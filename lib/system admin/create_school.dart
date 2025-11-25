@@ -1,0 +1,276 @@
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart'; // Import for EthiopianDate
+import 'package:amde_haymanot_abalat_guday/models/ethiopian_date_picker.dart'; // Import for EthiopianDatePickerDialog
+import 'package:flutter/material.dart';
+import 'package:amde_haymanot_abalat_guday/services/system_admin_service.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+class CreateSchoolScreen extends StatefulWidget {
+  const CreateSchoolScreen({Key? key}) : super(key: key);
+
+  @override
+  State<CreateSchoolScreen> createState() => _CreateSchoolScreenState();
+}
+
+class _CreateSchoolScreenState extends State<CreateSchoolScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _pastorController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _serviceTimesController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  EthiopianDate? _establishedDate; // Use EthiopianDate for state
+  bool _isSubmitting = false;
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSubmitting = true);
+
+    final schoolData = {
+      'name': _nameController.text.trim(),
+      'pastor_name': _pastorController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'address': _addressController.text.trim(),
+      'service_times': _serviceTimesController.text.trim(),
+      'description': _descriptionController.text.trim(),
+      'established_date': _establishedDate?.toDatabaseString(),
+    };
+
+    final result = await SystemAdminService.createSchool(schoolData);
+
+    setState(() => _isSubmitting = false);
+
+    if (mounted) {
+      if (result['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('ትምህርት ቤቱ በተሳካ ሁኔታ ተፈጥሯል!',
+                  style: GoogleFonts.notoSansEthiopic())),
+        );
+        Navigator.of(context).pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'])),
+        );
+      }
+    }
+  }
+
+  // --- MODIFIED TO USE ETHIOPIAN DATE PICKER ---
+  Future<void> _selectEstablishedDate() async {
+    final EthiopianDate? picked = await showDialog<EthiopianDate>(
+      context: context,
+      builder: (context) => EthiopianDatePickerDialog(
+        initialDate: _establishedDate ?? EthiopianDate.now(),
+      ),
+    );
+    if (picked != null && picked != _establishedDate) {
+      setState(() => _establishedDate = picked);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('አዲስ ትምህርት ቤት ፍጠር', style: GoogleFonts.notoSansEthiopic()),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Theme.of(context).colorScheme.secondary,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Basic Information Section
+              Text(
+                'መሰረታዊ መረጃ',
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'የትምህርት ቤቱ ስም *',
+                  labelStyle: GoogleFonts.notoSansEthiopic(),
+                  border: const OutlineInputBorder(),
+                  hintText: 'የትምህርት ቤቱን ስም ያስገቡ',
+                  hintStyle: GoogleFonts.notoSansEthiopic(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'እባክዎ የትምህርት ቤቱን ስም ያስገቡ';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _pastorController,
+                decoration: InputDecoration(
+                  labelText: 'የፓስተር ስም',
+                  labelStyle: GoogleFonts.notoSansEthiopic(),
+                  border: const OutlineInputBorder(),
+                  hintText: 'የፓስተሩን ስም ያስገቡ',
+                  hintStyle: GoogleFonts.notoSansEthiopic(),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Contact Information Section
+              Text(
+                'የዕውቂያ መረጃ',
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'የኢሜል አድራሻ',
+                  labelStyle: GoogleFonts.notoSansEthiopic(),
+                  border: const OutlineInputBorder(),
+                  hintText: 'school@example.com',
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(
+                  labelText: 'ስልክ ቁጥር',
+                  labelStyle: GoogleFonts.notoSansEthiopic(),
+                  border: const OutlineInputBorder(),
+                  hintText: '+251-XXX-XXXXXX',
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _addressController,
+                decoration: InputDecoration(
+                  labelText: 'አካላዊ አድራሻ',
+                  labelStyle: GoogleFonts.notoSansEthiopic(),
+                  border: const OutlineInputBorder(),
+                  hintText: 'የትምህርት ቤቱን አድራሻ ያስገቡ',
+                  hintStyle: GoogleFonts.notoSansEthiopic(),
+                ),
+                maxLines: 2,
+              ),
+
+              const SizedBox(height: 24),
+
+              // Additional Information Section
+              Text(
+                'ተጨማሪ መረጃ',
+                style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _serviceTimesController,
+                decoration: InputDecoration(
+                  labelText: 'የአገልግሎት ሰዓታት',
+                  labelStyle: GoogleFonts.notoSansEthiopic(),
+                  border: const OutlineInputBorder(),
+                  hintText:
+                      'እሑድ፡ 8:30 ጥዋት - የልጆች አገልግሎት፣ 10:00 ጥዋት - የወጣቶች አገልግሎት',
+                  hintStyle: GoogleFonts.notoSansEthiopic(),
+                ),
+                maxLines: 3,
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _descriptionController,
+                decoration: InputDecoration(
+                  labelText: 'መግለጫ',
+                  labelStyle: GoogleFonts.notoSansEthiopic(),
+                  border: const OutlineInputBorder(),
+                  hintText: 'ስለ ትምህርት ቤቱ አጭር መግለጫ...',
+                  hintStyle: GoogleFonts.notoSansEthiopic(),
+                ),
+                maxLines: 4,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Established Date
+              ListTile(
+                title:
+                    Text('የተቋቋመበት ቀን', style: GoogleFonts.notoSansEthiopic()),
+                subtitle: Text(
+                  _establishedDate != null
+                      ? _establishedDate.toString()
+                      : 'ቀን ይምረጡ',
+                  style: GoogleFonts.notoSansEthiopic(),
+                ),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: _selectEstablishedDate,
+              ),
+
+              const SizedBox(height: 32),
+
+              // Submit Button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submitForm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Theme.of(context).colorScheme.secondary,
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          'ትምህርት ቤት ፍጠር',
+                          style: GoogleFonts.notoSansEthiopic(fontSize: 16),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _pastorController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _serviceTimesController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+}
