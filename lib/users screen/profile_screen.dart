@@ -673,102 +673,146 @@ class _ProfileScreenState extends State<ProfileScreen>
         ? (c['scores'] ?? c['assessments']) as List
         : [];
 
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        leading: Icon(Iconsax.book_1, color: kGoldColor, size: 20),
-        title: Text(
-          c['course_name']?.toString() ?? '-',
-          style:
-              GoogleFonts.notoSansEthiopic(color: Colors.white, fontSize: 14),
-        ),
-        trailing: Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-              color: kGoldColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8)),
-          child: Text(
-            score.toStringAsFixed(1),
-            style: GoogleFonts.notoSansEthiopic(
-                color: kGoldColor, fontWeight: FontWeight.bold),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white10)),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          iconColor: kGoldColor,
+          collapsedIconColor: Colors.white54,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                color: kGoldColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8)),
+            child: const Icon(Iconsax.book_1, color: kGoldColor, size: 20),
           ),
-        ),
-        children: [
-          if (assessments.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
-              child: Text("ምንም የፈተና ዝርዝር የለም",
-                  style: TextStyle(color: Colors.white38, fontSize: 12)),
-            )
-          else
-            ...assessments.map((a) {
-              final aName = a['assessment_name'] ?? a['name'] ?? '-';
-              final aScore = a['score'] ?? 0;
-              final aMax = a['max_score'] ??
-                  a['total'] ??
-                  100; // Default to 100 if max not provided? Or just hide it?
-
-              // If we don't know max score, maybe just show score?
-              final scoreText = (a['max_score'] != null || a['total'] != null)
-                  ? "$aScore / $aMax"
-                  : "$aScore";
-
-              return Padding(
-                padding: const EdgeInsets.only(left: 48, right: 16, bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          title: Text(
+            c['course_name']?.toString() ?? '-',
+            style: GoogleFonts.notoSansEthiopic(
+                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+          subtitle: assessments.isEmpty
+              ? Text("No grades yet",
+                  style: TextStyle(color: Colors.white38, fontSize: 11))
+              : Text("${assessments.length} assessments",
+                  style: TextStyle(color: Colors.white38, fontSize: 11)),
+          children: [
+            if (assessments.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text("ምንም የፈተና ውጤት አልገባም",
+                    style: TextStyle(
+                        color: Colors.white60, fontStyle: FontStyle.italic)),
+              )
+            else ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                   children: [
-                    Text(aName,
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    Text(scoreText,
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("የፈተና ዓይነት (Assessment)",
+                            style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold)),
+                        Text("ውጤት (Score)",
+                            style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const Divider(color: Colors.white12, height: 20),
+                    // List
+                    ...assessments.map((a) {
+                      final aName = a['assessment_name'] ?? a['name'] ?? '-';
+                      final aScore = a['score'] ?? 0;
+                      final aMax = a['max_score'] ?? a['total'] ?? 100;
+
+                      // Decide how to show score
+                      final scoreText =
+                          (a['max_score'] != null || a['total'] != null)
+                              ? "$aScore / $aMax"
+                              : "$aScore";
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(aName,
+                                  style: GoogleFonts.notoSansEthiopic(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 13)),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 2),
+                              decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(4)),
+                              child: Text(scoreText,
+                                  style: TextStyle(
+                                      color: kGoldColor,
+                                      fontSize: 13,
+                                      fontFamily: 'Courier')),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    const Divider(color: Colors.white24, height: 32),
+                    // Summary Footer
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("ጠቅላላ ውጤት",
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: Colors.white70, fontSize: 12)),
+                            Text("Total Score",
+                                style: GoogleFonts.poppins(
+                                    color: Colors.white38, fontSize: 10)),
+                          ],
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              score.toStringAsFixed(1),
+                              style: GoogleFonts.poppins(
+                                  color: kGoldColor,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            Text("%",
+                                style: GoogleFonts.poppins(
+                                    color: kGoldColor.withOpacity(0.7),
+                                    fontSize: 14)),
+                          ],
+                        )
+                      ],
+                    )
                   ],
                 ),
-              );
-            }).toList(),
-          // Summary Section
-          if (assessments.isNotEmpty) ...[
-            const Divider(
-                color: Colors.white10, height: 16, indent: 16, endIndent: 16),
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("ድምር (Total)",
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kGoldColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold)),
-                  Text(score.toStringAsFixed(1),
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kGoldColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("አማካይ (Average)",
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kGoldColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold)),
-                  Text("${score.toStringAsFixed(1)}%",
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kGoldColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-          ] else
-            const SizedBox(height: 8)
-        ],
+              )
+            ]
+          ],
+        ),
       ),
     );
   }
