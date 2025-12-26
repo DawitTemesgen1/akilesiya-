@@ -317,10 +317,46 @@ class _ProfileScreenState extends State<ProfileScreen>
           FutureBuilder<dynamic>(
             future: _attendanceFuture,
             builder: (context, snapshot) {
-              // Placeholder for attendance chart
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator(color: kAccentGold));
+              }
+
+              // Calculate Attendance (Robust)
+              double percentage = 0.0;
+              String message = "No records";
+              String subMessage = "Attendance data unavailable";
+              int total = 0;
+              int present = 0;
+
+              if (snapshot.hasData &&
+                  snapshot.data is Map &&
+                  snapshot.data['success'] == true) {
+                final data = snapshot.data['data'];
+                if (data is List && data.isNotEmpty) {
+                  total = data.length;
+                  present = data
+                      .where((item) =>
+                          item['status'].toString().toLowerCase() == 'present')
+                      .length;
+                  percentage = total > 0 ? present / total : 0.0;
+
+                  if (percentage >= 0.8) {
+                    message = "Excellent!";
+                    subMessage = "You are regular in your service.";
+                  } else if (percentage >= 0.5) {
+                    message = "Good";
+                    subMessage = "Keep up the good work.";
+                  } else {
+                    message = "Attention";
+                    subMessage = "Try to attend more frequently.";
+                  }
+                } else if (data is List && data.isEmpty) {
+                  subMessage = "No attendance records yet.";
+                }
+              }
+
               return Container(
-                height: 150,
-                width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: kSurfaceColor.withOpacity(0.5),
@@ -330,17 +366,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Row(
                   children: [
                     CircularPercentIndicator(
-                      radius: 50,
-                      lineWidth: 10,
-                      percent: 0.85,
-                      center: Text("85%",
+                      radius: 45,
+                      lineWidth: 8,
+                      percent: percentage.clamp(0.0, 1.0),
+                      center: Text("${(percentage * 100).toStringAsFixed(0)}%",
                           style: GoogleFonts.poppins(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 18)),
-                      progressColor: kAccentGold,
+                      progressColor:
+                          percentage > 0.5 ? kAccentGold : Colors.redAccent,
                       backgroundColor: Colors.white10,
                       circularStrokeCap: CircularStrokeCap.round,
+                      animation: true,
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -348,13 +386,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Great Job!",
+                        Text(message,
                             style: GoogleFonts.poppins(
                                 color: Colors.white,
-                                fontWeight: FontWeight.bold)),
-                        Text("You are regular in your service.",
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
+                        const SizedBox(height: 4),
+                        Text(subMessage,
                             style: GoogleFonts.poppins(
                                 color: Colors.white54, fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Text("$present / $total Sessions",
+                            style: GoogleFonts.notoSansEthiopic(
+                                color: kAccentBlue,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ))
                   ],
