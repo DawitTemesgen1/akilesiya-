@@ -14,7 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 
-// --- PIXEL-PERFECT SCREENSHOT MATCH ---
+// --- PIXEL-PERFECT SCREENSHOT MATCH (CRASH FIXED) ---
 const Color kNavyBg = Color(0xFF030712); // Deepest Navy
 const Color kCardNavy = Color(0xFF111827); // Dark Blue-Grey Card
 const Color kGold = Color(0xFFFFCC00); // Bright Yellow-Gold
@@ -105,32 +105,44 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
+              // Header as a generic Sliver
               SliverToBoxAdapter(
-                  child: _buildHeader(profile, userProvider.avatarUrl)),
-              SliverPersistentHeader(
-                delegate: _ExactTabBarDelegate(
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: kGold,
-                    unselectedLabelColor: Colors.grey,
-                    indicatorColor: kGold,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    isScrollable: true,
-                    labelStyle: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.bold, fontSize: 13),
-                    tabs: const [
-                      Tab(text: "ሁኔታ", icon: Icon(Icons.bar_chart_outlined)),
-                      Tab(text: "የግል", icon: Icon(Icons.person_outline)),
-                      Tab(
-                          text: "መንፈሳዊ",
-                          icon: Icon(Icons.school_outlined)), // Mortarboard
-                      Tab(
-                          text: "ትምህርት እና ቤተሰብ",
-                          icon: Icon(Icons.menu_book_outlined)), // Book
-                    ],
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _buildHeader(profile, userProvider.avatarUrl),
+                ),
+              ),
+              // Pinned Tab Bar using SliverAppBar (Crash Fix)
+              SliverAppBar(
+                backgroundColor: kNavyBg,
+                pinned: true,
+                primary: false, // Don't try to account for status bar again
+                toolbarHeight: 0, // Hide the toolbar part
+                automaticallyImplyLeading: false,
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(50),
+                  child: Container(
+                    color: kNavyBg,
+                    child: TabBar(
+                      controller: _tabController,
+                      labelColor: kGold,
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: kGold,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      isScrollable: true,
+                      labelStyle: GoogleFonts.notoSansEthiopic(
+                          fontWeight: FontWeight.bold, fontSize: 13),
+                      tabs: const [
+                        Tab(text: "ሁኔታ", icon: Icon(Icons.bar_chart_outlined)),
+                        Tab(text: "የግል", icon: Icon(Icons.person_outline)),
+                        Tab(text: "መንፈሳዊ", icon: Icon(Icons.school_outlined)),
+                        Tab(
+                            text: "ትምህርት እና ቤተሰብ",
+                            icon: Icon(Icons.menu_book_outlined)),
+                      ],
+                    ),
                   ),
                 ),
-                pinned: true,
               ),
             ];
           },
@@ -466,8 +478,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                               style: GoogleFonts.notoSansEthiopic(
                                   color: kGold, fontWeight: FontWeight.bold)))),
                   ...courses.map((c) {
-                    final grade =
-                        double.tryParse(c['score']?.toString() ?? '0') ?? 0;
+                    double grade = 0;
+                    try {
+                      grade = double.parse(c['score'].toString());
+                    } catch (e) {}
                     return _buildRow(
                         Icons.menu_book,
                         c['course_name']?.toString() ?? '-',
@@ -512,24 +526,4 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
     );
   }
-}
-
-class _ExactTabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar _tabBar;
-  _ExactTabBarDelegate(this._tabBar);
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height + 10;
-  @override
-  double get maxExtent => _tabBar.preferredSize.height + 10;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(color: kNavyBg, child: _tabBar);
-  }
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      true;
 }
