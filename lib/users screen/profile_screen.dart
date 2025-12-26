@@ -430,12 +430,18 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     // Add custom fields from config
-    final personalFields =
-        config.customFields.where((f) => f.category == 'personal').toList();
+    final personalFields = config.customFields
+        .where((f) => f is Map && f['category'] == 'personal')
+        .toList();
     for (var field in personalFields) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
+      final fieldMap = field as Map<String, dynamic>;
       rows.add(_buildDetailRow(
-          Icons.info_outline, field.label, profile[field.fieldName]));
+          Icons.info_outline,
+          fieldMap['label']?.toString() ??
+              fieldMap['field_name']?.toString() ??
+              'Custom Field',
+          profile[fieldMap['field_name']]));
     }
 
     return ListView(
@@ -481,12 +487,18 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     // Add custom fields from config
-    final spiritualFields =
-        config.customFields.where((f) => f.category == 'spiritual').toList();
+    final spiritualFields = config.customFields
+        .where((f) => f is Map && f['category'] == 'spiritual')
+        .toList();
     for (var field in spiritualFields) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
+      final fieldMap = field as Map<String, dynamic>;
       rows.add(_buildDetailRow(
-          Icons.info_outline, field.label, profile[field.fieldName]));
+          Icons.info_outline,
+          fieldMap['label']?.toString() ??
+              fieldMap['field_name']?.toString() ??
+              'Custom Field',
+          profile[fieldMap['field_name']]));
     }
 
     return ListView(
