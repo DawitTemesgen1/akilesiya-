@@ -14,12 +14,13 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 
-// --- ULTIMATE PREMIUM THEME (Diamond & Gold) ---
-const Color kRichBlack = Color(0xFF000000);
-const Color kDeepOnyx = Color(0xFF101010);
-const Color kGoldGradientStart = Color(0xFFFFD700);
-const Color kGoldGradientEnd = Color(0xFFDAA520);
-const Color kPlatinum = Color(0xFFE5E4E2);
+// --- RESTORED ORIGINAL THEME (Dark Blue & Gold) ---
+const Color kPrimaryColor = Color(0xFF050511); // Deep Navy/Black
+const Color kCardColor = Color(0xFF151522); // Card Background
+const Color kGoldColor = Color(0xFFFFC107); // Amber/Gold
+const Color kTextWhite = Colors.white;
+const Color kTextGrey = Colors.white54;
+const Color kRedError = Color(0xFFE53935);
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -73,21 +74,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  // --- GOLD TEXT SHADER HELPER ---
-  Widget _goldText(String text,
-      {double fontSize = 16, FontWeight fontWeight = FontWeight.bold}) {
-    return ShaderMask(
-      shaderCallback: (bounds) => const LinearGradient(
-        colors: [kGoldGradientStart, kGoldGradientEnd, kGoldGradientStart],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(bounds),
-      child: Text(text,
-          style: GoogleFonts.notoSansEthiopic(
-              fontSize: fontSize, fontWeight: fontWeight, color: Colors.white)),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
@@ -96,274 +82,319 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     if (userProvider.isLoading || profile == null) {
       return const Scaffold(
-          backgroundColor: kRichBlack,
-          body: Center(
-              child: CircularProgressIndicator(color: kGoldGradientStart)));
+          backgroundColor: kPrimaryColor,
+          body: Center(child: CircularProgressIndicator(color: kGoldColor)));
     }
 
     return Scaffold(
-      backgroundColor: kRichBlack,
-      body: Stack(
-        children: [
-          // LUXURY BACKGROUND
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFF0F0F1A), kRichBlack, kRichBlack],
-                  stops: [0.0, 0.4, 1.0]),
-            ),
-          ),
-          // Ambient Glow
-          Positioned(
-              top: -100,
-              right: -100,
-              child: Container(
-                  width: 300,
-                  height: 300,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: kGoldGradientStart.withOpacity(0.05),
-                      boxShadow: [
-                        BoxShadow(
-                            color: kGoldGradientStart.withOpacity(0.1),
-                            blurRadius: 100)
-                      ]))),
-
-          NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                _buildSliverAppBar(context, profile, userProvider.avatarUrl),
-                SliverPersistentHeader(
-                  delegate: _PremiumTabBarDelegate(
-                    TabBar(
-                      controller: _tabController,
-                      labelColor: kGoldGradientStart,
-                      unselectedLabelColor: Colors.grey,
-                      labelStyle: GoogleFonts.notoSansEthiopic(
-                          fontWeight: FontWeight.w900, fontSize: 13),
-                      indicatorColor: kGoldGradientStart,
-                      indicatorWeight: 3,
-                      padding: EdgeInsets.zero,
-                      dividerColor: Colors.transparent,
-                      tabs: const [
-                        Tab(text: "ሁኔታ"), // Status
-                        Tab(text: "የግል"), // Personal
-                        Tab(text: "መንፈሳዊ"), // Spiritual
-                        Tab(text: "ትምህርት"), // Education
-                      ],
-                    ),
+      backgroundColor: kPrimaryColor,
+      body: RefreshIndicator(
+        onRefresh: _refreshAllData,
+        color: kGoldColor,
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              _buildAppBar(context),
+              SliverToBoxAdapter(
+                  child: _buildHeader(profile, userProvider.avatarUrl)),
+              SliverPersistentHeader(
+                delegate: _RestoredTabBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: kGoldColor,
+                    unselectedLabelColor: Colors.white60,
+                    indicatorColor: kGoldColor,
+                    indicatorWeight: 3,
+                    labelStyle: GoogleFonts.notoSansEthiopic(
+                        fontWeight: FontWeight.bold, fontSize: 12),
+                    tabs: const [
+                      Tab(text: "ሁኔታ", icon: Icon(Iconsax.status)),
+                      Tab(text: "የግል", icon: Icon(Iconsax.user)),
+                      Tab(text: "መንፈሳዊ", icon: Icon(Iconsax.teacher)),
+                      Tab(text: "ትምህርት", icon: Icon(Iconsax.book)),
+                    ],
                   ),
-                  pinned: true,
                 ),
-              ];
-            },
-            body: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildStatusTab(profile),
-                _buildDetailsList(profile, 'የግል', profileConfig),
-                _buildDetailsList(profile, 'መንፈሳዊ', profileConfig),
-                _buildEducationTab(profile, profileConfig),
-              ],
-            ),
+                pinned: true,
+              ),
+            ];
+          },
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildStatusTab(profile),
+              _buildDynamicTabContent(profile, 'የግል', profileConfig),
+              _buildDynamicTabContent(profile, 'መንፈሳዊ', profileConfig),
+              _buildEducationTab(profile, profileConfig),
+            ],
           ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (ctx) => const UserEditProfileScreen(),
+        ).then((_) => _refreshAllData()),
+        backgroundColor: kGoldColor,
+        child: const Icon(Iconsax.edit, color: Colors.black),
+      ),
+    );
+  }
+
+  Widget _buildAppBar(BuildContext context) {
+    return SliverAppBar(
+      backgroundColor: kPrimaryColor,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      centerTitle: true,
+      // Hamburger menu is likely handled by Scaffold drawer, leading is Auto.
+    );
+  }
+
+  Widget _buildHeader(Map<String, dynamic> profile, String? avatarUrl) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        children: [
+          Stack(
+            children: [
+              // Glow
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [
+                  BoxShadow(
+                      color: kGoldColor.withOpacity(0.3),
+                      blurRadius: 40,
+                      spreadRadius: 5)
+                ]),
+              ),
+              // Avatar
+              Container(
+                width: 110,
+                height: 110,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: kGoldColor, width: 2)),
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: const Color(0xFF222233),
+                  backgroundImage: (avatarUrl != null)
+                      ? CachedNetworkImageProvider(avatarUrl)
+                      : null,
+                  child: (avatarUrl == null)
+                      ? Text((profile['full_name'] ?? 'U')[0].toUpperCase(),
+                          style: GoogleFonts.poppins(
+                              fontSize: 40, color: kGoldColor))
+                      : null,
+                ),
+              ),
+              // Camera Icon
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: _pickAndUploadImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                        color: kGoldColor, shape: BoxShape.circle),
+                    child: const Icon(Iconsax.camera,
+                        color: Colors.black, size: 18),
+                  ),
+                ),
+              )
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(profile['full_name'] ?? 'ስም የለም',
+              style: GoogleFonts.notoSansEthiopic(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(profile['email'] ?? '',
+              style: GoogleFonts.poppins(color: Colors.white54, fontSize: 14)),
         ],
       ),
     );
   }
 
-  Widget _buildSliverAppBar(
-      BuildContext context, Map<String, dynamic> profile, String? avatarUrl) {
-    return SliverAppBar(
-      backgroundColor: kRichBlack,
-      expandedHeight: 300,
-      pinned: true,
-      centerTitle: true,
-      title: _goldText("መገለጫ"), // Profile
-      actions: [
-        IconButton(
-            icon: const Icon(Iconsax.edit, color: kPlatinum),
-            onPressed: () => showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (c) => const UserEditProfileScreen())
-                .then((_) => _refreshAllData())),
-      ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          alignment: Alignment.center,
-          children: [
-            Opacity(
-                opacity: 0.05,
-                child: Image.network(
-                    "https://www.transparenttextures.com/patterns/cubes.png",
-                    repeat: ImageRepeat.repeat,
-                    errorBuilder: (c, o, s) => const SizedBox())),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 40),
-                GestureDetector(
-                  onTap: _pickAndUploadImage,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                            colors: [kGoldGradientStart, kGoldGradientEnd]),
-                        boxShadow: [
-                          BoxShadow(
-                              color: kGoldGradientStart.withOpacity(0.4),
-                              blurRadius: 30,
-                              spreadRadius: 2)
-                        ]),
-                    child: CircleAvatar(
-                      radius: 65,
-                      backgroundColor: kDeepOnyx,
-                      backgroundImage: (avatarUrl != null)
-                          ? CachedNetworkImageProvider(avatarUrl)
-                          : null,
-                      child: (avatarUrl == null)
-                          ? Text((profile['full_name'] ?? 'U')[0].toUpperCase(),
-                              style: GoogleFonts.notoSansEthiopic(
-                                  fontSize: 50, color: kGoldGradientStart))
-                          : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(profile['full_name'] ?? 'ስም የለም',
-                    style: GoogleFonts.notoSansEthiopic(
-                        color: kPlatinum,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white10),
-                      borderRadius: BorderRadius.circular(30),
-                      color: Colors.white.withOpacity(0.05)),
-                  child: Text(profile['spiritual_class'] ?? 'ክፍል አልተመደበም',
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kGoldGradientEnd,
-                          fontSize: 12,
-                          letterSpacing: 1.5)),
-                ),
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- PREMIUM CONTENT ---
+  // --- TAB CONTENT ---
 
   Widget _buildStatusTab(Map<String, dynamic> profile) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          Row(
+    final serviceStatus =
+        profile['service_sector']?.toString() ?? "አገልግሎት ላይ ያልሆነ";
+    final isActive = serviceStatus != "አገልግሎት ላይ ያልሆነ";
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Service Status Card
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+              color: kCardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white10)),
+          child: Column(
             children: [
-              Expanded(
-                  child: _buildDiamondCard("ሁኔታ", "ንቁ", Iconsax.verify5,
-                      Colors.greenAccent)), // Status: Active
-              const SizedBox(width: 20),
-              Expanded(
-                  child: _buildDiamondCard(
-                      "የአገልግሎት ዘርፍ",
-                      profile['service_sector']?.toString() ?? "አልተመደበም",
-                      Iconsax.briefcase,
-                      kGoldGradientStart)), // Sector: Not Assigned
+              Text("የአገልግሎት ሁኔታ",
+                  style: GoogleFonts.notoSansEthiopic(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              isActive
+                  ? const Icon(Iconsax.verify5,
+                      color: Colors.greenAccent, size: 50)
+                  : const Icon(Icons.cancel_outlined,
+                      color: kRedError, size: 50),
+              const SizedBox(height: 16),
+              Text(serviceStatus,
+                  style: GoogleFonts.notoSansEthiopic(
+                      color: isActive ? Colors.greenAccent : kRedError,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text("ይህ ሁኔታ የሚተዳደረው በስተዳደር ነው::",
+                  style: GoogleFonts.notoSansEthiopic(
+                      color: Colors.white38, fontSize: 12)),
             ],
           ),
-          const SizedBox(height: 30),
-          FutureBuilder<dynamic>(
-            future: _attendanceFuture,
-            builder: (context, snapshot) {
-              double percent = 0;
-              int present = 0;
-              int total = 0;
-              if (snapshot.hasData &&
-                  snapshot.data is Map &&
-                  snapshot.data['success'] == true) {
-                final data = snapshot.data['data'];
-                if (data is List) {
-                  total = data.length;
-                  present = data
-                      .where((x) =>
-                          x['status'].toString().toLowerCase() == 'present')
-                      .length;
-                  percent = total > 0 ? present / total : 0.0;
-                }
+        ),
+        const SizedBox(height: 16),
+
+        // Attendance Card
+        FutureBuilder<dynamic>(
+          future: _attendanceFuture,
+          builder: (context, snapshot) {
+            int present = 0;
+            int absent = 0;
+            double percent = 0;
+            if (snapshot.hasData &&
+                snapshot.data is Map &&
+                snapshot.data['success'] == true) {
+              final list = snapshot.data['data'];
+              if (list is List) {
+                present = list
+                    .where((x) =>
+                        x['status'].toString().toLowerCase() == 'present')
+                    .length;
+                absent = list
+                    .where(
+                        (x) => x['status'].toString().toLowerCase() == 'absent')
+                    .length;
+                if (list.isNotEmpty) percent = present / list.length;
               }
-              return _buildGlassContainer(
-                  child: Column(
+            }
+
+            return Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                  color: kCardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white10)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _goldText("የመገኘት ሁኔታ", fontSize: 14), // Attendance
-                          const SizedBox(height: 4),
-                          Text("አጠቃላይ ዓመታዊ ሪፖርት",
-                              style: GoogleFonts.notoSansEthiopic(
-                                  color: Colors.white38,
-                                  fontSize: 10)), // Yearly Overview
-                        ],
-                      ),
-                      Text("$present / $total",
+                      Text("የመገኘት ማጠቃለያ",
                           style: GoogleFonts.notoSansEthiopic(
-                              color: kPlatinum,
-                              fontSize: 24,
+                              color: Colors.white,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold)),
+                      const Icon(Icons.arrow_forward_ios,
+                          color: Colors.white54, size: 16),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  LinearPercentIndicator(
-                    lineHeight: 20,
-                    percent: percent.clamp(0.0, 1.0),
-                    animation: true,
-                    barRadius: const Radius.circular(10),
-                    backgroundColor: Colors.white10,
-                    progressColor: kGoldGradientStart,
-                    center: Text("${(percent * 100).toInt()}%",
-                        style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black)),
-                  )
+                  Row(
+                    children: [
+                      CircularPercentIndicator(
+                        radius: 50,
+                        lineWidth: 10,
+                        percent: percent.clamp(0.0, 1.0),
+                        progressColor: kGoldColor,
+                        backgroundColor: const Color(0xFF2A2A3A),
+                        center: Text("${(percent * 100).toStringAsFixed(1)}%",
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
+                        circularStrokeCap: CircularStrokeCap.round,
+                      ),
+                      const SizedBox(width: 30),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLegendItem(Icons.person, "ተገኝቷል: $present",
+                              Colors.greenAccent),
+                          const SizedBox(height: 10),
+                          _buildLegendItem(
+                              Icons.person_off, "ቀርቷል: $absent", kRedError),
+                          // const SizedBox(height: 10),
+                          // _buildLegendItem(Icons.calendar_today, "አስፈቅዷል: 0", Colors.orange),
+                        ],
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                      child: Text("ዝርዝር ታሪክን ለማየት ይጫኑ",
+                          style: GoogleFonts.notoSansEthiopic(
+                              color: kGoldColor, fontSize: 12))),
                 ],
-              ));
-            },
-          )
-        ],
-      ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
-  Widget _buildDetailsList(
+  Widget _buildLegendItem(IconData icon, String text, Color color) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 16),
+        const SizedBox(width: 8),
+        Text(text,
+            style: GoogleFonts.notoSansEthiopic(
+                color: Colors.white, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildDynamicTabContent(
       Map<String, dynamic> profile, String tab, ProfileConfigProvider config) {
     final widgets = <Widget>[];
 
-    void add(String l, String v) => widgets.add(_buildDetailRow(l, v));
+    void add(String l, String v, IconData i) =>
+        widgets.add(_buildProfileRow(i, l, v));
 
-    // Built-in
-    final builtIn = _getBuiltInFields(tab);
-    for (var key in builtIn) {
-      if (config.isWidgetVisible(key))
-        add(_getTranslatedLabel(key), _formatValue(key, profile[key]));
+    // Simple manual mapping based on screenshots for "Original" look
+    if (tab == 'መንፈሳዊ') {
+      add("የንስሐ አባት ስም", profile['confession_father_name']?.toString() ?? "-",
+          Iconsax.user);
+      add("የመንፈሳዊ ትምህርት ክፍል", profile['spiritual_class']?.toString() ?? "-",
+          Iconsax.teacher);
+      add("ክፍል", profile['kifil']?.toString() ?? "Not set", Iconsax.people);
+    } else {
+      // Personal
+      add("የክርስትና ስም", profile['christian_name']?.toString() ?? "-",
+          Iconsax.heart);
+      add("የእናት ስም", profile['mother_name']?.toString() ?? "-",
+          Iconsax.user_square);
+      add("ስልክ ቁጥር", profile['phone_number']?.toString() ?? "-", Iconsax.call);
     }
 
-    // Custom
+    // Custom Fields appended
     final custom = config.customFields.where((f) {
       final t = f['profile_tab']?.toString().toUpperCase() ?? 'PERSONAL';
       if (tab == 'የግል') return t == 'PERSONAL';
@@ -382,19 +413,62 @@ class _ProfileScreenState extends State<ProfileScreen>
             orElse: () => null);
         val = op?['option_value']?.toString() ?? '-';
       }
-      add(f['name'].toString(), val);
+      add(f['name'].toString(), val, Iconsax.info_circle);
     }
 
     return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [_buildGlassContainer(child: Column(children: widgets))],
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          decoration: BoxDecoration(
+              color: kCardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white10)),
+          child: Column(children: widgets),
+        )
+      ],
+    );
+  }
+
+  Widget _buildProfileRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+                color: const Color(0xFF222233),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: kGoldColor.withOpacity(0.2))),
+            child: Icon(icon, color: kGoldColor, size: 20),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: GoogleFonts.notoSansEthiopic(
+                        color: Colors.white54, fontSize: 12)),
+                const SizedBox(height: 4),
+                Text(value,
+                    style: GoogleFonts.notoSansEthiopic(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+          )
+        ],
+      ),
     );
   }
 
   Widget _buildEducationTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       children: [
         FutureBuilder<dynamic>(
           future: _gradesFuture,
@@ -411,114 +485,31 @@ class _ProfileScreenState extends State<ProfileScreen>
               else if (d is List) courses = List<Map<String, dynamic>>.from(d);
             } catch (e) {}
 
-            if (courses.isEmpty)
-              return Center(
-                  child: Text("ምንም ውጤት የለም",
-                      style:
-                          GoogleFonts.notoSansEthiopic(color: Colors.white54)));
+            if (courses.isEmpty) return const SizedBox.shrink();
 
-            return Column(
-              children: courses.map((c) => _buildGradeItem(c)).toList(),
+            return Container(
+              decoration: BoxDecoration(
+                  color: kCardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white10)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text("የትምህርት ውጤት",
+                        style: GoogleFonts.notoSansEthiopic(
+                            color: kGoldColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                  ),
+                  ...courses.map((c) => _buildGradeItem(c)).toList(),
+                ],
+              ),
             );
           },
         ),
-        const SizedBox(height: 30),
-        _buildGlassContainer(
-            child: Column(children: [
-          _buildDetailRow(
-              "የትምህርት ደረጃ", profile['academic_level']?.toString() ?? '-'),
-          _buildDetailRow("የወላጅ ስም", profile['parent_name']?.toString() ?? '-'),
-          _buildDetailRow(
-              "የወላጅ ስልክ", profile['parent_phone_number']?.toString() ?? '-'),
-        ]))
       ],
-    );
-  }
-
-  // --- WIDGETS ---
-
-  Widget _buildGlassContainer({required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-          color: const Color(0xFF1A1A24), // Subtle dark purple-grey
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10))
-          ]),
-      child: child,
-    );
-  }
-
-  Widget _buildDiamondCard(
-      String title, String value, IconData icon, Color color) {
-    return Container(
-      height: 140,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-          gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [const Color(0xFF20202C), kDeepOnyx]),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 15,
-                offset: const Offset(0, 8))
-          ]),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-                shape: BoxShape.circle, color: color.withOpacity(0.1)),
-            child: Icon(icon, size: 20, color: color),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value,
-                  style: GoogleFonts.notoSansEthiopic(
-                      color: kPlatinum,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 4),
-              Text(title,
-                  style: GoogleFonts.notoSansEthiopic(
-                      color: Colors.white30,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold)),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: GoogleFonts.notoSansEthiopic(
-                  color: Colors.white38, fontSize: 13)),
-          Text(value,
-              style: GoogleFonts.notoSansEthiopic(
-                  color: kPlatinum, fontSize: 14, fontWeight: FontWeight.w600)),
-        ],
-      ),
     );
   }
 
@@ -537,57 +528,27 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (max <= 0) max = 100;
 
     final courseName =
-        course['course_name']?.toString() ?? course['subject_name'] ?? 'ኮርስ';
+        course['course_name']?.toString() ?? course['subject_name'] ?? '-';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-          color: kDeepOnyx,
-          borderRadius: BorderRadius.circular(16),
-          border: Border(
-              left: BorderSide(
-                  color: (score / max > 0.5) ? kGoldGradientStart : Colors.red,
-                  width: 4))),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Colors.white10))),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
               child: Text(courseName,
-                  style: GoogleFonts.notoSansEthiopic(
-                      color: kPlatinum, fontWeight: FontWeight.bold))),
-          _goldText("${score.toStringAsFixed(1)}", fontSize: 18),
+                  style: GoogleFonts.notoSansEthiopic(color: Colors.white))),
+          Text("${score.toStringAsFixed(1)} / $max",
+              style: const TextStyle(
+                  color: kGoldColor, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  // Helpers
-  List<String> _getBuiltInFields(String tab) {
-    if (tab == 'የግል')
-      return [
-        'christian_name',
-        'mother_name',
-        'gender',
-        'age',
-        'dob',
-        'phone_number'
-      ];
-    if (tab == 'መንፈሳዊ')
-      return ['confession_father_name', 'spiritual_class', 'kifil'];
-    return [];
-  }
-
-  String _formatValue(String key, dynamic value) {
-    if (value == null || value.toString().isEmpty) return '-';
-    if (key == 'dob') {
-      try {
-        return DateFormat.yMMMd().format(DateTime.parse(value.toString()));
-      } catch (e) {}
-    }
-    return value.toString();
-  }
-
+  // --- Helpers ---
   Map<String, dynamic> _getCustomFieldValuesMap(Map<String, dynamic> profile) {
     if (profile['custom_field_values'] is Map)
       return profile['custom_field_values'];
@@ -599,43 +560,23 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
     return {};
   }
-
-  String _getTranslatedLabel(String key) {
-    const Map<String, String> translations = {
-      'christian_name': 'የክርስትና ስም',
-      'mother_name': 'የእናት ስም',
-      'gender': 'ጾታ',
-      'age': 'ዕድሜ',
-      'dob': 'የትውልድ ቀን',
-      'phone_number': 'ስልክ ቁጥር',
-      'confession_father_name': 'የንስሐ አባት ስም',
-      'spiritual_class': 'የመንፈሳዊ ትምህርት ክፍል',
-      'kifil': 'ክፍል',
-      'academic_level': 'የትምህርት ደረጃ',
-      'parent_name': 'የወላጅ ስም',
-      'parent_phone_number': 'የወላጅ ስልክ ቁጥር',
-      'grade_points': 'ውጤት',
-      'full_name': 'ስም',
-    };
-    return translations[key] ?? key.replaceAll('_', ' ').toUpperCase();
-  }
 }
 
-class _PremiumTabBarDelegate extends SliverPersistentHeaderDelegate {
+class _RestoredTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar _tabBar;
-  _PremiumTabBarDelegate(this._tabBar);
+  _RestoredTabBarDelegate(this._tabBar);
 
   @override
-  double get minExtent => _tabBar.preferredSize.height + 24;
+  double get minExtent => _tabBar.preferredSize.height + 20;
   @override
-  double get maxExtent => _tabBar.preferredSize.height + 24;
+  double get maxExtent => _tabBar.preferredSize.height + 20;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-        color: kRichBlack,
-        padding: const EdgeInsets.only(top: 12, bottom: 12),
+        color: kPrimaryColor,
+        padding: const EdgeInsets.only(top: 10, bottom: 10),
         child: _tabBar);
   }
 
