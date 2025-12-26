@@ -20,16 +20,19 @@ class ProfileConfigProvider with ChangeNotifier {
   }
 
   Future<void> fetchConfig() async {
+    print('DEBUG ProfileConfig: fetchConfig() called');
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
+      print('DEBUG ProfileConfig: Starting API calls...');
       final results = await Future.wait([
         UserAdminService.getProfileSettings(),
         TemplateService.getCustomFields(),
       ]);
 
+      print('DEBUG ProfileConfig: API calls completed');
       final settingsResult = results[0];
       final fieldsResult = results[1];
 
@@ -45,18 +48,23 @@ class ProfileConfigProvider with ChangeNotifier {
 
       if (fieldsResult['success'] == true) {
         _customFields = fieldsResult['data'];
-        print('DEBUG ProfileConfig: Loaded ${_customFields.length} custom fields');
+        print(
+            'DEBUG ProfileConfig: Loaded ${_customFields.length} custom fields');
       } else {
-        print('DEBUG ProfileConfig: Fields API failed - ${fieldsResult['message']}');
+        print(
+            'DEBUG ProfileConfig: Fields API failed - ${fieldsResult['message']}');
         throw Exception(
             fieldsResult['message'] ?? 'Failed to load custom fields.');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       _error = e.toString();
-      print("Error fetching profile config: $_error");
+      print("ERROR fetching profile config: $_error");
+      print("Stack trace: $stackTrace");
     } finally {
       _isLoading = false;
       notifyListeners();
+      print(
+          'DEBUG ProfileConfig: fetchConfig() completed, isLoading=$_isLoading, error=$_error');
     }
   }
 
