@@ -206,7 +206,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (ctx) => const EditProfileSheet(),
+            builder: (ctx) => const UserEditProfileScreen(),
           ).then((_) => _refreshAllData()),
         ),
       ],
