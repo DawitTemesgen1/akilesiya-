@@ -14,12 +14,11 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 
-// --- Ultra Modern Theme Constants ---
-const Color kDarkBg = Color(0xFF05050A);
-const Color kSurfaceColor = Color(0xFF1E1E2C);
-const Color kAccentGold = Color(0xFFFFD700);
-const Color kAccentBlue = Color(0xFF2E86DE);
-const Color kAccentPurple = Color(0xFF6C5CE7);
+// --- Safe Luxury Theme ---
+const Color kPrimaryColor = Color(0xFF0F0F1E);
+const Color kDarkAccent = Color(0xFF1A1A2E);
+const Color kGoldColor = Color(0xFFFFD700);
+const Color kSurfaceColor = Color(0xFF252535);
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -32,7 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ImagePicker _picker = ImagePicker();
-  final ScrollController _scrollController = ScrollController();
+  // Removed custom scroll controller for NestedScrollView to rely on default behavior which is often safer for Slivers
 
   Future<dynamic>? _attendanceFuture;
   Future<dynamic>? _gradesFuture;
@@ -82,104 +81,66 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     if (userProvider.isLoading || profile == null) {
       return const Scaffold(
-          backgroundColor: kDarkBg,
-          body: Center(child: CircularProgressIndicator(color: kAccentGold)));
+          backgroundColor: kPrimaryColor,
+          body: Center(child: CircularProgressIndicator(color: kGoldColor)));
     }
 
     return Scaffold(
-      backgroundColor: kDarkBg,
-      body: Stack(
-        children: [
-          // 1. Ambient Background (Mesh Gradient effect)
-          Positioned(
-              top: -100,
-              right: -100,
-              child: _buildBlurOrb(kAccentPurple.withOpacity(0.2))),
-          Positioned(
-              top: 200,
-              left: -50,
-              child: _buildBlurOrb(kAccentBlue.withOpacity(0.15))),
-          Positioned(
-              bottom: -50,
-              right: 0,
-              child: _buildBlurOrb(kAccentGold.withOpacity(0.1))),
-
-          NestedScrollView(
-            controller: _scrollController,
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                _buildModernAppBar(context),
-                SliverToBoxAdapter(
-                    child:
-                        _buildImmersiveHeader(profile, userProvider.avatarUrl)),
-                SliverPersistentHeader(
-                  delegate: _GlassTabBarDelegate(
-                    TabBar(
-                      controller: _tabController,
-                      overlayColor:
-                          MaterialStateProperty.all(Colors.transparent),
-                      labelColor: kDarkBg,
-                      unselectedLabelColor: Colors.white60,
-                      labelStyle: GoogleFonts.notoSansEthiopic(
-                          fontWeight: FontWeight.bold, fontSize: 13),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      indicator: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        color: kAccentGold,
-                      ),
-                      dividerColor: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 0),
-                      tabs: const [
-                        Tab(text: "ሁኔታ"),
-                        Tab(text: "የግል"),
-                        Tab(text: "መንፈሳዊ"),
-                        Tab(text: "ትምህርት"),
-                      ],
-                    ),
+      backgroundColor: kPrimaryColor,
+      body: RefreshIndicator(
+        onRefresh: _refreshAllData,
+        color: kGoldColor,
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              _buildAppBar(context),
+              SliverToBoxAdapter(
+                  child: _buildHeader(profile, userProvider.avatarUrl)),
+              SliverPersistentHeader(
+                delegate: _StickyTabBarDelegate(
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: kGoldColor,
+                    unselectedLabelColor: Colors.white60,
+                    indicatorColor: kGoldColor,
+                    indicatorWeight: 3,
+                    labelStyle: GoogleFonts.notoSansEthiopic(
+                        fontWeight: FontWeight.bold),
+                    tabs: const [
+                      Tab(text: "ሁኔታ"),
+                      Tab(text: "የግል"),
+                      Tab(text: "መንፈሳዊ"),
+                      Tab(text: "ትምህርት"),
+                    ],
                   ),
-                  pinned: true,
                 ),
-              ];
-            },
-            body: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildStatusDashboard(profile),
-                _buildGridContent('የግል', profile, profileConfig),
-                _buildGridContent('መንፈሳዊ', profile, profileConfig),
-                _buildEducationDashboard(profile, profileConfig),
-              ],
-            ),
+                pinned: true,
+              ),
+            ];
+          },
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildStatusTab(profile),
+              _buildDynamicTab(profile, 'የግል', profileConfig),
+              _buildDynamicTab(profile, 'መንፈሳዊ', profileConfig),
+              _buildEducationTab(profile, profileConfig),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildBlurOrb(Color color) {
-    return Container(
-      width: 300,
-      height: 300,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-          child: Container(color: Colors.transparent)),
-    );
-  }
-
-  Widget _buildModernAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context) {
     return SliverAppBar(
-      backgroundColor: kDarkBg.withOpacity(0.8),
-      title: Text("MY PROFILE",
-          style: GoogleFonts.poppins(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-              fontSize: 16)),
-      centerTitle: true,
+      backgroundColor: kPrimaryColor,
       pinned: true,
       elevation: 0,
+      centerTitle: true,
+      title: Text("መገለጫ",
+          style: GoogleFonts.notoSansEthiopic(
+              color: kGoldColor, fontWeight: FontWeight.bold)),
       actions: [
         IconButton(
           icon: const Icon(Iconsax.edit, color: Colors.white),
@@ -194,215 +155,154 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildImmersiveHeader(
-      Map<String, dynamic> profile, String? avatarUrl) {
-    return Padding(
+  Widget _buildHeader(Map<String, dynamic> profile, String? avatarUrl) {
+    return Container(
+      color: kPrimaryColor, // Ensure opaque background behind scroll
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       child: Column(
         children: [
-          FadeInDown(
-            duration: const Duration(milliseconds: 600),
-            child: Row(
-              children: [
-                _buildAvatarRing(profile, avatarUrl),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(profile['full_name'] ?? 'User Name',
-                          style: GoogleFonts.notoSansEthiopic(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              height: 1.2)),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: [
-                              kAccentGold,
-                              kAccentGold.withOpacity(0.7)
-                            ]),
-                            borderRadius: BorderRadius.circular(20)),
-                        child: Text(
-                          profile['spiritual_class'] ?? 'No Class',
-                          style: GoogleFonts.notoSansEthiopic(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
+          Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: kGoldColor, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                          color: kGoldColor.withOpacity(0.2),
+                          blurRadius: 15,
+                          spreadRadius: 2)
+                    ]),
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: kSurfaceColor,
+                  backgroundImage: (avatarUrl != null)
+                      ? CachedNetworkImageProvider(avatarUrl)
+                      : null,
+                  child: (avatarUrl == null)
+                      ? Text((profile['full_name'] ?? 'U')[0].toUpperCase(),
+                          style: GoogleFonts.poppins(
+                              fontSize: 40, color: kGoldColor))
+                      : null,
+                ),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: GestureDetector(
+                  onTap: _pickAndUploadImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                        color: kGoldColor, shape: BoxShape.circle),
+                    child: const Icon(Iconsax.camera,
+                        color: Colors.black, size: 18),
                   ),
                 ),
-              ],
-            ),
+              )
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(profile['full_name'] ?? 'User',
+              style: GoogleFonts.notoSansEthiopic(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+                color: kGoldColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: kGoldColor.withOpacity(0.5))),
+            child: Text(profile['spiritual_class'] ?? 'No Class',
+                style: GoogleFonts.notoSansEthiopic(
+                    color: kGoldColor, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAvatarRing(Map<String, dynamic> profile, String? avatarUrl) {
-    return Stack(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white24, width: 1)),
-          child: Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: kAccentGold, width: 2)),
-            child: CircleAvatar(
-              radius: 40,
-              backgroundColor: kSurfaceColor,
-              backgroundImage: (avatarUrl != null)
-                  ? CachedNetworkImageProvider(avatarUrl)
-                  : null,
-              child: (avatarUrl == null)
-                  ? Text((profile['full_name'] ?? 'U')[0].toUpperCase(),
-                      style:
-                          GoogleFonts.poppins(fontSize: 30, color: kAccentGold))
-                  : null,
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: GestureDetector(
-            onTap: _pickAndUploadImage,
-            child: CircleAvatar(
-                radius: 14,
-                backgroundColor: kAccentGold,
-                child:
-                    const Icon(Iconsax.camera, size: 14, color: Colors.black)),
-          ),
-        )
-      ],
-    );
-  }
+  // --- TABS ---
 
-  // --- TAB CONTENT: STATUS DASHBOARD ---
-  Widget _buildStatusDashboard(Map<String, dynamic> profile) {
+  Widget _buildStatusTab(Map<String, dynamic> profile) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle("Status Overview"),
-          const SizedBox(height: 15),
           Row(
             children: [
               Expanded(
-                  child: _buildModernStatCard(
-                      "Status", "Active", Iconsax.verify5, Colors.greenAccent)),
+                  child: _buildDetailCard(
+                      "Status", "Active", Iconsax.verify, Colors.greenAccent)),
               const SizedBox(width: 15),
               Expanded(
-                  child: _buildModernStatCard(
-                      "Members",
+                  child: _buildDetailCard(
+                      "Sector",
                       profile['service_sector']?.toString() ?? "-",
-                      Iconsax.people,
-                      kAccentBlue)),
+                      Iconsax.briefcase,
+                      kGoldColor)),
             ],
           ),
           const SizedBox(height: 20),
-          _buildSectionTitle("Attendance"),
-          const SizedBox(height: 15),
           FutureBuilder<dynamic>(
             future: _attendanceFuture,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                    child: CircularProgressIndicator(color: kAccentGold));
-              }
-
-              // Calculate Attendance (Robust)
-              double percentage = 0.0;
-              String message = "No records";
-              String subMessage = "Attendance data unavailable";
-              int total = 0;
+              // Safe parsing logic
+              double percent = 0.0;
               int present = 0;
-
+              int total = 0;
               if (snapshot.hasData &&
                   snapshot.data is Map &&
                   snapshot.data['success'] == true) {
-                final data = snapshot.data['data'];
-                if (data is List && data.isNotEmpty) {
-                  total = data.length;
-                  present = data
-                      .where((item) =>
-                          item['status'].toString().toLowerCase() == 'present')
+                final list = snapshot.data['data'];
+                if (list is List && list.isNotEmpty) {
+                  total = list.length;
+                  present = list
+                      .where((i) =>
+                          i['status']?.toString().toLowerCase() == 'present')
                       .length;
-                  percentage = total > 0 ? present / total : 0.0;
-
-                  if (percentage >= 0.8) {
-                    message = "Excellent!";
-                    subMessage = "You are regular in your service.";
-                  } else if (percentage >= 0.5) {
-                    message = "Good";
-                    subMessage = "Keep up the good work.";
-                  } else {
-                    message = "Attention";
-                    subMessage = "Try to attend more frequently.";
-                  }
-                } else if (data is List && data.isEmpty) {
-                  subMessage = "No attendance records yet.";
+                  percent = total > 0 ? present / total : 0.0;
                 }
               }
 
               return Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: kSurfaceColor.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white10),
+                  color: kSurfaceColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white12),
                 ),
                 child: Row(
                   children: [
                     CircularPercentIndicator(
-                      radius: 45,
-                      lineWidth: 8,
-                      percent: percentage.clamp(0.0, 1.0),
-                      center: Text("${(percentage * 100).toStringAsFixed(0)}%",
+                      radius: 40,
+                      lineWidth: 6,
+                      percent: percent.clamp(0.0, 1.0),
+                      center: Text("${(percent * 100).toStringAsFixed(0)}%",
                           style: GoogleFonts.poppins(
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18)),
-                      progressColor:
-                          percentage > 0.5 ? kAccentGold : Colors.redAccent,
+                              fontWeight: FontWeight.bold)),
+                      progressColor: kGoldColor,
                       backgroundColor: Colors.white10,
                       circularStrokeCap: CircularStrokeCap.round,
-                      animation: true,
                     ),
                     const SizedBox(width: 20),
                     Expanded(
                         child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(message,
+                        Text("Attendance Rate",
                             style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                        const SizedBox(height: 4),
-                        Text(subMessage,
+                                color: kGoldColor,
+                                fontWeight: FontWeight.bold)),
+                        Text("$present out of $total sessions",
                             style: GoogleFonts.poppins(
                                 color: Colors.white54, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text("$present / $total Sessions",
-                            style: GoogleFonts.notoSansEthiopic(
-                                color: kAccentBlue,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold)),
                       ],
-                    ))
+                    )),
                   ],
                 ),
               );
@@ -413,10 +313,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // --- TAB CONTENT: GRIDS (Personal / Spiritual) ---
-  Widget _buildGridContent(String tabName, Map<String, dynamic> profile,
+  Widget _buildDynamicTab(Map<String, dynamic> profile, String tabName,
       ProfileConfigProvider config) {
-    // Collect Fields
     final builtIn = _getBuiltInFields(tabName);
     final custom = config.customFields.where((f) {
       final t = f['profile_tab']?.toString().toUpperCase() ?? 'PERSONAL';
@@ -425,230 +323,151 @@ class _ProfileScreenState extends State<ProfileScreen>
       return false;
     }).toList();
 
-    final allWidgets = <Widget>[];
-
-    // Built-in
+    List<Widget> items = [];
     for (var key in builtIn) {
       if (config.isWidgetVisible(key)) {
-        allWidgets.add(_buildDetailItem(key, _formatValue(key, profile[key])));
+        items.add(_buildInfoRow(key, _formatValue(key, profile[key])));
       }
     }
 
-    // Custom
+    // Add custom fields
     final savedValues = _getCustomFieldValuesMap(profile);
     for (var field in custom) {
-      final fieldId = field['id'].toString();
-      final fieldName = field['name'].toString();
-      String displayValue = '-';
-      final optionId = savedValues[fieldId];
-      if (optionId != null) {
+      final name = field['name'].toString();
+      String val = '-';
+      final optId = savedValues[field['id'].toString()];
+      if (optId != null) {
         final options = field['options'] as List<dynamic>? ?? [];
-        final option = options.firstWhere(
-            (opt) => opt['id'].toString() == optionId.toString(),
+        final opt = options.firstWhere(
+            (o) => o['id'].toString() == optId.toString(),
             orElse: () => null);
-        displayValue = option?['option_value']?.toString() ?? '-';
+        val = opt?['option_value']?.toString() ?? '-';
       }
-      allWidgets.add(_buildDetailItem(fieldName, displayValue, isCustom: true));
+      items.add(_buildInfoRow(name, val, isCustom: true));
     }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: FadeInUp(
-        child: Wrap(
-          spacing: 15,
-          runSpacing: 15,
-          children: allWidgets
-              .map((w) => SizedBox(
-                  width: (MediaQuery.of(context).size.width - 55) /
-                      2, // 2 items per row
-                  child: w))
-              .toList(),
-        ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+            color: kSurfaceColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white10)),
+        child: Column(children: items),
       ),
     );
   }
 
-  // --- TAB CONTENT: EDUCATION (Grades) ---
-  Widget _buildEducationDashboard(
+  Widget _buildEducationTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle("Academic Performance"),
-          const SizedBox(height: 15),
           FutureBuilder<dynamic>(
             future: _gradesFuture,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting)
-                return const Center(child: CircularProgressIndicator());
-              if (!snapshot.hasData)
-                return const Text("No grades available",
-                    style: TextStyle(color: Colors.white54));
-
-              final rawData =
-                  snapshot.data is Map ? snapshot.data['data'] : null;
+              if (!snapshot.hasData) return const SizedBox.shrink();
               List<Map<String, dynamic>> courses = [];
-              if (rawData is Map) {
-                rawData.forEach((k, v) {
-                  if (v is List)
-                    courses.addAll(List<Map<String, dynamic>>.from(v));
-                });
-              } else if (rawData is List) {
-                courses = List<Map<String, dynamic>>.from(rawData);
-              }
+              try {
+                final d = snapshot.data['data'];
+                if (d is Map)
+                  d.forEach((k, v) {
+                    if (v is List)
+                      courses.addAll(List<Map<String, dynamic>>.from(v));
+                  });
+                else if (d is List)
+                  courses = List<Map<String, dynamic>>.from(d);
+              } catch (e) {}
 
-              if (courses.isEmpty)
-                return Container(
-                    padding: const EdgeInsets.all(20),
+              if (courses.isEmpty) return const SizedBox.shrink();
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: courses.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (_, idx) {
+                  final c = courses[idx];
+                  double score = 0;
+                  double max = 100;
+                  try {
+                    final sList = c['scores'];
+                    if (sList is List && sList.isNotEmpty) {
+                      for (var s in sList)
+                        score +=
+                            double.tryParse(s['score']?.toString() ?? '0') ?? 0;
+                    } else {
+                      score =
+                          double.tryParse(c['score']?.toString() ?? '0') ?? 0;
+                      max = double.tryParse(
+                              c['total_marks']?.toString() ?? '100') ??
+                          100;
+                    }
+                  } catch (e) {}
+                  if (max <= 0) max = 100;
+
+                  return Container(
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                        color: Colors.white10,
-                        borderRadius: BorderRadius.circular(16)),
-                    child: const Text("No Grade Data",
-                        style: TextStyle(color: Colors.white)));
-
-              return SizedBox(
-                height: 200,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: courses.length,
-                  itemBuilder: (context, index) =>
-                      _buildGradeCard(courses[index], index),
-                ),
+                        color: kSurfaceColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10)),
+                    child: Row(
+                      children: [
+                        Expanded(
+                            child: Text(
+                                c['course_name']?.toString() ?? 'Subject',
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold))),
+                        Text(
+                            "${score.toStringAsFixed(1)} / ${max.toStringAsFixed(0)}",
+                            style: GoogleFonts.poppins(
+                                color: kGoldColor,
+                                fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           ),
-          const SizedBox(height: 25),
-          _buildSectionTitle("Additional Info"),
-          const SizedBox(height: 15),
-          // Reusing Grid Logic for Education details
-          ..._buildGridContentWidgets('ትምህርት/ቤተሰብ', profile, config),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildGridContentWidgets(String tabName,
-      Map<String, dynamic> profile, ProfileConfigProvider config) {
-    // Manual fallback for education
-    return [
-      Wrap(
-        spacing: 15,
-        runSpacing: 15,
-        children: [
-          _buildDetailGridItem(
-              'Academic Level', profile['academic_level']?.toString() ?? '-'),
-          _buildDetailGridItem(
-              'Guardian Name', profile['parent_name']?.toString() ?? '-'),
-          _buildDetailGridItem('Guardian Phone',
-              profile['parent_phone_number']?.toString() ?? '-'),
-        ],
-      )
-    ];
-  }
-
-  // --- WIDGETS ---
-
-  Widget _buildGradeCard(Map<String, dynamic> course, int index) {
-    final colors = [
-      kAccentBlue,
-      kAccentPurple,
-      Colors.orangeAccent,
-      Colors.tealAccent
-    ];
-    final color = colors[index % colors.length];
-    final courseName = course['course_name']?.toString() ?? 'Course';
-
-    // Calculate total safely
-    double total = 0.0;
-    double maxScore = 100.0;
-
-    try {
-      final scores = course['scores'];
-      if (scores is List && scores.isNotEmpty) {
-        for (var s in scores) {
-          final scoreVal = double.tryParse(s['score']?.toString() ?? '0') ?? 0;
-          total += scoreVal;
-        }
-      } else {
-        total = double.tryParse(course['score']?.toString() ?? '0') ?? 0;
-        maxScore =
-            double.tryParse(course['total_marks']?.toString() ?? '100') ??
-                100.0;
-      }
-    } catch (e) {
-      total = 0.0;
-    }
-
-    if (maxScore <= 0) maxScore = 100.0;
-    final percent = (total / maxScore).clamp(0.0, 1.0);
-    if (total.isNaN) total = 0.0;
-
-    return Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 15),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [color.withOpacity(0.2), color.withOpacity(0.05)]),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Text(courseName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.notoSansEthiopic(
-                  color: Colors.white, fontWeight: FontWeight.bold)),
-          const Spacer(),
-          CircularPercentIndicator(
-            radius: 40,
-            lineWidth: 8,
-            percent: percent,
-            center: Text(total.toStringAsFixed(0),
-                style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20)),
-            progressColor: color,
-            backgroundColor: Colors.white10,
-            circularStrokeCap: CircularStrokeCap.round,
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+                color: kSurfaceColor, borderRadius: BorderRadius.circular(16)),
+            child: Column(children: [
+              _buildInfoRow("Academic Level",
+                  profile['academic_level']?.toString() ?? '-',
+                  isCustom: true),
+              _buildInfoRow(
+                  "Parent Name", profile['parent_name']?.toString() ?? '-',
+                  isCustom: true),
+              _buildInfoRow("Parent Phone",
+                  profile['parent_phone_number']?.toString() ?? '-',
+                  isCustom: true),
+            ]),
           ),
-          const Spacer(),
-          Text("Score",
-              style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12)),
         ],
       ),
     );
   }
 
-  Widget _buildModernStatCard(
+  Widget _buildDetailCard(
       String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
           color: kSurfaceColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: const Offset(0, 4))
-          ]),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: color, size: 20),
-          ),
+          Icon(icon, color: color, size: 24),
           const SizedBox(height: 12),
           Text(value,
               style: GoogleFonts.notoSansEthiopic(
@@ -656,26 +475,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                   fontWeight: FontWeight.bold,
                   fontSize: 16)),
           Text(title,
-              style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12)),
+              style: GoogleFonts.poppins(color: Colors.white54, fontSize: 11)),
         ],
       ),
     );
   }
 
-  Widget _buildDetailItem(String key, String value, {bool isCustom = false}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-          color: kSurfaceColor.withOpacity(0.6),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.05))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildInfoRow(String title, String value, {bool isCustom = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(isCustom ? key : _getTranslatedLabel(key),
+          Text(isCustom ? title : _getTranslatedLabel(title),
               style: GoogleFonts.notoSansEthiopic(
-                  color: Colors.white54, fontSize: 11)),
-          const SizedBox(height: 4),
+                  color: Colors.white54, fontSize: 13)),
           Text(value,
               style: GoogleFonts.notoSansEthiopic(
                   color: Colors.white,
@@ -686,23 +500,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildDetailGridItem(String title, String value) {
-    return SizedBox(
-      width: (MediaQuery.of(context).size.width - 55) / 2,
-      child: _buildDetailItem(title, value, isCustom: true),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(title,
-        style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5));
-  }
-
-  // Helpers
+  // --- Helpers ---
   List<String> _getBuiltInFields(String tab) {
     if (tab == 'የግል')
       return [
@@ -760,39 +558,27 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 }
 
-class _GlassTabBarDelegate extends SliverPersistentHeaderDelegate {
+class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar _tabBar;
-  _GlassTabBarDelegate(this._tabBar);
-
-  // Calculate height dynamically
-  double get _height => _tabBar.preferredSize.height + 20;
+  _StickyTabBarDelegate(this._tabBar);
 
   @override
-  double get minExtent => _height;
-
+  double get minExtent =>
+      _tabBar.preferredSize.height + 20; // Exact match padded height
   @override
-  double get maxExtent => _height;
+  double get maxExtent => _tabBar.preferredSize.height + 20;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-        height: _height,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              color: Colors.white.withOpacity(0.05),
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              child: _tabBar,
-            ),
-          ),
-        ));
+        color: kPrimaryColor, // Solid bg to handle pinned state cleanly
+        padding:
+            const EdgeInsets.symmetric(vertical: 10), // Matches extent padding
+        child: _tabBar);
   }
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      true; // Always rebuild to be safe
+      true;
 }
