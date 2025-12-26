@@ -25,14 +25,13 @@ import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
 
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   void _onItemTapped(int index) {
     setState(() {
@@ -73,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
               pages: pages,
               userId: userId,
               languageProvider: languageProvider,
+              scaffoldKey: _scaffoldKey,
             );
           }
         },
@@ -91,6 +91,7 @@ class _MobileLayout extends StatelessWidget {
   final List<Widget> pages;
   final String userId;
   final LanguageProvider languageProvider;
+  final GlobalKey<ScaffoldState> scaffoldKey;
 
   const _MobileLayout({
     required this.selectedIndex,
@@ -98,6 +99,7 @@ class _MobileLayout extends StatelessWidget {
     required this.pages,
     required this.userId,
     required this.languageProvider,
+    required this.scaffoldKey,
   });
 
   @override
@@ -105,7 +107,7 @@ class _MobileLayout extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      key: HomeScreen.scaffoldKey,
+      key: scaffoldKey,
       // =========== THE FIX IS HERE ===========
       // Assign the AppDrawer to the Scaffold's drawer property.
       drawer: AppDrawer(
