@@ -131,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 primary: false,
                 toolbarHeight: 0,
                 bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(72),
+                  preferredSize: const Size.fromHeight(75),
                   child: Container(
                     color: kPrimaryColor,
                     width: double.infinity,
