@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'package:amde_haymanot_abalat_guday/users%20screen/appdrawer.dart';
 import 'package:amde_haymanot_abalat_guday/providers/profile_config_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
@@ -114,12 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     return Scaffold(
       backgroundColor: bgColor,
-      drawer: AppDrawer(
-        selectedIndex: 3, // Profile is index 3
-        onItemTapped: (index) {
-          // Navigation handled by AppDrawer
-        },
-      ),
+      // Drawer removed - already provided by parent HomeScreen
       appBar: AppBar(
         title: const Text(""), // Empty title
         backgroundColor: bgColor,

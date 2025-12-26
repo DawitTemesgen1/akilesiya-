@@ -1,5 +1,6 @@
 // lib/admin only/student_list.dart
 
+import 'package:amde_haymanot_abalat_guday/users%20screen/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';

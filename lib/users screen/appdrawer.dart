@@ -180,7 +180,7 @@ class AppDrawer extends StatelessWidget {
                             isSelected: selectedIndex == 0,
                             onTap: () => _handleNavigation(context, 0)),
                         _buildDrawerItem(context,
-                            icon: Iconsax.shield_tick,
+                            icon: Iconsax.cloud_connection,
                             title: AppLocalizations.of(context)
                                     ?.managementPageTitle ??
                                 'Management',

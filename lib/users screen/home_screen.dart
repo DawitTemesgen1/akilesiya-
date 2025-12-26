@@ -306,7 +306,7 @@ class AppBottomNavBar extends StatelessWidget {
             icon: Iconsax
                 .cloud_connection, // Changed to better represent "Private" or "Connect"
             activeIcon: Iconsax.cloud_connection5,
-            label: "ማህበረሰብ", // Updated label for "Community/Private"
+            label: l10n.managementPageTitle, // Updated from hardcoded "ማህበረሰብ"
             isSelected: selectedIndex == 1,
             onTap: () => onItemTapped(1),
             selectedBg: selectedBg,

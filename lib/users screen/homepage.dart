@@ -1,5 +1,4 @@
 import 'package:amde_haymanot_abalat_guday/admin%20only/post_general_home.dart';
-import 'package:amde_haymanot_abalat_guday/users%20screen/appdrawer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
@@ -243,10 +242,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      drawer: AppDrawer(
-        selectedIndex: 0,
-        onItemTapped: (index) {},
-      ),
+      // Drawer removed - already provided by parent HomeScreen
       body: Container(
         color: bgColor,
         child: RefreshIndicator(
