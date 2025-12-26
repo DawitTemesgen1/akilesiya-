@@ -251,7 +251,7 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: surfaceColor,
           child: CustomScrollView(
             slivers: [
-              _buildSliverAppBar(userName, primaryColor, surfaceColor,
+              _buildSliverAppBar(context, userName, primaryColor, surfaceColor,
                   textColor, subtleText, isDark, themeProvider.toggleTheme),
               if (_isLoading)
                 SliverFillRemaining(
@@ -321,6 +321,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSliverAppBar(
+      BuildContext outerContext,
       String userName,
       Color primaryColor,
       Color surfaceColor,
@@ -334,11 +335,9 @@ class _HomePageState extends State<HomePage> {
       pinned: true,
       backgroundColor: Colors.transparent, // Transparent to show gradient
       elevation: 0,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: Icon(Icons.sort, color: textColor, size: 28),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-        ),
+      leading: IconButton(
+        icon: Icon(Icons.sort, color: textColor, size: 28),
+        onPressed: () => Scaffold.of(outerContext).openDrawer(),
       ),
       actions: [
         IconButton(

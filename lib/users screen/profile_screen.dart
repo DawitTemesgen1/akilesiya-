@@ -118,12 +118,10 @@ class _ProfileScreenState extends State<ProfileScreen>
         title: const Text(""), // Empty title
         backgroundColor: bgColor,
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.sort,
-                color: primaryColor, size: 28), // Hamburger style
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: Icon(Icons.sort,
+              color: primaryColor, size: 28), // Hamburger style
+          onPressed: () => Scaffold.of(context).openDrawer(),
         ),
         actions: [
           IconButton(

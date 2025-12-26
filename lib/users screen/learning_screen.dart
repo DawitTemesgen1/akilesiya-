@@ -218,9 +218,7 @@ class _LearningScreenState extends State<LearningScreen> {
                 expandedHeight: 120,
                 leading: IconButton(
                   icon: Icon(Icons.sort, color: textColor),
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
+                  onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
                   titlePadding: const EdgeInsets.only(left: 60, bottom: 16),

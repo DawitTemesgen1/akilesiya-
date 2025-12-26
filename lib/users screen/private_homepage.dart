@@ -700,7 +700,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
             stops: const [0.0, 0.4, 1.0],
           ),
         ),
-        child: _buildBody(),
+        child: _buildBody(context),
       ),
       floatingActionButton:
           // Add a check to ensure data is loaded and sundaySchool is not null
@@ -710,7 +710,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext outerContext) {
     if (_isLoading) return _buildSpectacularLoadingScreen();
     if (_error != null) {
       return Center(
@@ -757,7 +757,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildDynamicAppBar(),
+          _buildDynamicAppBar(outerContext),
           SliverToBoxAdapter(child: FadeInDown(child: _buildWelcomeHero())),
           SliverToBoxAdapter(
               child: FadeIn(
@@ -827,7 +827,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     );
   }
 
-  SliverAppBar _buildDynamicAppBar() {
+  SliverAppBar _buildDynamicAppBar(BuildContext outerContext) {
     final appBarHeight = 100.0;
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
     final gradientColor = Theme.of(context).primaryColor;
@@ -841,7 +841,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
       leading: IconButton(
         icon: Icon(Icons.sort, color: titleColor),
         onPressed: () {
-          Scaffold.of(context).openDrawer();
+          Scaffold.of(outerContext).openDrawer();
         },
       ),
       elevation: 0,
