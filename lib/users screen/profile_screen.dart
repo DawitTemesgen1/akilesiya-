@@ -430,12 +430,21 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     // Add custom fields from config
+    print('DEBUG: Total custom fields: ${config.customFields.length}');
+    print('DEBUG: Custom fields data: ${config.customFields}');
+
     final personalFields = config.customFields
         .where((f) => f is Map && f['category'] == 'personal')
         .toList();
+
+    print('DEBUG: Personal fields found: ${personalFields.length}');
+    print('DEBUG: Personal fields: $personalFields');
+
     for (var field in personalFields) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
       final fieldMap = field as Map<String, dynamic>;
+      print(
+          'DEBUG: Adding personal field: ${fieldMap['label']} = ${profile[fieldMap['field_name']]}');
       rows.add(_buildDetailRow(
           Icons.info_outline,
           fieldMap['label']?.toString() ??
