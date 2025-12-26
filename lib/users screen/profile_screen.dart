@@ -14,7 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 
-// --- PIXEL-PERFECT SCREENSHOT MATCH (CRASH FIXED) ---
+// --- PIXEL-PERFECT SCREENSHOT MATCH (CRASH FIXED & SCROLL FIXED) ---
 const Color kNavyBg = Color(0xFF030712); // Deepest Navy
 const Color kCardNavy = Color(0xFF111827); // Dark Blue-Grey Card
 const Color kGold = Color(0xFFFFCC00); // Bright Yellow-Gold
@@ -242,11 +242,12 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // --- TABS ---
+  // --- TABS (NOW WITH PageStorageKey) ---
 
   Widget _buildStatusTab(Map<String, dynamic> profile) {
     bool inService = profile['service_sector'] != null;
     return ListView(
+      key: const PageStorageKey('status_tab'), // Unique Key
       padding: const EdgeInsets.all(20),
       children: [
         Container(
@@ -379,6 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildPersonalTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
     return ListView(
+      key: const PageStorageKey('personal_tab'), // Unique Key
       padding: const EdgeInsets.all(20),
       children: [
         Container(
@@ -412,6 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildSpiritualTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
     return ListView(
+      key: const PageStorageKey('spiritual_tab'), // Unique Key
       padding: const EdgeInsets.all(20),
       children: [
         Container(
@@ -446,6 +449,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildEducationTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
     return ListView(
+      key: const PageStorageKey('education_tab'), // Unique Key
       padding: const EdgeInsets.all(20),
       children: [
         FutureBuilder<dynamic>(
