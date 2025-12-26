@@ -113,6 +113,8 @@ class UserProvider extends ChangeNotifier {
           if (name != null) {
             _userProfile![name] =
                 value; // Merge to root for ProfileScreen access
+            print(
+                "DEBUG UserProvider: Merged custom field '$name' with value '$value'");
           }
         }
       }
