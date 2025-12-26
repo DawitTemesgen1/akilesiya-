@@ -40,22 +40,27 @@ class ProfileConfigProvider with ChangeNotifier {
       print('DEBUG ProfileConfig: Settings result = $settingsResult');
       print('DEBUG ProfileConfig: Fields result = $fieldsResult');
 
+      // Profile settings are optional - use defaults if they fail
       if (settingsResult['success'] == true) {
         _widgetVisibility = Map<String, bool>.from(settingsResult['data']);
+        print('DEBUG ProfileConfig: Loaded widget visibility settings');
       } else {
-        throw Exception(
-            settingsResult['message'] ?? 'Failed to load profile settings.');
+        print(
+            'DEBUG ProfileConfig: Profile settings failed (${settingsResult['message']}), using defaults');
+        _widgetVisibility =
+            {}; // Empty map means all widgets visible by default
       }
 
+      // Custom fields are critical - throw if they fail
       if (fieldsResult['success'] == true) {
-        _customFields = fieldsResult['data'];
+        _customFields = fieldsResult['data'] ?? [];
         print(
             'DEBUG ProfileConfig: Loaded ${_customFields.length} custom fields');
+        print('DEBUG ProfileConfig: Custom fields: $_customFields');
       } else {
         print(
             'DEBUG ProfileConfig: Fields API failed - ${fieldsResult['message']}');
-        throw Exception(
-            fieldsResult['message'] ?? 'Failed to load custom fields.');
+        _customFields = []; // Use empty list if fields fail
       }
     } catch (e, stackTrace) {
       _error = e.toString();
