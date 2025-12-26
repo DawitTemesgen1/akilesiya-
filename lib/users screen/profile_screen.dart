@@ -14,13 +14,12 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 
-// --- ROYAL ELEGANCE THEME ---
-const Color kDeepBlue = Color(0xFF0F172A);
-const Color kPaperBlack = Color(0xFF000000);
-const Color kGoldPrimary = Color(0xFFFFD700);
-const Color kGoldMuted = Color(0xFFC5A000);
-const Color kCleanWhite = Color(0xFFFFFFFF);
-const Color kGlassWhite = Color(0x1AFFFFFF);
+// --- ULTIMATE PREMIUM THEME (Diamond & Gold) ---
+const Color kRichBlack = Color(0xFF000000);
+const Color kDeepOnyx = Color(0xFF101010);
+const Color kGoldGradientStart = Color(0xFFFFD700);
+const Color kGoldGradientEnd = Color(0xFFDAA520);
+const Color kPlatinum = Color(0xFFE5E4E2);
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -74,6 +73,30 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
+  // --- GOLD TEXT SHADER HELPER ---
+  Widget _goldText(String text,
+      {double fontSize = 16,
+      FontWeight fontWeight = FontWeight.bold,
+      String? fontFamily}) {
+    return ShaderMask(
+      shaderCallback: (bounds) => const LinearGradient(
+        colors: [kGoldGradientStart, kGoldGradientEnd, kGoldGradientStart],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(bounds),
+      child: Text(
+        text,
+        style: fontFamily == 'cinzel'
+            ? GoogleFonts.cinzel(
+                fontSize: fontSize, fontWeight: fontWeight, color: Colors.white)
+            : GoogleFonts.notoSansEthiopic(
+                fontSize: fontSize,
+                fontWeight: fontWeight,
+                color: Colors.white),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
@@ -82,52 +105,63 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     if (userProvider.isLoading || profile == null) {
       return const Scaffold(
-          backgroundColor: kPaperBlack,
-          body: Center(child: CircularProgressIndicator(color: kGoldPrimary)));
+          backgroundColor: kRichBlack,
+          body: Center(
+              child: CircularProgressIndicator(color: kGoldGradientStart)));
     }
 
     return Scaffold(
-      backgroundColor: kPaperBlack,
+      backgroundColor: kRichBlack,
       body: Stack(
         children: [
-          // Background Gradient (Subtle)
+          // LUXURY BACKGROUND
           Container(
-            decoration: BoxDecoration(
-                gradient: RadialGradient(
-              center: const Alignment(0, -0.6),
-              radius: 1.2,
-              colors: [Color(0xFF1E2838), kPaperBlack],
-            )),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF0F0F1A), kRichBlack, kRichBlack],
+                  stops: [0.0, 0.4, 1.0]),
+            ),
           ),
+          // Ambient Glow
+          Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                  width: 300,
+                  height: 300,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: kGoldGradientStart.withOpacity(0.05),
+                      boxShadow: [
+                        BoxShadow(
+                            color: kGoldGradientStart.withOpacity(0.1),
+                            blurRadius: 100)
+                      ]))),
 
           NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
-                _buildSliverAppBar(context),
-                SliverToBoxAdapter(
-                  child: _buildHeroProfile(profile, userProvider.avatarUrl),
-                ),
+                _buildSliverAppBar(context, profile, userProvider.avatarUrl),
                 SliverPersistentHeader(
-                  delegate: _ElegantTabBarDelegate(
+                  delegate: _PremiumTabBarDelegate(
                     TabBar(
                       controller: _tabController,
-                      labelColor: kPaperBlack,
-                      unselectedLabelColor: Colors.white54,
-                      labelStyle: GoogleFonts.notoSansEthiopic(
-                          fontWeight: FontWeight.bold, fontSize: 13),
-                      indicator: BoxDecoration(
-                        borderRadius: BorderRadius.circular(24),
-                        color: kGoldPrimary,
-                      ),
-                      indicatorSize: TabBarIndicatorSize.tab,
+                      labelColor: kGoldGradientStart,
+                      unselectedLabelColor: Colors.grey,
+                      labelStyle: GoogleFonts.cinzel(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13), // Premium Font
+                      indicatorColor: kGoldGradientStart,
+                      indicatorWeight: 3,
+                      padding: EdgeInsets.zero,
                       dividerColor: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      labelPadding: EdgeInsets.zero,
                       tabs: const [
-                        Tab(text: "ሁኔታ"),
-                        Tab(text: "የግል"),
-                        Tab(text: "መንፈሳዊ"),
-                        Tab(text: "ትምህርት"),
+                        Tab(text: "STATUS"),
+                        Tab(text: "PERSONAL"),
+                        Tab(text: "SPIRITUAL"),
+                        Tab(text: "ACADEMIC"),
                       ],
                     ),
                   ),
@@ -139,7 +173,8 @@ class _ProfileScreenState extends State<ProfileScreen>
               controller: _tabController,
               children: [
                 _buildStatusTab(profile),
-                _buildDetailsList(profile, 'የግል', profileConfig),
+                _buildDetailsList(profile, 'የግል',
+                    profileConfig), // Keeping content logic but wrapped
                 _buildDetailsList(profile, 'መንፈሳዊ', profileConfig),
                 _buildEducationTab(profile, profileConfig),
               ],
@@ -150,110 +185,98 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context) {
+  Widget _buildSliverAppBar(
+      BuildContext context, Map<String, dynamic> profile, String? avatarUrl) {
     return SliverAppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
+      backgroundColor: kRichBlack,
+      expandedHeight: 300,
+      pinned: true,
       centerTitle: true,
-      title: Text("MY PROFILE",
-          style: GoogleFonts.cinzel(
-              color: kGoldPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2)),
+      title: _goldText("PROFILE", fontSize: 18, fontFamily: 'cinzel'),
       actions: [
         IconButton(
-          icon: const Icon(Iconsax.edit, color: kCleanWhite),
-          onPressed: () => showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (ctx) => const UserEditProfileScreen(),
-          ).then((_) => _refreshAllData()),
-        ),
+            icon: const Icon(Iconsax.edit, color: kPlatinum),
+            onPressed: () => showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (c) => const UserEditProfileScreen())
+                .then((_) => _refreshAllData())),
       ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Diamond Pattern or similar
+            Opacity(
+                opacity: 0.05,
+                child: Image.network(
+                    "https://www.transparenttextures.com/patterns/cubes.png",
+                    repeat: ImageRepeat.repeat,
+                    errorBuilder: (c, o, s) =>
+                        const SizedBox())), // Fallback safe
+
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+                GestureDetector(
+                  onTap: _pickAndUploadImage,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                            colors: [kGoldGradientStart, kGoldGradientEnd]),
+                        boxShadow: [
+                          BoxShadow(
+                              color: kGoldGradientStart.withOpacity(0.4),
+                              blurRadius: 30,
+                              spreadRadius: 2)
+                        ]),
+                    child: CircleAvatar(
+                      radius: 65,
+                      backgroundColor: kDeepOnyx,
+                      backgroundImage: (avatarUrl != null)
+                          ? CachedNetworkImageProvider(avatarUrl)
+                          : null,
+                      child: (avatarUrl == null)
+                          ? Text((profile['full_name'] ?? 'U')[0].toUpperCase(),
+                              style: GoogleFonts.cinzel(
+                                  fontSize: 50, color: kGoldGradientStart))
+                          : null,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(profile['full_name'] ?? 'User',
+                    style: GoogleFonts.notoSansEthiopic(
+                        color: kPlatinum,
+                        fontSize: 28,
+                        fontWeight: FontWeight.normal)),
+                const SizedBox(height: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white10),
+                      borderRadius: BorderRadius.circular(30),
+                      color: Colors.white.withOpacity(0.05)),
+                  child: Text(profile['spiritual_class'] ?? 'No Class',
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: kGoldGradientEnd,
+                          fontSize: 12,
+                          letterSpacing: 1.5)),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildHeroProfile(Map<String, dynamic> profile, String? avatarUrl) {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-        // Avatar Ring
-        GestureDetector(
-          onTap: _pickAndUploadImage,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 130,
-                height: 130,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border:
-                      Border.all(color: kGoldMuted.withOpacity(0.3), width: 1),
-                ),
-              ),
-              Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: (avatarUrl != null)
-                        ? DecorationImage(
-                            image: CachedNetworkImageProvider(avatarUrl),
-                            fit: BoxFit.cover)
-                        : null,
-                    color: kDeepBlue,
-                    border: Border.all(color: kGoldPrimary, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                          color: kGoldPrimary.withOpacity(0.2),
-                          blurRadius: 20,
-                          spreadRadius: 5)
-                    ]),
-                child: (avatarUrl == null)
-                    ? Center(
-                        child: Text(
-                            (profile['full_name'] ?? 'U')[0].toUpperCase(),
-                            style: GoogleFonts.cinzel(
-                                fontSize: 40, color: kGoldPrimary)))
-                    : null,
-              ),
-              Positioned(
-                bottom: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                      color: kGoldPrimary, shape: BoxShape.circle),
-                  child:
-                      const Icon(Iconsax.camera, size: 14, color: kPaperBlack),
-                ),
-              )
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        Text(profile['full_name'] ?? 'Nom de l\'utilisateur',
-            style: GoogleFonts.notoSansEthiopic(
-                fontSize: 26, color: kCleanWhite, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-              border: Border.all(color: kGoldPrimary.withOpacity(0.5)),
-              borderRadius: BorderRadius.circular(20)),
-          child: Text(profile['spiritual_class'] ?? 'No Class',
-              style: GoogleFonts.notoSansEthiopic(
-                  color: kGoldPrimary, fontSize: 12, letterSpacing: 1.2)),
-        ),
-        const SizedBox(height: 30),
-      ],
-    );
-  }
-
-  // --- TABS CONTENT ---
+  // --- PREMIUM CONTENT ---
 
   Widget _buildStatusTab(Map<String, dynamic> profile) {
     return SingleChildScrollView(
@@ -263,18 +286,18 @@ class _ProfileScreenState extends State<ProfileScreen>
           Row(
             children: [
               Expanded(
-                  child: _buildEleganceCard(
-                      "Status", "Active", Iconsax.verify5, Colors.greenAccent)),
-              const SizedBox(width: 16),
+                  child: _buildDiamondCard(
+                      "STATUS", "Active", Iconsax.verify5, Colors.greenAccent)),
+              const SizedBox(width: 20),
               Expanded(
-                  child: _buildEleganceCard(
-                      "Sector",
+                  child: _buildDiamondCard(
+                      "SECTOR",
                       profile['service_sector']?.toString() ?? "-",
                       Iconsax.briefcase,
-                      kGoldPrimary)),
+                      kGoldGradientStart)),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 30),
           FutureBuilder<dynamic>(
             future: _attendanceFuture,
             builder: (context, snapshot) {
@@ -284,59 +307,56 @@ class _ProfileScreenState extends State<ProfileScreen>
               if (snapshot.hasData &&
                   snapshot.data is Map &&
                   snapshot.data['success'] == true) {
-                final l = snapshot.data['data'];
-                if (l is List) {
-                  total = l.length;
-                  present = l
-                      .where((i) =>
-                          i['status'].toString().toLowerCase() == 'present')
+                final data = snapshot.data['data'];
+                if (data is List) {
+                  total = data.length;
+                  present = data
+                      .where((x) =>
+                          x['status'].toString().toLowerCase() == 'present')
                       .length;
                   percent = total > 0 ? present / total : 0.0;
                 }
               }
-
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: kGlassWhite),
-                  color: kGlassWhite,
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("ATTENDANCE",
-                            style: GoogleFonts.cinzel(
-                                color: kGoldPrimary,
-                                fontWeight: FontWeight.bold)),
-                        Text("${(percent * 100).toInt()}%",
-                            style: GoogleFonts.cinzel(
-                                color: kCleanWhite,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    LinearPercentIndicator(
-                      lineHeight: 8,
-                      percent: percent.clamp(0.0, 1.0),
-                      backgroundColor: Colors.white10,
-                      progressColor: kGoldPrimary,
-                      barRadius: const Radius.circular(4),
-                      animation: true,
-                    ),
-                    const SizedBox(height: 16),
-                    Text("$present sessions attended out of $total total.",
-                        style: GoogleFonts.notoSansEthiopic(
-                            color: Colors.white54, fontSize: 13)),
-                  ],
-                ),
-              );
+              return _buildGlassContainer(
+                  child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _goldText("ATTENDANCE",
+                              fontFamily: 'cinzel', fontSize: 14),
+                          const SizedBox(height: 4),
+                          Text("Yearly Overview",
+                              style: GoogleFonts.poppins(
+                                  color: Colors.white38, fontSize: 10)),
+                        ],
+                      ),
+                      Text("$present / $total",
+                          style: GoogleFonts.cinzel(
+                              color: kPlatinum, fontSize: 24)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  LinearPercentIndicator(
+                    lineHeight: 20,
+                    percent: percent.clamp(0.0, 1.0),
+                    animation: true,
+                    barRadius: const Radius.circular(10),
+                    backgroundColor: Colors.white10,
+                    progressColor: kGoldGradientStart,
+                    center: Text("${(percent * 100).toInt()}%",
+                        style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black)),
+                  )
+                ],
+              ));
             },
-          ),
+          )
         ],
       ),
     );
@@ -346,12 +366,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       Map<String, dynamic> profile, String tab, ProfileConfigProvider config) {
     final widgets = <Widget>[];
 
-    // Built-ins
+    void add(String l, String v) => widgets.add(_buildDetailRow(l, v));
+
+    // Built-in
     final builtIn = _getBuiltInFields(tab);
     for (var key in builtIn) {
-      if (config.isWidgetVisible(key)) {
-        widgets.add(_buildRowItem(key, _formatValue(key, profile[key])));
-      }
+      if (config.isWidgetVisible(key))
+        add(_getTranslatedLabel(key), _formatValue(key, profile[key]));
     }
 
     // Custom
@@ -361,34 +382,24 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (tab == 'መንፈሳዊ') return t == 'SPIRITUAL';
       return false;
     }).toList();
+    final saved = _getCustomFieldValuesMap(profile);
 
-    final savedValues = _getCustomFieldValuesMap(profile);
-    for (var field in custom) {
-      final name = field['name'].toString();
+    for (var f in custom) {
       String val = '-';
-      final optId = savedValues[field['id'].toString()];
+      final optId = saved[f['id'].toString()];
       if (optId != null) {
-        final options = field['options'] as List<dynamic>? ?? [];
-        final opt = options.firstWhere(
+        final opts = f['options'] as List<dynamic>? ?? [];
+        final op = opts.firstWhere(
             (o) => o['id'].toString() == optId.toString(),
             orElse: () => null);
-        val = opt?['option_value']?.toString() ?? '-';
+        val = op?['option_value']?.toString() ?? '-';
       }
-      widgets.add(_buildRowItem(name, val, isCustom: true));
+      add(f['name'].toString(), val);
     }
 
     return ListView(
       padding: const EdgeInsets.all(24),
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-              color: kGlassWhite,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.05))),
-          child: Column(children: widgets),
-        )
-      ],
+      children: [_buildGlassContainer(child: Column(children: widgets))],
     );
   }
 
@@ -415,92 +426,117 @@ class _ProfileScreenState extends State<ProfileScreen>
             if (courses.isEmpty) return const SizedBox.shrink();
 
             return Column(
-              children: courses.map((c) => _buildGradeRow(c)).toList(),
+              children: courses.map((c) => _buildGradeItem(c)).toList(),
             );
           },
         ),
-        const SizedBox(height: 20),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-              color: kGlassWhite,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.05))),
-          child: Column(children: [
-            _buildRowItem(
-                "Academic Level", profile['academic_level']?.toString() ?? '-',
-                isCustom: true),
-            _buildRowItem(
-                "Parent Name", profile['parent_name']?.toString() ?? '-',
-                isCustom: true),
-            _buildRowItem("Parent Phone",
-                profile['parent_phone_number']?.toString() ?? '-',
-                isCustom: true),
-          ]),
-        )
+        const SizedBox(height: 30),
+        _buildGlassContainer(
+            child: Column(children: [
+          _buildDetailRow(
+              "Academic Level", profile['academic_level']?.toString() ?? '-'),
+          _buildDetailRow(
+              "Parent Name", profile['parent_name']?.toString() ?? '-'),
+          _buildDetailRow("Parent Phone",
+              profile['parent_phone_number']?.toString() ?? '-'),
+        ]))
       ],
     );
   }
 
   // --- WIDGETS ---
 
-  Widget _buildEleganceCard(
+  Widget _buildGlassContainer({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+          color: const Color(0xFF1A1A24), // Subtle dark purple-grey
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10))
+          ]),
+      child: child,
+    );
+  }
+
+  Widget _buildDiamondCard(
       String title, String value, IconData icon, Color color) {
     return Container(
+      height: 140,
       padding: const EdgeInsets.all(20),
-      height: 120,
       decoration: BoxDecoration(
-          color: kGlassWhite,
+          gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [const Color(0xFF20202C), kDeepOnyx]),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.05))),
+          border: Border.all(color: color.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 15,
+                offset: const Offset(0, 8))
+          ]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: color, size: 28),
-          const Spacer(),
-          Text(value,
-              style: GoogleFonts.notoSansEthiopic(
-                  color: kCleanWhite,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16)),
-          Text(title,
-              style: GoogleFonts.cinzel(
-                  color: kGoldMuted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold)),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+                shape: BoxShape.circle, color: color.withOpacity(0.1)),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(value,
+                  style: GoogleFonts.notoSansEthiopic(
+                      color: kPlatinum,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 4),
+              Text(title,
+                  style: GoogleFonts.cinzel(
+                      color: Colors.white30, fontSize: 10, letterSpacing: 2)),
+            ],
+          )
         ],
       ),
     );
   }
 
-  Widget _buildRowItem(String title, String value, {bool isCustom = false}) {
+  Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(isCustom ? title : _getTranslatedLabel(title),
+          Text(label,
               style: GoogleFonts.notoSansEthiopic(
-                  color: Colors.white54, fontSize: 13)),
+                  color: Colors.white38, fontSize: 13)),
           Text(value,
               style: GoogleFonts.notoSansEthiopic(
-                  color: kCleanWhite,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14)),
+                  color: kPlatinum, fontSize: 14, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 
-  Widget _buildGradeRow(Map<String, dynamic> course) {
+  Widget _buildGradeItem(Map<String, dynamic> course) {
     double score = 0;
     double max = 100;
     try {
       final s = course['scores'];
-      if (s is List && s.isNotEmpty) {
+      if (s is List && s.isNotEmpty)
         for (var i in s) score += double.tryParse(i['score'].toString()) ?? 0;
-      } else {
+      else {
         score = double.tryParse(course['score'].toString()) ?? 0;
         max = double.tryParse(course['total_marks'].toString()) ?? 100;
       }
@@ -508,32 +544,23 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (max <= 0) max = 100;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: kGlassWhite,
+          color: kDeepOnyx,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.02))),
+          border: Border(
+              left: BorderSide(
+                  color: (score / max > 0.5) ? kGoldGradientStart : Colors.red,
+                  width: 4))),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-              width: 4,
-              height: 40,
-              decoration: BoxDecoration(
-                  color: (score / max > 0.5) ? Colors.green : Colors.red,
-                  borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: 16),
           Expanded(
               child: Text(course['course_name']?.toString() ?? 'Course',
                   style: GoogleFonts.notoSansEthiopic(
-                      color: kCleanWhite, fontWeight: FontWeight.bold))),
-          Text(score.toStringAsFixed(1),
-              style: GoogleFonts.cinzel(
-                  color: kGoldPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18)),
-          Text("/${max.toInt()}",
-              style: GoogleFonts.cinzel(color: Colors.white30, fontSize: 12)),
+                      color: kPlatinum, fontWeight: FontWeight.bold))),
+          _goldText("${score.toStringAsFixed(1)}", fontSize: 18),
         ],
       ),
     );
@@ -597,21 +624,21 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 }
 
-class _ElegantTabBarDelegate extends SliverPersistentHeaderDelegate {
+class _PremiumTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar _tabBar;
-  _ElegantTabBarDelegate(this._tabBar);
+  _PremiumTabBarDelegate(this._tabBar);
 
   @override
-  double get minExtent => _tabBar.preferredSize.height + 30;
+  double get minExtent => _tabBar.preferredSize.height + 24;
   @override
-  double get maxExtent => _tabBar.preferredSize.height + 30;
+  double get maxExtent => _tabBar.preferredSize.height + 24;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-        color: kPaperBlack,
-        padding: const EdgeInsets.only(top: 15, bottom: 15),
+        color: kRichBlack,
+        padding: const EdgeInsets.only(top: 12, bottom: 12),
         child: _tabBar);
   }
 
