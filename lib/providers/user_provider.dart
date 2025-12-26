@@ -103,8 +103,24 @@ class UserProvider extends ChangeNotifier {
         ? List<String>.from(profileData['allowed_screens'])
         : [];
 
+    // Handle custom_fields_detail list from backend
+    if (profileData['custom_fields_detail'] is List) {
+      final details = profileData['custom_fields_detail'] as List;
+      for (var item in details) {
+        if (item is Map) {
+          final name = item['field_name'];
+          final value = item['field_value'];
+          if (name != null) {
+            _userProfile![name] =
+                value; // Merge to root for ProfileScreen access
+          }
+        }
+      }
+    }
+
+    // Also ensure custom_field_values exists as a map (legacy support)
     if (profileData['custom_field_values'] is Map) {
-      // Data is already the correct Map format from the backend.
+      // It's already there
     } else {
       if (_userProfile != null) {
         _userProfile!['custom_field_values'] = <String, dynamic>{};

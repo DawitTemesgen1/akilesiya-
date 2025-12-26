@@ -194,7 +194,13 @@ class GradeService {
         return {'success': false, 'message': 'Failed to fetch user profile'};
       }
 
-      final profileData = json.decode(profileResponse.body);
+      var profileData = json.decode(profileResponse.body);
+
+      // Unwrap if wrapped in 'data'
+      if (profileData['data'] != null && profileData['success'] == true) {
+        profileData = profileData['data'];
+      }
+
       final userId = profileData['id']?.toString();
       final user_id = profileData['user_id']?.toString();
       final studentIdKey = profileData['student_id']?.toString();
