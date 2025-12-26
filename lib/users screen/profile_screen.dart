@@ -36,6 +36,9 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Future<dynamic>? _attendanceFuture;
   Future<dynamic>? _gradesFuture;
+  Future<dynamic>? _booksFuture;
+
+  int _readingTab = 0;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     setState(() {
       _attendanceFuture = ProfileService.getMyAttendance();
       _gradesFuture = ProfileService.getMyGrades();
+      _booksFuture = ProfileService.getMyBooks();
     });
   }
 
@@ -403,6 +407,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             );
           },
         ),
+        const SizedBox(height: 16),
+        _buildReadingHistoryCard(),
         const SizedBox(height: 80),
       ],
     );
@@ -817,6 +823,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
+          key: PageStorageKey('course_${c['course_id'] ?? c['course_name']}'),
+          initiallyExpanded: false,
           iconColor: kGoldColor,
           collapsedIconColor: Colors.white54,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -989,5 +997,193 @@ class _ProfileScreenState extends State<ProfileScreen>
         color: Colors.white.withOpacity(0.05),
         indent: 16,
         endIndent: 16);
+  }
+
+  Widget _buildReadingHistoryCard() {
+    return FutureBuilder<dynamic>(
+      future: _booksFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+              height: 100, child: Center(child: CircularProgressIndicator()));
+        }
+
+        final data = snapshot.data;
+        List<dynamic> allBooks = [];
+        if (data is Map && data['success'] == true) {
+          allBooks = data['data'] ?? [];
+        } else if (data is List) {
+          allBooks = data;
+        }
+
+        final toRead = allBooks.where((b) {
+          final r = b['is_read'];
+          return r != true && r != 1 && r != '1';
+        }).toList();
+        final read = allBooks.where((b) {
+          final r = b['is_read'];
+          return r == true || r == 1 || r == '1';
+        }).toList();
+
+        final currentList = _readingTab == 0 ? toRead : read;
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+              color: kCardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white10)),
+          child: Column(
+            children: [
+              // Header & Tabs
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("ቤተ-መጽሐፍት",
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16)),
+                  Container(
+                    decoration: BoxDecoration(
+                        color: Colors.black26,
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      children: [
+                        _buildTabButton("የሚነበብ", 0, toRead.length),
+                        _buildTabButton("ተነብቦ ያለቀ", 1, read.length),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              if (currentList.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    _readingTab == 0
+                        ? "ምንም የሚነበብ መጽሐፍ የለም"
+                        : "እስካሁን ያነበቡት መጽሐፍ የለም",
+                    style: GoogleFonts.notoSansEthiopic(color: Colors.white38),
+                  ),
+                )
+              else
+                ...currentList.map((book) {
+                  final title =
+                      book['title'] ?? book['bookTitle'] ?? 'Unknown Title';
+                  final deadlineRaw = book['deadline'] ?? book['finishBy'];
+                  final id = book['id']?.toString() ??
+                      book['assignedBookId']?.toString();
+                  String deadlineStr = "";
+
+                  if (deadlineRaw != null) {
+                    try {
+                      final dt = DateTime.parse(deadlineRaw.toString());
+                      final now = DateTime.now();
+                      final diff = dt.difference(now).inDays;
+                      deadlineStr =
+                          "${dt.day}/${dt.month}/${dt.year} (${diff > 0 ? '$diff ቀናት ቀርተዋል' : 'ጊዜው አልፏል'})";
+                    } catch (e) {
+                      deadlineStr = deadlineRaw.toString();
+                    }
+                  }
+
+                  return Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Transform.scale(
+                              scale: 1.2,
+                              child: Checkbox(
+                                value: _readingTab ==
+                                    1, // Checked if in 'Read' tab
+                                activeColor: Colors.green,
+                                side: BorderSide(color: kGoldColor, width: 2),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4)),
+                                onChanged: (val) async {
+                                  if (id == null) return;
+                                  // Optimistic toggle? Or just strict 'mark as read'
+                                  // If in "To Read" (0), val becomes true -> Move to Read
+                                  // If in "Read" (1), val becomes false -> Move back to To Read
+                                  bool newStatus = val == true;
+                                  if (_readingTab == 1 && val == false) {
+                                    newStatus = false;
+                                  } else if (_readingTab == 0 && val == true) {
+                                    newStatus = true;
+                                  } else {
+                                    return; // No change logic needed
+                                  }
+
+                                  // Disable UI or show loader? Simple async update.
+                                  await ProfileService.updateBookStatus(
+                                      id, newStatus);
+                                  _initializeFutures(); // Refresh data
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(title,
+                                      style: GoogleFonts.notoSansEthiopic(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14)),
+                                  const SizedBox(height: 4),
+                                  if (_readingTab == 0 &&
+                                      deadlineStr.isNotEmpty)
+                                    Text("የማጠናቀቂያ ጊዜ: $deadlineStr",
+                                        style: GoogleFonts.notoSansEthiopic(
+                                            color: kGoldColor, fontSize: 12)),
+                                  if (_readingTab == 1)
+                                    Text("ተነብቦ ተረጋግጧል",
+                                        style: GoogleFonts.notoSansEthiopic(
+                                            color: Colors.green, fontSize: 12))
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      if (book != currentList.last)
+                        Divider(
+                            color: Colors.white.withOpacity(0.05), height: 1),
+                    ],
+                  );
+                }).toList()
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTabButton(String text, int index, int count) {
+    final bool isSelected = _readingTab == index;
+    return GestureDetector(
+      onTap: () => setState(() => _readingTab = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? kGoldColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          "$text ($count)",
+          style: GoogleFonts.notoSansEthiopic(
+            color: isSelected ? Colors.black : Colors.white54,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
   }
 }

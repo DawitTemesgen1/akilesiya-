@@ -27,17 +27,27 @@ class GradeService {
   }
 
   // --- Course Management ---
-  static Future<List<dynamic>> getCourses(String spiritualClass) async {
-    final response =
-        await ApiService.get('/grades/courses?spiritual_class=$spiritualClass');
+  static Future<List<dynamic>> getCourses(String spiritualClass,
+      {int? year}) async {
+    String url = '/grades/courses?spiritual_class=$spiritualClass';
+    if (year != null) {
+      url += '&year=$year';
+    }
+    final response = await ApiService.get(url);
     if (response.statusCode == 200) return json.decode(response.body);
     throw Exception('Failed to load courses');
   }
 
   static Future<Map<String, dynamic>> addCourse(
-      {required String spiritualClass, required String courseName}) async {
-    final response = await ApiService.post('/grades/courses',
-        {'spiritual_class': spiritualClass, 'course_name': courseName});
+      {required String spiritualClass,
+      required String courseName,
+      int? year}) async {
+    final body = {
+      'spiritual_class': spiritualClass,
+      'course_name': courseName,
+      if (year != null) 'year': year
+    };
+    final response = await ApiService.post('/grades/courses', body);
     if (response.statusCode == 201) return json.decode(response.body);
     throw Exception('Failed to add course');
   }
@@ -191,6 +201,7 @@ class GradeService {
   }) async {
     try {
       // First, get the user's profile to know their ID (and default class/year)
+      // We still need this to determine the 'current' class for showing empty course lists
       final profileResponse = await ApiService.get('/profile/me');
 
       if (profileResponse.statusCode != 200) {
@@ -204,49 +215,17 @@ class GradeService {
         profileData = profileData['data'];
       }
 
-      final userId = profileData['id']?.toString();
-      final user_id = profileData['user_id']?.toString();
-      final studentIdKey = profileData['student_id']?.toString();
-      final fullName = profileData['full_name']?.toString() ??
-          profileData['name']?.toString();
-
       // Use override if provided, otherwise fallback to profile
       final spiritualClass =
           spiritualClassOverride ?? profileData['spiritual_class']?.toString();
 
       debugPrint(
-          "DEBUG GradeService: Fetched profile. Using Spiritual Class: '$spiritualClass'");
-
-      if (userId == null && user_id == null && studentIdKey == null) {
-        debugPrint("DEBUG GradeService: No user identifier found");
-        return {
-          'success': false,
-          'message': 'No user identifier found in profile'
-        };
-      }
-
-      final List<String> possibleUserIds = [
-        if (userId != null) userId,
-        if (user_id != null) user_id,
-        if (studentIdKey != null) studentIdKey,
-      ];
-
-      // If no spiritual class assigned, return empty
-      if (spiritualClass == null || spiritualClass.isEmpty) {
-        debugPrint(
-            "DEBUG GradeService: No spiritual class assigned, returning empty result");
-        return {
-          'success': true,
-          'data': {'grades': []},
-          'message': 'No spiritual class assigned'
-        };
-      }
+          "DEBUG GradeService: Fetched profile. Current Spiritual Class: '$spiritualClass'");
 
       // Get current Ethiopian year
       final currentYear = EthiopianDate.now().year;
 
       // Fetch grades for requested year(s)
-      // If override provided, fetch only that year. If not, fetch current and prev.
       final years = yearOverride != null
           ? [yearOverride]
           : [currentYear, currentYear - 1];
@@ -254,52 +233,23 @@ class GradeService {
 
       for (final year in years) {
         try {
-          debugPrint(
-              'DEBUG: Fetching grades for spiritualClass: $spiritualClass, year: $year');
-          final studentsData = await getStudentsWithGrades(
-            spiritualClass: spiritualClass,
-            year: year,
-          );
+          debugPrint('DEBUG: Fetching grades for year: $year');
 
-          debugPrint(
-              'DEBUG: Received ${studentsData.length} students for year $year');
+          // Use the new, robust endpoint that fetches by User ID + Year
+          // This ignores the user's current class, preserving history.
+          final response = await ApiService.get('/grades/my-grades?year=$year');
 
-          // Find the current user's grades in the response
-          final userGrades = studentsData.firstWhere(
-            (student) {
-              final sId = student['student_id']?.toString();
-              final id = student['id']?.toString();
-              final uId = student['user_id']?.toString();
-              final sName = student['full_name']?.toString() ??
-                  student['name']?.toString();
-
-              // Check if any of the student's ID matches any of our possible IDs
-              final isIdMatch = possibleUserIds
-                  .any((pId) => pId == sId || pId == id || pId == uId);
-
-              // Fallback to name match if IDs don't work and we have a name
-              final isNameMatch =
-                  fullName != null && sName != null && fullName == sName;
-
-              final isMatch = isIdMatch || isNameMatch;
-
-              if (isMatch) {
+          if (response.statusCode == 200) {
+            final jsonResponse = json.decode(response.body);
+            if (jsonResponse['success'] == true &&
+                jsonResponse['data'] != null) {
+              final grades = jsonResponse['data']['grades'];
+              if (grades is List && grades.isNotEmpty) {
+                gradesByYear[year.toString()] = grades;
                 debugPrint(
-                    'DEBUG: Found match for user - isIdMatch: $isIdMatch, isNameMatch: $isNameMatch');
+                    'DEBUG: Found ${grades.length} grades for year $year');
               }
-              return isMatch;
-            },
-            orElse: () => null,
-          );
-
-          if (userGrades != null && userGrades['grades'] != null) {
-            final gradesList = userGrades['grades'] as List<dynamic>;
-            debugPrint(
-                'DEBUG: User has ${gradesList.length} grades for year $year');
-            gradesByYear[year.toString()] = gradesList;
-          } else {
-            debugPrint(
-                'DEBUG: No grades found for userId $userId in year $year');
+            }
           }
         } catch (e) {
           debugPrint('Error fetching grades for year $year: $e');
@@ -310,7 +260,10 @@ class GradeService {
           'DEBUG: Finished fetching all years. gradesByYear keys: ${gradesByYear.keys}');
 
       // IF no grades found for current year, try to fetch COURSES to show empty state
-      if (!gradesByYear.containsKey(currentYear.toString())) {
+      // This relies on the CURRENT spiritual class.
+      if (!gradesByYear.containsKey(currentYear.toString()) &&
+          spiritualClass != null &&
+          spiritualClass.isNotEmpty) {
         try {
           final courses = await getCourses(spiritualClass);
           if (courses.isNotEmpty) {
@@ -319,12 +272,13 @@ class GradeService {
                       'course_name': c['course_name'],
                       'course_id': c['id'],
                       'scores': [], // No assessments
-                      'total': 0,
-                      'score': 0
+                      'total': 0.0,
+                      'score': 0.0
                     })
                 .toList();
             gradesByYear[currentYear.toString()] = emptyGrades;
-            debugPrint('DEBUG: Added empty course list for year $currentYear');
+            debugPrint(
+                'DEBUG: Added empty course list for year $currentYear (Class: $spiritualClass)');
           }
         } catch (e) {
           debugPrint('DEBUG: Failed to fetch courses for empty state: $e');
@@ -338,7 +292,7 @@ class GradeService {
           'data': gradesByYear,
         };
       } else if (gradesByYear.length == 1) {
-        // Single year, return just the grades array
+        // Single year, return just the grades array (legacy support if needed)
         return {
           'success': true,
           'data': {

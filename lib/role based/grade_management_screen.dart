@@ -245,7 +245,7 @@ class _GradeEntryViewState extends State<GradeEntryView> {
       final results = await Future.wait([
         GradeService.getStudentsWithGrades(
             spiritualClass: _selectedSpiritualClass!, year: _selectedYear!),
-        GradeService.getCourses(_selectedSpiritualClass!)
+        GradeService.getCourses(_selectedSpiritualClass!, year: _selectedYear)
       ]);
       if (mounted) {
         setState(() {
@@ -278,6 +278,7 @@ class _GradeEntryViewState extends State<GradeEntryView> {
         context: context,
         builder: (context) => _CourseManagementDialog(
             spiritualClass: _selectedSpiritualClass!,
+            year: _selectedYear!,
             initialCourses: _coursesForClass));
     if (didCoursesChange == true) {
       _showSnackbar("የትምህርት ዝርዝር ተዘምኗል። መረጃው እንደገና እየተጫነ ነው።");
@@ -692,9 +693,12 @@ class _AdminManagementViewState extends State<AdminManagementView> {
 // ===============================================================
 class _CourseManagementDialog extends StatefulWidget {
   final String spiritualClass;
+  final int year;
   final List<Map<String, dynamic>> initialCourses;
   const _CourseManagementDialog(
-      {required this.spiritualClass, required this.initialCourses});
+      {required this.spiritualClass,
+      required this.year,
+      required this.initialCourses});
   @override
   State<_CourseManagementDialog> createState() =>
       _CourseManagementDialogState();
@@ -718,7 +722,9 @@ class _CourseManagementDialogState extends State<_CourseManagementDialog> {
     setState(() => _isAdding = true);
     try {
       final newCourse = await GradeService.addCourse(
-          spiritualClass: widget.spiritualClass, courseName: courseName);
+          spiritualClass: widget.spiritualClass,
+          courseName: courseName,
+          year: widget.year);
       if (mounted) {
         setState(() {
           _courses.add(newCourse);
