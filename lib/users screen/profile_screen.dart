@@ -14,11 +14,13 @@ import 'package:intl/intl.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 
-// --- Safe Luxury Theme ---
-const Color kPrimaryColor = Color(0xFF0F0F1E);
-const Color kDarkAccent = Color(0xFF1A1A2E);
-const Color kGoldColor = Color(0xFFFFD700);
-const Color kSurfaceColor = Color(0xFF252535);
+// --- AWARD WINNING THEME ---
+const Color kBgDark = Color(0xFF121418); // Matte Black
+const Color kBgCard = Color(0xFF1B1D23); // Gunmetal
+const Color kAccentGold = Color(0xFFD4AF37); // Classic Gold
+const Color kAccentBlue = Color(0xFF5E81AC); // Nordic Blue
+const Color kTextWhite = Color(0xFFECEFF4);
+const Color kTextGrey = Color(0xFFD8DEE9);
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,7 +33,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final ImagePicker _picker = ImagePicker();
-  // Removed custom scroll controller for NestedScrollView to rely on default behavior which is often safer for Slivers
 
   Future<dynamic>? _attendanceFuture;
   Future<dynamic>? _gradesFuture;
@@ -81,44 +82,54 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     if (userProvider.isLoading || profile == null) {
       return const Scaffold(
-          backgroundColor: kPrimaryColor,
-          body: Center(child: CircularProgressIndicator(color: kGoldColor)));
+          backgroundColor: kBgDark,
+          body: Center(child: CircularProgressIndicator(color: kAccentGold)));
     }
 
     return Scaffold(
-      backgroundColor: kPrimaryColor,
-      body: RefreshIndicator(
-        onRefresh: _refreshAllData,
-        color: kGoldColor,
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              _buildAppBar(context),
-              SliverToBoxAdapter(
-                  child: _buildHeader(profile, userProvider.avatarUrl)),
-              SliverPersistentHeader(
-                delegate: _StickyTabBarDelegate(
-                  TabBar(
-                    controller: _tabController,
-                    labelColor: kGoldColor,
-                    unselectedLabelColor: Colors.white60,
-                    indicatorColor: kGoldColor,
-                    indicatorWeight: 3,
-                    labelStyle: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.bold),
-                    tabs: const [
-                      Tab(text: "ሁኔታ"),
-                      Tab(text: "የግል"),
-                      Tab(text: "መንፈሳዊ"),
-                      Tab(text: "ትምህርት"),
-                    ],
-                  ),
+      backgroundColor: kBgDark,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            _buildSliverAppBar(context, profile, userProvider.avatarUrl),
+            SliverPersistentHeader(
+              delegate: _ModernTabBarDelegate(
+                TabBar(
+                  controller: _tabController,
+                  labelColor: kBgDark,
+                  unselectedLabelColor: Colors.white54,
+                  labelStyle: GoogleFonts.notoSansEthiopic(
+                      fontWeight: FontWeight.w800, fontSize: 13),
+                  indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(50),
+                      color: kAccentGold,
+                      boxShadow: [
+                        BoxShadow(
+                            color: kAccentGold.withOpacity(0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4))
+                      ]),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  dividerColor: Colors.transparent,
+                  tabs: const [
+                    Tab(text: "ሁኔታ"),
+                    Tab(text: "የግል"),
+                    Tab(text: "መንፈሳዊ"),
+                    Tab(text: "ትምህርት"),
+                  ],
                 ),
-                pinned: true,
               ),
-            ];
-          },
-          body: TabBarView(
+              pinned: true,
+            ),
+          ];
+        },
+        body: Container(
+          decoration: BoxDecoration(
+            color: kBgDark,
+            // subtle noise or patterns could go here
+          ),
+          child: TabBarView(
             controller: _tabController,
             children: [
               _buildStatusTab(profile),
@@ -132,96 +143,146 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildSliverAppBar(
+      BuildContext context, Map<String, dynamic> profile, String? avatarUrl) {
     return SliverAppBar(
-      backgroundColor: kPrimaryColor,
+      expandedHeight: 280.0,
+      backgroundColor: kBgDark,
       pinned: true,
-      elevation: 0,
-      centerTitle: true,
-      title: Text("መገለጫ",
-          style: GoogleFonts.notoSansEthiopic(
-              color: kGoldColor, fontWeight: FontWeight.bold)),
-      actions: [
-        IconButton(
-          icon: const Icon(Iconsax.edit, color: Colors.white),
-          onPressed: () => showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (ctx) => const UserEditProfileScreen(),
-          ).then((_) => _refreshAllData()),
-        ),
-      ],
-    );
-  }
+      stretch: true,
+      leading: const SizedBox
+          .shrink(), // Hides back button if any (or use leading automatically)
+      flexibleSpace: FlexibleSpaceBar(
+        stretchModes: const [
+          StretchMode.zoomBackground,
+          StretchMode.blurBackground
+        ],
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Abstract Background Art
+            Container(
+              decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                begin: Alignment.bottomLeft,
+                end: Alignment.topRight,
+                colors: [kBgDark, Color(0xFF2A2A35)],
+              )),
+            ),
+            // Pattern
+            Positioned(
+              right: -50,
+              top: -50,
+              child: Opacity(
+                opacity: 0.1,
+                child: Icon(Iconsax.star1, size: 300, color: kAccentGold),
+              ),
+            ),
 
-  Widget _buildHeader(Map<String, dynamic> profile, String? avatarUrl) {
-    return Container(
-      color: kPrimaryColor, // Ensure opaque background behind scroll
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: kGoldColor, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                          color: kGoldColor.withOpacity(0.2),
-                          blurRadius: 15,
-                          spreadRadius: 2)
-                    ]),
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: kSurfaceColor,
-                  backgroundImage: (avatarUrl != null)
-                      ? CachedNetworkImageProvider(avatarUrl)
-                      : null,
-                  child: (avatarUrl == null)
-                      ? Text((profile['full_name'] ?? 'U')[0].toUpperCase(),
-                          style: GoogleFonts.poppins(
-                              fontSize: 40, color: kGoldColor))
-                      : null,
+            // Content
+            Positioned(
+              bottom: 60,
+              left: 0,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Avatar with glowing ring
+                    GestureDetector(
+                      onTap: _pickAndUploadImage,
+                      child: Container(
+                        height: 100,
+                        width: 100,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: kAccentGold, width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: kAccentGold.withOpacity(0.3),
+                                  blurRadius: 20)
+                            ],
+                            image: (avatarUrl != null)
+                                ? DecorationImage(
+                                    image:
+                                        CachedNetworkImageProvider(avatarUrl),
+                                    fit: BoxFit.cover)
+                                : null,
+                            color: kBgCard),
+                        child: (avatarUrl == null)
+                            ? Center(
+                                child: Text(
+                                    (profile['full_name'] ?? 'U')[0]
+                                        .toUpperCase(),
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 40, color: kAccentGold)))
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    // Name and Tag
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 200),
+                            child: Text(profile['full_name'] ?? 'Guest User',
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: kTextWhite,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.2),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          const SizedBox(height: 8),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 400),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                  color: kAccentGold,
+                                  borderRadius: BorderRadius.circular(4)),
+                              child: Text(
+                                profile['spiritual_class'] ?? 'No Class',
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: kBgDark,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ),
+                    )
+                  ],
                 ),
               ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: GestureDetector(
-                  onTap: _pickAndUploadImage,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                        color: kGoldColor, shape: BoxShape.circle),
-                    child: const Icon(Iconsax.camera,
-                        color: Colors.black, size: 18),
-                  ),
-                ),
-              )
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(profile['full_name'] ?? 'User',
-              style: GoogleFonts.notoSansEthiopic(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-                color: kGoldColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: kGoldColor.withOpacity(0.5))),
-            child: Text(profile['spiritual_class'] ?? 'No Class',
-                style: GoogleFonts.notoSansEthiopic(
-                    color: kGoldColor, fontWeight: FontWeight.w600)),
-          ),
-        ],
+            )
+          ],
+        ),
       ),
+      actions: [
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+              shape: BoxShape.circle, color: Colors.white.withOpacity(0.1)),
+          child: IconButton(
+            icon: const Icon(Iconsax.edit, color: Colors.white, size: 20),
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (ctx) => const UserEditProfileScreen(),
+            ).then((_) => _refreshAllData()),
+          ),
+        )
+      ],
     );
   }
 
@@ -231,130 +292,170 @@ class _ProfileScreenState extends State<ProfileScreen>
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text("DASHBOARD",
+              style: GoogleFonts.poppins(
+                  color: Colors.white24,
+                  letterSpacing: 4,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 20),
+
+          // Stats Row
           Row(
             children: [
               Expanded(
-                  child: _buildDetailCard(
-                      "Status", "Active", Iconsax.verify, Colors.greenAccent)),
+                  child: _buildStatBox("MEMBERSHIP", "Active", Iconsax.verify5,
+                      Colors.greenAccent)),
               const SizedBox(width: 15),
               Expanded(
-                  child: _buildDetailCard(
-                      "Sector",
+                  child: _buildStatBox(
+                      "SECTOR",
                       profile['service_sector']?.toString() ?? "-",
                       Iconsax.briefcase,
-                      kGoldColor)),
+                      kAccentBlue)),
             ],
           ),
-          const SizedBox(height: 20),
+
+          const SizedBox(height: 24),
+
+          // Attendance Graph / Card
           FutureBuilder<dynamic>(
             future: _attendanceFuture,
             builder: (context, snapshot) {
-              // Safe parsing logic
+              // Robust Processing
               double percent = 0.0;
               int present = 0;
               int total = 0;
               if (snapshot.hasData &&
                   snapshot.data is Map &&
                   snapshot.data['success'] == true) {
-                final list = snapshot.data['data'];
-                if (list is List && list.isNotEmpty) {
-                  total = list.length;
-                  present = list
+                final raw = snapshot.data['data'];
+                if (raw is List) {
+                  total = raw.length;
+                  present = raw
                       .where((i) =>
-                          i['status']?.toString().toLowerCase() == 'present')
+                          i['status'].toString().toLowerCase() == 'present')
                       .length;
-                  percent = total > 0 ? present / total : 0.0;
+                  percent = total > 0 ? present / total : 0;
                 }
               }
 
-              return Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: kSurfaceColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white12),
-                ),
-                child: Row(
-                  children: [
-                    CircularPercentIndicator(
-                      radius: 40,
-                      lineWidth: 6,
-                      percent: percent.clamp(0.0, 1.0),
-                      center: Text("${(percent * 100).toStringAsFixed(0)}%",
-                          style: GoogleFonts.poppins(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                      progressColor: kGoldColor,
-                      backgroundColor: Colors.white10,
-                      circularStrokeCap: CircularStrokeCap.round,
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                        child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Attendance Rate",
-                            style: GoogleFonts.poppins(
-                                color: kGoldColor,
-                                fontWeight: FontWeight.bold)),
-                        Text("$present out of $total sessions",
-                            style: GoogleFonts.poppins(
-                                color: Colors.white54, fontSize: 12)),
+              return FadeInUp(
+                child: Container(
+                  height: 180,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF2E323A), kBgCard]),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black45,
+                            blurRadius: 20,
+                            offset: Offset(0, 10))
                       ],
-                    )),
-                  ],
+                      border:
+                          Border.all(color: Colors.white.withOpacity(0.05))),
+                  child: Row(
+                    children: [
+                      CircularPercentIndicator(
+                        radius: 60,
+                        lineWidth: 12,
+                        percent: percent.clamp(0.0, 1.0),
+                        progressColor: kAccentGold,
+                        backgroundColor: Colors.black26,
+                        center: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text("${(percent * 100).toStringAsFixed(0)}%",
+                                style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 24)),
+                            Text("Present",
+                                style: GoogleFonts.poppins(
+                                    color: Colors.white38, fontSize: 10)),
+                          ],
+                        ),
+                        circularStrokeCap: CircularStrokeCap.round,
+                        animation: true,
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text("ATTENDANCE",
+                                style: GoogleFonts.poppins(
+                                    color: kAccentGold,
+                                    fontSize: 12,
+                                    letterSpacing: 2,
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Text(
+                                "You have attended $present out of $total sessions.",
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: kTextGrey,
+                                    height: 1.5,
+                                    fontSize: 13)),
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               );
             },
-          ),
+          )
         ],
       ),
     );
   }
 
-  Widget _buildDynamicTab(Map<String, dynamic> profile, String tabName,
-      ProfileConfigProvider config) {
-    final builtIn = _getBuiltInFields(tabName);
-    final custom = config.customFields.where((f) {
-      final t = f['profile_tab']?.toString().toUpperCase() ?? 'PERSONAL';
-      if (tabName == 'የግል') return t == 'PERSONAL';
-      if (tabName == 'መንፈሳዊ') return t == 'SPIRITUAL';
-      return false;
-    }).toList();
+  Widget _buildDynamicTab(
+      Map<String, dynamic> profile, String tab, ProfileConfigProvider config) {
+    final widgets = <Widget>[];
 
-    List<Widget> items = [];
+    // Built-ins
+    final builtIn = _getBuiltInFields(tab);
     for (var key in builtIn) {
       if (config.isWidgetVisible(key)) {
-        items.add(_buildInfoRow(key, _formatValue(key, profile[key])));
+        widgets.add(_buildInfoTile(key, _formatValue(key, profile[key])));
       }
     }
 
-    // Add custom fields
+    // Custom
+    final custom = config.customFields.where((f) {
+      final t = f['profile_tab']?.toString().toUpperCase() ?? 'PERSONAL';
+      if (tab == 'የግል') return t == 'PERSONAL';
+      if (tab == 'መንፈሳዊ') return t == 'SPIRITUAL';
+      return false;
+    }).toList();
+
     final savedValues = _getCustomFieldValuesMap(profile);
     for (var field in custom) {
       final name = field['name'].toString();
-      String val = '-';
+      String displayValue = '-';
       final optId = savedValues[field['id'].toString()];
       if (optId != null) {
         final options = field['options'] as List<dynamic>? ?? [];
         final opt = options.firstWhere(
             (o) => o['id'].toString() == optId.toString(),
             orElse: () => null);
-        val = opt?['option_value']?.toString() ?? '-';
+        displayValue = opt?['option_value']?.toString() ?? '-';
       }
-      items.add(_buildInfoRow(name, val, isCustom: true));
+      widgets.add(_buildInfoTile(name, displayValue, isCustom: true));
     }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-            color: kSurfaceColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white10)),
-        child: Column(children: items),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: widgets,
       ),
     );
   }
@@ -364,7 +465,14 @@ class _ProfileScreenState extends State<ProfileScreen>
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text("ACADEMIC RESULTS",
+              style: GoogleFonts.poppins(
+                  color: Colors.white24,
+                  letterSpacing: 4,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 20),
           FutureBuilder<dynamic>(
             future: _gradesFuture,
             builder: (context, snapshot) {
@@ -381,126 +489,190 @@ class _ProfileScreenState extends State<ProfileScreen>
                   courses = List<Map<String, dynamic>>.from(d);
               } catch (e) {}
 
-              if (courses.isEmpty) return const SizedBox.shrink();
+              if (courses.isEmpty)
+                return const Text("No grades yet.",
+                    style: TextStyle(color: Colors.white54));
 
-              return ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: courses.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (_, idx) {
-                  final c = courses[idx];
-                  double score = 0;
-                  double max = 100;
-                  try {
-                    final sList = c['scores'];
-                    if (sList is List && sList.isNotEmpty) {
-                      for (var s in sList)
-                        score +=
-                            double.tryParse(s['score']?.toString() ?? '0') ?? 0;
-                    } else {
-                      score =
-                          double.tryParse(c['score']?.toString() ?? '0') ?? 0;
-                      max = double.tryParse(
-                              c['total_marks']?.toString() ?? '100') ??
-                          100;
-                    }
-                  } catch (e) {}
-                  if (max <= 0) max = 100;
-
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                        color: kSurfaceColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.white10)),
-                    child: Row(
-                      children: [
-                        Expanded(
-                            child: Text(
-                                c['course_name']?.toString() ?? 'Subject',
-                                style: GoogleFonts.notoSansEthiopic(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold))),
-                        Text(
-                            "${score.toStringAsFixed(1)} / ${max.toStringAsFixed(0)}",
-                            style: GoogleFonts.poppins(
-                                color: kGoldColor,
-                                fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  );
-                },
+              return SizedBox(
+                height: 220,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: courses.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                  itemBuilder: (_, idx) => _buildGradeCard(courses[idx], idx),
+                ),
               );
             },
           ),
+          const SizedBox(height: 40),
+          Text("DETAILS",
+              style: GoogleFonts.poppins(
+                  color: Colors.white24,
+                  letterSpacing: 4,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-                color: kSurfaceColor, borderRadius: BorderRadius.circular(16)),
-            child: Column(children: [
-              _buildInfoRow("Academic Level",
-                  profile['academic_level']?.toString() ?? '-',
-                  isCustom: true),
-              _buildInfoRow(
-                  "Parent Name", profile['parent_name']?.toString() ?? '-',
-                  isCustom: true),
-              _buildInfoRow("Parent Phone",
-                  profile['parent_phone_number']?.toString() ?? '-',
-                  isCustom: true),
-            ]),
-          ),
+          _buildInfoTile(
+              "Academic Level", profile['academic_level']?.toString() ?? '-',
+              isCustom: true),
+          _buildInfoTile(
+              "Parent Name", profile['parent_name']?.toString() ?? '-',
+              isCustom: true),
+          _buildInfoTile(
+              "Parent Phone", profile['parent_phone_number']?.toString() ?? '-',
+              isCustom: true),
         ],
       ),
     );
   }
 
-  Widget _buildDetailCard(
-      String title, String value, IconData icon, Color color) {
+  // --- COMPONENT WIDGETS ---
+
+  Widget _buildStatBox(
+      String title, String value, IconData icon, Color accent) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: kSurfaceColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white10)),
+        color: kBgCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 12),
+          Icon(icon, color: accent, size: 28),
+          const Spacer(),
           Text(value,
               style: GoogleFonts.notoSansEthiopic(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16)),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 4),
           Text(title,
-              style: GoogleFonts.poppins(color: Colors.white54, fontSize: 11)),
+              style: GoogleFonts.poppins(
+                  color: Colors.white30,
+                  fontSize: 10,
+                  letterSpacing: 1,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
+      height: 140,
     );
   }
 
-  Widget _buildInfoRow(String title, String value, {bool isCustom = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+  Widget _buildInfoTile(String title, String value, {bool isCustom = false}) {
+    final label = isCustom ? title : _getTranslatedLabel(title);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: kBgCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white.withOpacity(0.02))),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(isCustom ? title : _getTranslatedLabel(title),
-              style: GoogleFonts.notoSansEthiopic(
-                  color: Colors.white54, fontSize: 13)),
-          Text(value,
-              style: GoogleFonts.notoSansEthiopic(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14)),
+          Container(
+            width: 4,
+            height: 40,
+            decoration: BoxDecoration(
+                color: kAccentGold.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: GoogleFonts.notoSansEthiopic(
+                        color: Colors.white38,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 4),
+                Text(value,
+                    style: GoogleFonts.notoSansEthiopic(
+                        color: kTextWhite,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500)),
+              ],
+            ),
+          )
         ],
       ),
     );
   }
 
-  // --- Helpers ---
+  Widget _buildGradeCard(Map<String, dynamic> course, int index) {
+    final colors = [
+      Color(0xFF88C0D0),
+      Color(0xFFB48EAD),
+      Color(0xFFA3BE8C),
+      Color(0xFFEBCB8B)
+    ];
+    final color = colors[index % colors.length];
+
+    double score = 0;
+    double max = 100;
+    try {
+      final sList = course['scores'];
+      if (sList is List && sList.isNotEmpty) {
+        for (var s in sList)
+          score += double.tryParse(s['score']?.toString() ?? '0') ?? 0;
+      } else {
+        score = double.tryParse(course['score']?.toString() ?? '0') ?? 0;
+        max =
+            double.tryParse(course['total_marks']?.toString() ?? '100') ?? 100;
+      }
+    } catch (e) {}
+    if (max <= 0) max = 100;
+    double percent = (score / max).clamp(0.0, 1.0);
+
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+          color: kBgCard,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))
+          ]),
+      child: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: CircularPercentIndicator(
+                radius: 40,
+                lineWidth: 8,
+                percent: percent,
+                center: Text("${score.toInt()}",
+                    style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold)),
+                progressColor: color,
+                backgroundColor: Colors.white10,
+                circularStrokeCap: CircularStrokeCap.round,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(course['course_name']?.toString() ?? 'Course',
+              style: GoogleFonts.notoSansEthiopic(
+                  color: Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+
+  // Helpers
   List<String> _getBuiltInFields(String tab) {
     if (tab == 'የግል')
       return [
@@ -558,23 +730,21 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 }
 
-class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+class _ModernTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar _tabBar;
-  _StickyTabBarDelegate(this._tabBar);
+  _ModernTabBarDelegate(this._tabBar);
 
   @override
-  double get minExtent =>
-      _tabBar.preferredSize.height + 20; // Exact match padded height
+  double get minExtent => _tabBar.preferredSize.height + 24;
   @override
-  double get maxExtent => _tabBar.preferredSize.height + 20;
+  double get maxExtent => _tabBar.preferredSize.height + 24;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-        color: kPrimaryColor, // Solid bg to handle pinned state cleanly
-        padding:
-            const EdgeInsets.symmetric(vertical: 10), // Matches extent padding
+        color: kBgDark,
+        padding: const EdgeInsets.only(top: 12, bottom: 12),
         child: _tabBar);
   }
 
