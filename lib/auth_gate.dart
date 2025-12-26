@@ -19,7 +19,7 @@ class AuthGate extends StatelessWidget {
 
         // 2. If done loading and the user is logged in, show the main app.
         if (userProvider.isLoggedIn) {
-          return const HomeScreen();
+          return HomeScreen();
         }
 
         // 3. Otherwise, the user is logged out, so show the public start screen.
