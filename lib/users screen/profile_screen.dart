@@ -3,6 +3,7 @@ import 'package:amde_haymanot_abalat_guday/providers/profile_config_provider.dar
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/profile_service.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/edit_profile_sheet.dart';
+import 'package:amde_haymanot_abalat_guday/services/grade_service.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/uploadpp.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -547,13 +548,142 @@ class _ProfileScreenState extends State<ProfileScreen>
     return null;
   }
 
+  // State for filtering
+  String? _selectedSpiritualClass;
+  int? _selectedYear;
+  bool _initialFilterSet = false;
+
+  final List<String> _spiritualClasses = [
+    '1ኛ ክፍል',
+    '2ኛ ክፍል',
+    '3ኛ ክፍል',
+    '4ኛ ክፍል',
+    '5ኛ ክፍል',
+    '6ኛ ክፍል',
+    '7ኛ ክፍል',
+    '8ኛ ክፍል',
+    '9ኛ ክፍል',
+    '10ኛ ክፍል',
+    '11ኛ ክፍል',
+    '12ኛ ክፍል'
+  ];
+
+  List<int> _getYearOptions() {
+    // Current Ethiopian Year approximation (based on logs seeing 2018)
+    final current = 2018;
+    return List.generate(10, (i) => current - i);
+  }
+
+  void _updateGradesFilter() {
+    setState(() {
+      _gradesFuture = GradeService.getMyGrades(
+          spiritualClassOverride: _selectedSpiritualClass,
+          yearOverride: _selectedYear);
+    });
+  }
+
   Widget _buildEducationTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
+    // Initialize filters once from profile data
+    if (!_initialFilterSet) {
+      if (profile['spiritual_class'] != null) {
+        _selectedSpiritualClass = profile['spiritual_class'];
+      }
+      _selectedYear = 2018; // Default
+      _initialFilterSet = true;
+    }
+
     return ListView(
       primary: false, // Fix ScrollController conflict
       key: const PageStorageKey('education_tab'),
       padding: const EdgeInsets.all(16),
       children: [
+        // Filter Section
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+              color: kCardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white10)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("ማጣሪያ (Filter)",
+                  style: GoogleFonts.notoSansEthiopic(
+                      color: kGoldColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: DropdownButtonFormField<String>(
+                      value: _spiritualClasses.contains(_selectedSpiritualClass)
+                          ? _selectedSpiritualClass
+                          : null,
+                      dropdownColor: kCardColor,
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: Colors.white, fontSize: 13),
+                      decoration: InputDecoration(
+                        labelText: "ክፍል",
+                        labelStyle:
+                            TextStyle(color: Colors.white54, fontSize: 12),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white24),
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      items: _spiritualClasses
+                          .map(
+                              (c) => DropdownMenuItem(value: c, child: Text(c)))
+                          .toList(),
+                      onChanged: (val) {
+                        _selectedSpiritualClass = val;
+                        _updateGradesFilter();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: DropdownButtonFormField<int>(
+                      value: _selectedYear,
+                      dropdownColor: kCardColor,
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: Colors.white, fontSize: 13),
+                      decoration: InputDecoration(
+                        labelText: "ዓመት",
+                        labelStyle:
+                            TextStyle(color: Colors.white54, fontSize: 12),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white24),
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      items: _getYearOptions()
+                          .map((y) => DropdownMenuItem(
+                              value: y, child: Text(y.toString())))
+                          .toList(),
+                      onChanged: (val) {
+                        _selectedYear = val;
+                        _updateGradesFilter();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
         FutureBuilder<dynamic>(
           future: _gradesFuture,
           builder: (context, snapshot) {
@@ -586,6 +716,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                   print("Error parsing grades: $e");
                 }
               }
+            }
+
+            if (courses.isNotEmpty) {
+              print(
+                  "DEBUG ProfileScreen: First Course Structure: ${courses[0]}");
             }
 
             if (courses.isEmpty) {

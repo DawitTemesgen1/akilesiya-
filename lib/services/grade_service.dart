@@ -185,9 +185,12 @@ class GradeService {
   /// Get grades for the currently logged-in user
   /// This fetches the user's profile to get their spiritual_class and year,
   /// then fetches their grades using the existing grades endpoint
-  static Future<Map<String, dynamic>> getMyGrades() async {
+  static Future<Map<String, dynamic>> getMyGrades({
+    String? spiritualClassOverride,
+    int? yearOverride,
+  }) async {
     try {
-      // First, get the user's profile to know their spiritual class and current year
+      // First, get the user's profile to know their ID (and default class/year)
       final profileResponse = await ApiService.get('/profile/me');
 
       if (profileResponse.statusCode != 200) {
@@ -206,10 +209,13 @@ class GradeService {
       final studentIdKey = profileData['student_id']?.toString();
       final fullName = profileData['full_name']?.toString() ??
           profileData['name']?.toString();
-      final spiritualClass = profileData['spiritual_class']?.toString();
+
+      // Use override if provided, otherwise fallback to profile
+      final spiritualClass =
+          spiritualClassOverride ?? profileData['spiritual_class']?.toString();
 
       debugPrint(
-          "DEBUG GradeService: Fetched profile. Spiritual Class: '$spiritualClass'");
+          "DEBUG GradeService: Fetched profile. Using Spiritual Class: '$spiritualClass'");
 
       if (userId == null && user_id == null && studentIdKey == null) {
         debugPrint("DEBUG GradeService: No user identifier found");
@@ -239,8 +245,11 @@ class GradeService {
       // Get current Ethiopian year
       final currentYear = EthiopianDate.now().year;
 
-      // Fetch grades for current and previous years
-      final years = [currentYear, currentYear - 1];
+      // Fetch grades for requested year(s)
+      // If override provided, fetch only that year. If not, fetch current and prev.
+      final years = yearOverride != null
+          ? [yearOverride]
+          : [currentYear, currentYear - 1];
       final Map<String, List<dynamic>> gradesByYear = {};
 
       for (final year in years) {
