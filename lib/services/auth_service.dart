@@ -245,6 +245,7 @@ class AuthService {
   static Future<Map<String, dynamic>> getMe() async {
     try {
       final response = await ApiService.get('/auth/me');
+      print("DEBUG AuthService: /auth/me response raw: ${response.body}");
       final body = json.decode(response.body);
 
       if (response.statusCode == 200 && body['success'] == true) {

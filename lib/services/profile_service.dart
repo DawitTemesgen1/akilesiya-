@@ -13,7 +13,7 @@ class ProfileService {
       Future<http.Response> futureResponse) async {
     try {
       final response = await futureResponse;
-      debugPrint(
+      print(
           "--- PROFILE SERVICE RAW RESPONSE ---\n${response.body}\n--------------------");
 
       if (response.body.isEmpty) {
