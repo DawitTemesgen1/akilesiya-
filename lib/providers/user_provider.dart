@@ -76,6 +76,11 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  List<String> _allowedScreens = []; // Added for Screen Permissions
+  List<String> get allowedScreens => _allowedScreens;
+
+  // ... (getters)
+
   void _processProfileData(Map<String, dynamic> profileData) {
     _userProfile = profileData;
     final imagePath = profileData['profile_image_url'];
@@ -93,6 +98,11 @@ class UserProvider extends ChangeNotifier {
             .toList()
         : [];
 
+    // Parse Allowed Screens
+    _allowedScreens = (profileData['allowed_screens'] is List)
+        ? List<String>.from(profileData['allowed_screens'])
+        : [];
+
     if (profileData['custom_field_values'] is Map) {
       // Data is already the correct Map format from the backend.
     } else {
@@ -103,6 +113,7 @@ class UserProvider extends ChangeNotifier {
 
     developer.log("--- UserProvider: Data Processed ---", name: "UserProvider");
     developer.log("Final roles: $_roles", name: "UserProvider");
+    developer.log("Allowed Screens: $_allowedScreens", name: "UserProvider");
     developer.log("Is System Admin: $isSystemAdmin",
         name: "UserProvider"); // For debugging
     developer.log("Can Manage Public Posts: $canManagePublicPosts",

@@ -741,7 +741,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get dateJustNow => 'አሁን';
 
   @override
-  String get dateHoursAgo => 'ሰ በፊት';
+  String get dateHoursAgo => 'h ago';
 
   @override
   String get dateYesterday => 'ትናንት';
@@ -894,10 +894,10 @@ class AppLocalizationsAm extends AppLocalizations {
   String get monthNehase => 'ነሐሴ';
 
   @override
-  String get monthPagume => 'Pagume';
+  String get monthPagume => 'ጳጉሜን';
 
   @override
-  String get dateHoursAgoSuffix => 'h ago';
+  String get dateHoursAgoSuffix => 'ሰ በፊት';
 
   @override
   String get loginSelectSchoolError => 'እባክዎ ትምህርት ቤት ይምረጡ።';

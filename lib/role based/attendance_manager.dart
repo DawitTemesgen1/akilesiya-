@@ -58,7 +58,8 @@ abstract class AmharicStringsAttendance {
   static const String errorLoadingStudents = 'ተማሪዎችን በመጫን ላይ ስህተት:';
   static const String errorLoadingRecords = 'መረጃዎችን በመጫን ላይ ስህተት:';
   static const String saveSuccess = 'ክትትል በተሳካ ሁኔታ ተመዝግቧል! 🎉';
-  static const String saveOffline = 'ክትትል ኦፍላይን ተመዝግቧል። ኢንተርኔት ሲገኝ በራስ-ሰር ይላካል።';
+  static const String saveOffline =
+      'ክትትል ኦፍላይን ተመዝግቧል። ኢንተርኔት ሲገኝ በራስ-ሰር ይላካል።';
   static const String errorSavingAttendance = 'ክትትል ማስቀመጥ ላይ ስህተት:';
 
   static const String searchUserHint = 'ተጠቃሚ ይፈልጉ...';
@@ -70,14 +71,14 @@ abstract class AmharicStringsAttendance {
 }
 
 // --- (Constants are unchanged) ---
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
+const Color primaryColor = Color(0xFF1E3A8A);
 const Color accentColor = Color(0xFFFFD700);
-const Color surfaceColor = Color(0xFFF4F7FC);
-const Color onSurfaceColor = Color(0xFF212529);
-const Color subtleTextColor = Color(0xFF6C757D);
-const Color successColor = Color(0xFF198754);
-const Color warningColor = Color(0xFFFD7E14);
-const Color dangerColor = Color(0xFFDC3545);
+const Color surfaceColor = Color(0xFFF8FAFC);
+const Color onSurfaceColor = Color(0xFF1E293B);
+const Color subtleTextColor = Color(0xFF64748B);
+const Color successColor = Color(0xFF10B981);
+const Color warningColor = Color(0xFFF59E0B);
+const Color dangerColor = Color(0xFFEF4444);
 
 class Student {
   final String id;
@@ -390,15 +391,15 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       // Check connectivity before saving
       final syncService = SyncService();
       final isOnline = await syncService.isOnline();
-      
+
       await AttendanceService.saveAttendance(
           records: records, dailyTopic: topicPayload);
-      
+
       // Update sync provider to refresh pending count
       if (mounted) {
         final syncProvider = context.read<SyncProvider>();
         await syncProvider.updatePendingCount();
-        
+
         if (isOnline) {
           _handleSuccess(AmharicStringsAttendance.saveSuccess);
         } else {

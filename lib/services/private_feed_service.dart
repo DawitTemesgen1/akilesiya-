@@ -57,6 +57,25 @@ class PrivateFeedService {
     }
   }
 
+  static Future<Map<String, dynamic>> updatePostWithImage({
+    required String postId,
+    required Map<String, String> fields,
+    required XFile file,
+  }) async {
+    try {
+      final streamedResponse = await ApiService.upload(
+        'private-feed/posts/$postId',
+        fields: fields,
+        file: file,
+        fieldName: 'image',
+      );
+      final response = await http.Response.fromStream(streamedResponse);
+      return _processResponse(Future.value(response));
+    } catch (e) {
+      return {'success': false, 'message': 'Network Error: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> updatePrivatePost(
       String postId, Map<String, dynamic> postData) {
     return _processResponse(

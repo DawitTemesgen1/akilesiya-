@@ -1,5 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:amde_haymanot_abalat_guday/services/system_admin_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EditSchoolScreen extends StatefulWidget {
   final Map<String, dynamic> school;
@@ -19,10 +24,18 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
   final _addressController = TextEditingController();
   final _serviceTimesController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _mottoController = TextEditingController();
+  final _foundingYearController = TextEditingController();
 
   DateTime? _establishedDate;
   bool _isSubmitting = false;
   bool _isActive = true;
+
+  // Logo Upload
+  File? _logoImage;
+  String? _logoUrl;
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploadingLogo = false;
 
   @override
   void initState() {
@@ -41,17 +54,63 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
     _descriptionController.text = school['description'] ?? '';
     _isActive = school['is_active'] == 1 || school['is_active'] == true;
 
+    // New Fields
+    _mottoController.text = school['motto'] ?? '';
+    _foundingYearController.text = school['founding_year'] != null
+        ? school['founding_year'].toString()
+        : '';
+    _logoUrl = school['logo_url'];
+
     if (school['established_date'] != null) {
       try {
         _establishedDate = DateTime.parse(school['established_date']);
       } catch (e) {
-        // የቀን ትንተና ካልተሳካ፣ ባዶውን ይተዉት
+        // Ignored
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _logoImage = File(image.path);
+        _isUploadingLogo = true;
+      });
+
+      try {
+        final response = await ApiService.uploadImage(image);
+        final respStr = await response.stream.bytesToString();
+        final jsonResp = json.decode(respStr);
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          setState(() {
+            _logoUrl = jsonResp['url'];
+            _isUploadingLogo = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ሎጎ በተሳካ ሁኔታ ተጭኗል')),
+          );
+        } else {
+          throw Exception(jsonResp['message'] ?? 'Upload failed');
+        }
+      } catch (e) {
+        setState(() => _isUploadingLogo = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ሎጎ መጫን አልተቻለም: $e')),
+        );
       }
     }
   }
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isUploadingLogo) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('እባክዎ ሎጎው እስኪጫን ይጠብቁ...')),
+      );
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
@@ -65,6 +124,10 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
       'description': _descriptionController.text.trim(),
       'is_active': _isActive,
       'established_date': _establishedDate?.toIso8601String().split('T')[0],
+      // New
+      'motto': _mottoController.text.trim(),
+      'founding_year': _foundingYearController.text.trim(),
+      'logo_url': _logoUrl,
     };
 
     final result =
@@ -79,7 +142,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.of(context).pop(true); // ስኬታማ መሆኑን ይመልሳል
+      Navigator.of(context).pop(true); // ወደ ኋላ ይመለሳል
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -106,7 +169,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ትምህርት ቤት ያርትዑ'), // ተተርጉሟል
+        title: const Text('ትምህርት ቤት ያርትዑ'),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Theme.of(context).colorScheme.secondary,
         actions: [
@@ -125,6 +188,51 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Logo Section
+              Center(
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: _logoImage != null
+                          ? FileImage(_logoImage!)
+                          : (_logoUrl != null
+                              ? NetworkImage(_logoUrl!)
+                              : const AssetImage(
+                                      'assets/icon/launcher_logo.png')
+                                  as ImageProvider),
+                      backgroundColor: Colors.grey[200],
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: InkWell(
+                        onTap: _pickImage,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: _isUploadingLogo
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.camera_alt,
+                                  color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // የመሰረታዊ መረጃ ክፍል
               const Text(
                 'መሰረታዊ መረጃ', // ተተርጉሟል
@@ -145,6 +253,29 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
                   }
                   return null;
                 },
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _mottoController,
+                decoration: const InputDecoration(
+                  labelText: 'መሪ ቃል (Motto)',
+                  border: OutlineInputBorder(),
+                  hintText: 'የትምህርት ቤቱን መሪ ቃል ያስገቡ',
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _foundingYearController,
+                decoration: const InputDecoration(
+                  labelText: 'የተመሰረተበት ዓመተ ምህረት',
+                  border: OutlineInputBorder(),
+                  hintText: 'ምሳሌ፡ 2000',
+                ),
+                keyboardType: TextInputType.number,
               ),
 
               const SizedBox(height: 16),
@@ -303,6 +434,8 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
     _addressController.dispose();
     _serviceTimesController.dispose();
     _descriptionController.dispose();
+    _mottoController.dispose();
+    _foundingYearController.dispose();
     super.dispose();
   }
 }

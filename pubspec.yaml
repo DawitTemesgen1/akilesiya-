@@ -68,7 +68,7 @@ dependencies:
   abushakir: ^1.0.0
   calendar_picker_ghe: ^2.1.0
   flutter_secure_storage: ^9.2.4
-  flutter_gen: ^5.12.0
+
   iconsax: ^0.0.8
   iconsax_plus: ^1.0.0
   block_app: ^0.0.1
@@ -82,6 +82,7 @@ dependencies:
   collection: ^1.19.1
   pdf: ^3.10.4
   printing: ^5.11.0
+  carousel_slider: ^5.1.1
 
 dev_dependencies:
   flutter_launcher_icons: "^0.13.1"
@@ -96,15 +97,16 @@ dev_dependencies:
 flutter_icons:
   android: true
   ios: true
-  image_path: "assets/icon/logo.png"
-  adaptive_icon_foreground: "assets/icon/logo.png"
-  adaptive_icon_background: "#FF012564" # Change to your brand's background color
+  image_path: "assets/icon/launcher_logo.png"
+  adaptive_icon_foreground: "assets/icon/launcher_logo.png"
+  adaptive_icon_background: "#FFFFFF" 
   android_round:
-    image_path: "assets/icon/logo_round.png"
+    image_path: "assets/icon/round_logo.png"
 
 # Dependency override
 dependency_overrides:
   http: ^1.2.1
+  sqflite_android: 2.4.0
   
 flutter:
   uses-material-design: true
@@ -117,3 +119,4 @@ flutter:
     - .env
     - assets/
     - assets/images/
+    - assets/icon/

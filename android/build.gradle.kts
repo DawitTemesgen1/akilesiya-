@@ -26,7 +26,7 @@ subprojects {
         // This will work for both app and library modules.
         extensions.findByType(CommonExtension::class.java)?.apply {
             // The 'compileSdk' property is defined on CommonExtension.
-            compileSdk = 34
+            compileSdk = 36
         }
     }
 }

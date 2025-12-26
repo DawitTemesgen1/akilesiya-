@@ -244,7 +244,7 @@
     "dateSelectDate": "📅 ቀን ይምረጡ",
     "dateEthiopianCalendar": "ዓ.ም.",
     "dateJustNow": "አሁን",
-    "dateHoursAgo": "ሰ በፊት",
+    "dateHoursAgoSuffix": "ሰ በፊት",
     "dateYesterday": "ትናንት",
     "loginSelectSchoolError": "እባክዎ ትምህርት ቤት ይምረጡ።",
     "loginFailedPrefix": "መግባት አልተሳካም፦ ",
@@ -343,7 +343,7 @@
     "monthSene": "ሰኔ",
     "monthHamle": "ሐምሌ",
     "monthNehase": "ነሐሴ",
-    "ethiopicMonthPagume": "ጳጉሜን",
+    "monthPagume": "ጳጉሜን",
     "signupStepAccount": "መለያ",
     "signupStepPersonal": "የግል",
     "signupStepGuardian": "አሳዳጊ",
@@ -385,7 +385,5 @@
     "signupPledgeTitle": "የአባልነት ቃል ኪዳን",
     "signupPledgeAgree": "ቃል ኪዳኑን አንብቤ ተስማምቻለሁ።",
     "settingsLanguageToggleTooltip": "ቋንቋ ቀይር",
-    "commonRequired": "የግድ የሚሞላ",
-    "dateInvalidDate": "ትክክለኛ ያልሆነ ቀን",
-    "dateInvalidDateFormat": "ትክክለኛ ያልሆነ የኢትዮጵያ ቀን ቅርጸት"
+    "commonRequired": "የግድ የሚሞላ"
 }

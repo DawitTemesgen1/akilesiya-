@@ -19,13 +19,13 @@ import 'package:amde_haymanot_abalat_guday/services/user_admin_service.dart';
 import 'package:amde_haymanot_abalat_guday/widgets/sync_status_indicator.dart';
 
 // --- የዩአይ ገጽታ ቋሚዎች ---
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
+const Color primaryColor = Color(0xFF1E3A8A);
 const Color accentColor = Color(0xFFFFD700);
-const Color surfaceColor = Color(0xFFF4F7FC);
-const Color onSurfaceColor = Color(0xFF212529);
-const Color subtleTextColor = Color(0xFF6C757D);
-const Color successColor = Color(0xFF198754);
-const Color dangerColor = Color(0xFFDC3545);
+const Color surfaceColor = Color(0xFFF8FAFC);
+const Color onSurfaceColor = Color(0xFF1E293B);
+const Color subtleTextColor = Color(0xFF64748B);
+const Color successColor = Color(0xFF10B981);
+const Color dangerColor = Color(0xFFEF4444);
 
 const List<String> spiritualClassOptions = [
   '1ኛ ክፍል',
@@ -344,7 +344,8 @@ class _GradeEntryViewState extends State<GradeEntryView> {
                 Expanded(
                     child: DropdownButtonFormField<String>(
                         value: _selectedSpiritualClass,
-                        hint: Text("ክፍል ይምረጡ", style: GoogleFonts.poppins()),
+                        hint: Text("ክፍል ይምረጡ",
+                            style: GoogleFonts.notoSansEthiopic()),
                         items: spiritualClassOptions
                             .map((String value) => DropdownMenuItem<String>(
                                 value: value,
@@ -353,27 +354,40 @@ class _GradeEntryViewState extends State<GradeEntryView> {
                             .toList(),
                         onChanged: (newValue) =>
                             setState(() => _selectedSpiritualClass = newValue),
-                        decoration: const InputDecoration(
-                            prefixIcon: Icon(Iconsax.teacher),
-                            border: OutlineInputBorder(),
-                            contentPadding:
-                                EdgeInsets.symmetric(horizontal: 10)))),
+                        decoration: InputDecoration(
+                            filled: true,
+                            fillColor: surfaceColor,
+                            prefixIcon: const Icon(Iconsax.teacher,
+                                color: primaryColor),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16)))),
                 const SizedBox(width: 16),
                 Expanded(
                     child: DropdownButtonFormField<int>(
                         value: _selectedYear,
-                        hint: const Text("ዓመት ይምረጡ"),
+                        hint: Text("ዓመት ይምረጡ",
+                            style: GoogleFonts.notoSansEthiopic()),
                         items: _yearOptions
                             .map((int value) => DropdownMenuItem<int>(
-                                value: value, child: Text("$value ዓ.ም.")))
+                                value: value,
+                                child: Text("$value ዓ.ም.",
+                                    style: GoogleFonts.notoSansEthiopic())))
                             .toList(),
                         onChanged: (newValue) =>
                             setState(() => _selectedYear = newValue),
-                        decoration: const InputDecoration(
-                            prefixIcon: Icon(Iconsax.calendar),
-                            border: OutlineInputBorder(),
-                            contentPadding:
-                                EdgeInsets.symmetric(horizontal: 10))))
+                        decoration: InputDecoration(
+                            filled: true,
+                            fillColor: surfaceColor,
+                            prefixIcon: const Icon(Iconsax.calendar,
+                                color: primaryColor),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16))))
               ]),
               const SizedBox(height: 16),
               SizedBox(
@@ -426,24 +440,45 @@ class _GradeEntryViewState extends State<GradeEntryView> {
               scrollDirection: Axis.horizontal,
               child: DataTable(
                   headingRowColor:
-                      MaterialStateProperty.all(primaryColor.withOpacity(0.05)),
-                  columns: const [
+                      WidgetStateProperty.all(primaryColor.withOpacity(0.05)),
+                  dataRowColor: WidgetStateProperty.resolveWith<Color?>(
+                    (Set<WidgetState> states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.08);
+                      }
+                      return null;
+                    },
+                  ),
+                  columns: [
                     DataColumn(
                         label: Text('ደረጃ',
-                            style: TextStyle(fontWeight: FontWeight.bold))),
+                            style: GoogleFonts.notoSansEthiopic(
+                                fontWeight: FontWeight.bold,
+                                color: subtleTextColor))),
                     DataColumn(
                         label: Text('ስም',
-                            style: TextStyle(fontWeight: FontWeight.bold))),
+                            style: GoogleFonts.notoSansEthiopic(
+                                fontWeight: FontWeight.bold,
+                                color: subtleTextColor))),
                     DataColumn(
                         label: Text('አማካይ %',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: GoogleFonts.notoSansEthiopic(
+                                fontWeight: FontWeight.bold,
+                                color: subtleTextColor)),
                         numeric: true),
                     DataColumn(
                         label: Text('ሁኔታ',
-                            style: TextStyle(fontWeight: FontWeight.bold))),
+                            style: GoogleFonts.notoSansEthiopic(
+                                fontWeight: FontWeight.bold,
+                                color: subtleTextColor))),
                     DataColumn(
                         label: Text('ድርጊቶች',
-                            style: TextStyle(fontWeight: FontWeight.bold)))
+                            style: GoogleFonts.notoSansEthiopic(
+                                fontWeight: FontWeight.bold,
+                                color: subtleTextColor)))
                   ],
                   rows: _filteredStudents.map((student) {
                     final double average =
@@ -1098,26 +1133,27 @@ class _EditGradesDialogState extends State<_EditGradesDialog> {
       // Check connectivity before saving
       final syncService = SyncService();
       final isOnline = await syncService.isOnline();
-      
+
       final result = await GradeService.saveStudentScores(
           studentId: widget.student['student_id'],
           year: widget.year,
           scores: updatedScoresPayload);
-      
+
       // Update sync provider to refresh pending count
       if (mounted) {
         final syncProvider = context.read<SyncProvider>();
         await syncProvider.updatePendingCount();
-        
+
         final responseData = result['data'];
         if (responseData != null && responseData is Map<String, dynamic>) {
           navigator.pop(responseData);
         } else {
           navigator.pop(null);
         }
-        
+
         // Show appropriate message
-        if (!isOnline || result['message']?.toString().contains('offline') == true) {
+        if (!isOnline ||
+            result['message']?.toString().contains('offline') == true) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('ውጤቶች ኦፍላይን ተመዝግተዋል። ኢንተርኔት ሲገኝ በራስ-ሰር ይላካሉ።'),
               backgroundColor: Colors.amber.shade700));
@@ -1561,17 +1597,34 @@ class _ManageBatchesTabState extends State<_ManageBatchesTab> {
                   itemBuilder: (context, index) {
                     final batch = batches[index];
                     return Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                                color: Colors.grey.withOpacity(0.2))),
                         margin: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 6),
                         child: ListTile(
-                            leading:
-                                const Icon(Iconsax.folder, color: primaryColor),
+                            contentPadding: const EdgeInsets.all(16),
+                            leading: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Iconsax.folder,
+                                    color: primaryColor)),
                             title: Text(
                                 "${batch['spiritual_class']} - ${batch['academic_year']} ዓ.ም.",
                                 style: GoogleFonts.notoSansEthiopic(
-                                    fontWeight: FontWeight.bold)),
-                            subtitle:
-                                Text("${batch['student_count']} ተማሪዎች ተመዝግበዋል"),
+                                    fontWeight: FontWeight.bold, fontSize: 16)),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                  "${batch['student_count']} ተማሪዎች ተመዝግበዋል",
+                                  style: GoogleFonts.notoSansEthiopic(
+                                      color: subtleTextColor)),
+                            ),
                             trailing: const Icon(Iconsax.arrow_right_3,
                                 color: subtleTextColor),
                             onTap: () => _showStudentsInBatchDialog(batch)));

@@ -1,5 +1,5 @@
 import 'package:amde_haymanot_abalat_guday/admin%20only/post_general_home.dart';
-import 'package:amde_haymanot_abalat_guday/services/app_theme.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/appdrawer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
@@ -9,8 +9,10 @@ import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/public_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
-// --- MODELS AND ENUMS (No Changes Here) ---
+// --- MODELS AND ENUMS ---
 
 enum PostType { event, announcement, news, prayer }
 
@@ -132,6 +134,10 @@ class Post {
   }
 }
 
+// --- CONSTANTS ---
+const Color premiumDark = Color(0xFF0F0F1E);
+const Color premiumGold = Color(0xFFFFD700);
+
 // --- MAIN WIDGET ---
 
 class HomePage extends StatefulWidget {
@@ -143,22 +149,29 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Post> _posts = [];
-  List<Post> _events = [];
+  List<Post> _featuredPosts = [];
   bool _isLoading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
   }
 
   Future<void> _loadData() async {
     if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    // Initial setState is redundant for first load as _isLoading is true,
+    // and if called later (e.g. refresh), we want it.
+    // However, to be safe and avoid "dirty build" if called rapidly:
+    if (!_isLoading) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final result = await PublicFeedService.getPublicPosts();
@@ -167,9 +180,21 @@ class _HomePageState extends State<HomePage> {
           final allPosts =
               (result['data'] as List).map((p) => Post.fromJson(p)).toList();
           setState(() {
-            _events = allPosts.where((p) => p.type == PostType.event).toList()
-              ..sort((a, b) => a.eventDate!.compareTo(b.eventDate!));
-            _posts = allPosts.where((p) => p.type != PostType.event).toList();
+            // Logic: Important posts or Events go to featured, rest to feed
+            _featuredPosts = allPosts
+                .where((p) => p.isImportant || p.type == PostType.event)
+                .toList()
+              ..sort((a, b) => b.date.compareTo(a.date));
+
+            // If no featured posts, take the top 3 latest
+            if (_featuredPosts.isEmpty && allPosts.isNotEmpty) {
+              _featuredPosts = allPosts.take(3).toList();
+            }
+
+            // The rest go to the main feed, excluding ones already in featured to avoid duplicates
+            final featuredIds = _featuredPosts.map((p) => p.id).toSet();
+            _posts =
+                allPosts; // .where((p) => !featuredIds.contains(p.id)).toList();
             _isLoading = false;
           });
         } else {
@@ -203,16 +228,86 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final bool canManagePosts =
         context.watch<UserProvider>().canManagePublicPosts;
+    final userProfile = context.watch<UserProvider>().userProfile;
+    final userName = userProfile != null
+        ? (userProfile['christian_name'] ?? userProfile['full_name'] ?? 'ምዕመን')
+        : 'ምዕመን';
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
-      body: RefreshIndicator(
-        onRefresh: _loadData,
-        child: _buildBody(),
+      backgroundColor: premiumDark,
+      drawer: AppDrawer(
+        selectedIndex: 0,
+        onItemTapped: (index) {
+          // Handle navigation if needed, or if this drawer is just for side menu tools
+          // For now, since this is the global drawer, we might want to navigate
+          // But HomePage usually resets to 0.
+        },
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF1A1A2E), // Slightly lighter dark at top
+              premiumDark,
+              Colors.black,
+            ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: RefreshIndicator(
+          onRefresh: _loadData,
+          color: premiumGold,
+          backgroundColor: premiumDark,
+          child: CustomScrollView(
+            slivers: [
+              _buildSliverAppBar(userName),
+              if (_isLoading)
+                const SliverFillRemaining(
+                  child: Center(
+                      child: CircularProgressIndicator(color: premiumGold)),
+                )
+              else if (_error != null)
+                SliverFillRemaining(child: _buildErrorWidget())
+              else ...[
+                if (_featuredPosts.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                      child: _buildSectionHeader("ልዩ ትኩረት", Iconsax.star1)),
+                  SliverToBoxAdapter(child: _buildFeaturedCarousel()),
+                ],
+                SliverToBoxAdapter(
+                    child: _buildSectionHeader("የቅርብ ጊዜ", Iconsax.activity)),
+                if (_posts.isEmpty)
+                  const SliverFillRemaining(
+                      child: Center(
+                          child: Text("ምንም መረጃ የለም",
+                              style: TextStyle(color: Colors.white60))))
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        return FadeInUp(
+                          duration: const Duration(milliseconds: 500),
+                          child: PostCard(
+                            post: _posts[index],
+                            onInteraction: () => setState(() {}),
+                            onComment: () => _showComments(_posts[index]),
+                          ),
+                        );
+                      },
+                      childCount: _posts.length,
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ]
+            ],
+          ),
+        ),
       ),
       floatingActionButton: canManagePosts
           ? FloatingActionButton(
-              heroTag: 'public_homepage',
+              heroTag: 'home_screen_fab', // Unique tag
               onPressed: () async {
                 final result = await Navigator.of(context).push(
                   MaterialPageRoute(
@@ -223,194 +318,205 @@ class _HomePageState extends State<HomePage> {
                   _loadData();
                 }
               },
-              backgroundColor: AppTheme.primary,
-              foregroundColor: AppTheme.accent,
+              backgroundColor: premiumGold,
+              foregroundColor: premiumDark,
+              enableFeedback: true,
               child: const Icon(Iconsax.edit),
-              tooltip: 'ይፋዊ ልጥፎችን ያስተዳድሩ',
             )
           : null,
     );
   }
 
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppTheme.primary));
-    }
-    if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Iconsax.warning_2, color: Colors.red, size: 50),
-              const SizedBox(height: 16),
-              const Text("ዝርዝሩን መጫን አልተቻለም",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(_error!,
-                  style: TextStyle(color: Colors.grey[700]),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                  icon: const Icon(Iconsax.refresh),
-                  label: const Text("እንደገና ሞክር"),
-                  onPressed: _loadData)
-            ],
-          ),
+  Widget _buildSliverAppBar(String userName) {
+    return SliverAppBar(
+      expandedHeight: 140.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: Colors.transparent, // Transparent to show gradient
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              "እንኳን ደህና መጡ፣",
+              style: GoogleFonts.notoSansEthiopic(
+                fontSize: 12,
+                color: Colors.white70,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+            Text(
+              userName,
+              style: GoogleFonts.notoSansEthiopic(
+                fontSize: 16, // Smaller font for collapsed state ideally
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
-      );
-    }
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          backgroundColor: AppTheme.primary,
-          foregroundColor: AppTheme.textLight,
-          pinned: true,
-          floating: true,
-          expandedHeight: 120,
-          flexibleSpace: FlexibleSpaceBar(
-            title: Text("ሰንበት ትምህርት ቤት ህብረት",
-                style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.bold, fontSize: 16)),
-            background: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                    colors: [AppTheme.primary, AppTheme.primaryLight],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                premiumGold.withOpacity(0.1),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          child: Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 50, right: 16),
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.white10,
+                child: Icon(Iconsax.notification, color: premiumGold),
               ),
             ),
           ),
         ),
-        if (_events.isNotEmpty) ...[
-          _buildSectionHeader("መጪ ዝግጅቶች", Iconsax.calendar_1),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 280,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _events.length,
-                itemBuilder: (context, index) =>
-                    _EventCard(event: _events[index]),
-              ),
-            ),
-          ),
-        ],
-        _buildSectionHeader("አዳዲስ መረጃዎች", Iconsax.activity),
-        if (_posts.isEmpty && _events.isEmpty)
-          const SliverFillRemaining(
-              child: Center(child: Text("እስካሁን ምንም አዲስ መረጃ የለም።")))
-        else
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                return PostCard(
-                  post: _posts[index],
-                  onInteraction: () => setState(() {}),
-                  onComment: () => _showComments(_posts[index]),
-                );
-              },
-              childCount: _posts.length,
-            ),
-          ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturedCarousel() {
+    return CarouselSlider(
+      options: CarouselOptions(
+        height: 220.0,
+        enlargeCenterPage: true,
+        autoPlay: true,
+        autoPlayCurve: Curves.fastOutSlowIn,
+        enableInfiniteScroll: _featuredPosts.length > 1,
+        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+        viewportFraction: 0.85,
+      ),
+      items: _featuredPosts.map((post) {
+        return Builder(
+          builder: (BuildContext context) {
+            return _FeaturedPostCard(post: post);
+          },
+        );
+      }).toList(),
     );
   }
 
   Widget _buildSectionHeader(String title, IconData icon) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-        child: Row(
-          children: [
-            Icon(icon, color: AppTheme.primary),
-            const SizedBox(width: 8),
-            Text(title,
-                style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.onSurface)),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+      child: Row(
+        children: [
+          Icon(icon, color: premiumGold, size: 20),
+          const SizedBox(width: 8),
+          Text(title,
+              style: GoogleFonts.notoSansEthiopic(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Iconsax.warning_2, color: Colors.white54, size: 50),
+          const SizedBox(height: 16),
+          Text(_error ?? "Unknown Error",
+              style: TextStyle(color: Colors.white70)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadData,
+            style: ElevatedButton.styleFrom(
+                backgroundColor: premiumGold, foregroundColor: premiumDark),
+            child: const Text("እንደገና ሞክር"),
+          )
+        ],
       ),
     );
   }
 }
 
-class _EventCard extends StatelessWidget {
-  final Post event;
-  const _EventCard({required this.event});
+class _FeaturedPostCard extends StatelessWidget {
+  final Post post;
+  const _FeaturedPostCard({required this.post});
+
   @override
   Widget build(BuildContext context) {
-    final shadowTextStyle = GoogleFonts.poppins(
-      color: Colors.white,
-      shadows: [
-        Shadow(
-            blurRadius: 4.0,
-            color: Colors.black.withOpacity(0.7),
-            offset: const Offset(1.0, 1.0))
-      ],
-    );
     return Container(
-      width: 220,
-      margin: const EdgeInsets.only(right: 16),
+      width: MediaQuery.of(context).size.width,
+      margin: const EdgeInsets.symmetric(horizontal: 5.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        image: event.imageUrl != null
+        image: post.imageUrl != null
             ? DecorationImage(
-                image: CachedNetworkImageProvider(event.imageUrl!),
-                fit: BoxFit.cover)
+                image: CachedNetworkImageProvider(post.imageUrl!),
+                fit: BoxFit.cover,
+              )
             : null,
-        color: event.imageUrl == null ? AppTheme.primaryLight : null,
+        color: post.imageUrl == null ? const Color(0xFF2A2A3D) : null,
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 10,
+              offset: const Offset(0, 5))
+        ],
       ),
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
-              colors: [
-                Colors.black.withOpacity(0.9),
-                Colors.black.withOpacity(0.2),
-                Colors.black.withOpacity(0.0)
-              ],
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              stops: const [0.0, 0.6, 1.0]),
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.black.withOpacity(0.8),
+            ],
+          ),
         ),
+        padding: const EdgeInsets.all(20),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (event.eventDate != null)
-              Text(
-                DateFormat('E, MMM d \'በ\' h:mm a').format(event.eventDate!),
-                style: shadowTextStyle.copyWith(
-                    color: AppTheme.accent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12),
+            if (post.type == PostType.event)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                    color: premiumGold, borderRadius: BorderRadius.circular(8)),
+                child: Text(
+                  "FEATURED EVENT",
+                  style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: premiumDark),
+                ),
               ),
+            Text(
+              post.title,
+              style: GoogleFonts.notoSansEthiopic(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: 4),
-            Text(event.title,
-                style: shadowTextStyle.copyWith(
-                    fontWeight: FontWeight.bold, fontSize: 16, height: 1.2),
-                maxLines: 2),
-            const SizedBox(height: 8),
-            if (event.location.isNotEmpty)
-              Row(
-                children: [
-                  const Icon(Iconsax.location, color: Colors.white, size: 14),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(event.location,
-                        style: shadowTextStyle.copyWith(fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1),
-                  ),
-                ],
-              ),
+            Text(
+              DateFormat.yMMMd().format(post.date),
+              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+            ),
           ],
         ),
       ),
@@ -429,126 +535,78 @@ class PostCard extends StatelessWidget {
       required this.onComment});
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      elevation: 4,
-      shadowColor: const Color.fromARGB(255, 233, 237, 240).withOpacity(0.1),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PostHeader(post: post),
-          if (post.type == PostType.event) EventInfoRow(post: post),
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: Colors.white10,
+                  backgroundImage: post.authorAvatar != null
+                      ? CachedNetworkImageProvider(post.authorAvatar!)
+                      : null,
+                  child: post.authorAvatar == null
+                      ? Icon(Iconsax.user, color: Colors.white70)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(post.author,
+                          style: GoogleFonts.notoSansEthiopic(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                      Text(DateFormat.yMMMd().format(post.date),
+                          style: GoogleFonts.poppins(
+                              color: Colors.white54, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                if (post.isImportant)
+                  Icon(Iconsax.verify, color: premiumGold, size: 20),
+              ],
+            ),
+          ),
+          // Content
           if (post.imageUrl != null)
             PostImage(imageUrl: post.imageUrl!, postId: post.id),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(post.title,
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.notoSansEthiopic(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: const Color.fromARGB(255, 239, 242, 245))),
+                        color: Colors.white)),
                 const SizedBox(height: 8),
                 Text(post.description,
-                    style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: AppTheme.textSecondary,
-                        height: 1.5),
-                    maxLines: 3,
+                    style: GoogleFonts.notoSansEthiopic(
+                        color: Colors.white70, height: 1.5),
+                    maxLines: 4,
                     overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
+          // Interactions
+          Divider(color: Colors.white10),
           PostFooter(
               post: post, onInteraction: onInteraction, onComment: onComment),
-        ],
-      ),
-    );
-  }
-}
-
-class PostHeader extends StatelessWidget {
-  final Post post;
-  const PostHeader({super.key, required this.post});
-  @override
-  Widget build(BuildContext context) {
-    final bool isEvent = post.type == PostType.event && post.eventDate != null;
-    final DateTime displayDate = isEvent ? post.eventDate! : post.date;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundImage: (post.authorAvatar != null)
-                ? CachedNetworkImageProvider(post.authorAvatar!)
-                : null,
-            child:
-                (post.authorAvatar == null) ? const Icon(Iconsax.shop) : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(post.author,
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        color: const Color.fromARGB(255, 246, 248, 250))),
-                Text(
-                    (isEvent ? 'ዝግጅቱ በ: ' : '') +
-                        DateFormat.yMMMd().format(displayDate),
-                    style: GoogleFonts.poppins(
-                        fontSize: 12, color: AppTheme.textSecondary)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class EventInfoRow extends StatelessWidget {
-  final Post post;
-  const EventInfoRow({super.key, required this.post});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: AppTheme.primary.withOpacity(0.05),
-      child: Column(
-        children: [
-          if (post.eventDate != null)
-            Row(
-              children: [
-                Icon(Iconsax.calendar_1, size: 16, color: AppTheme.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Text(
-                        DateFormat('EEEE, MMMM d, yyyy \'በ\' h:mm a')
-                            .format(post.eventDate!),
-                        style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.onSurface))),
-              ],
-            ),
-          if (post.location.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(Iconsax.location, size: 16, color: AppTheme.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Text(post.location,
-                        style: GoogleFonts.poppins(
-                            color: AppTheme.textSecondary))),
-              ],
-            ),
-          ]
         ],
       ),
     );
@@ -565,20 +623,36 @@ class PostImage extends StatelessWidget {
     // Unique Hero tag for each post image
     final String heroTag = 'postImage-$postId';
 
-    return Hero(
-      tag: heroTag,
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.cover,
-        height: 220,
-        width: double.infinity,
-        placeholder: (context, url) =>
-            Container(height: 220, color: Colors.grey[200]),
-        errorWidget: (context, url, error) => Container(
-            height: 220,
-            color: Colors.grey[200],
-            child: const Icon(Iconsax.gallery_slash,
-                color: AppTheme.textSecondary)),
+    // Image viewer
+    void openImageViewer() {
+      // Simple implementation: push a full screen image viewer
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => Scaffold(
+                backgroundColor: Colors.black,
+                appBar: AppBar(
+                    backgroundColor: Colors.transparent,
+                    iconTheme: const IconThemeData(color: Colors.white)),
+                body: Center(
+                  child: Hero(
+                      tag: heroTag,
+                      child: CachedNetworkImage(imageUrl: imageUrl)),
+                ),
+              )));
+    }
+
+    return GestureDetector(
+      onTap: openImageViewer,
+      child: Hero(
+        tag: heroTag,
+        child: Container(
+          height: 250,
+          width: double.infinity,
+          decoration: BoxDecoration(
+              color: Colors.black12,
+              image: DecorationImage(
+                  image: CachedNetworkImageProvider(imageUrl),
+                  fit: BoxFit.cover)),
+        ),
       ),
     );
   }
@@ -617,30 +691,45 @@ class _PostFooterState extends State<PostFooter> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Row(children: [
-          IconButton(
-              icon: Icon(widget.post.isLiked ? Iconsax.heart5 : Iconsax.heart,
-                  color: widget.post.isLiked
-                      ? AppTheme.danger
-                      : AppTheme.textSecondary),
-              onPressed: _handleLike),
-          if (widget.post.likes > 0)
-            Text(widget.post.likes.toString(),
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        ]),
-        Row(children: [
-          IconButton(
-              icon: const Icon(Iconsax.message_text_1,
-                  color: AppTheme.textSecondary),
-              onPressed: widget.onComment),
-          if (widget.post.commentCount > 0)
-            Text(widget.post.commentCount.toString(),
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        ]),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+        InkWell(
+          onTap: _handleLike,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(children: [
+              Icon(widget.post.isLiked ? Iconsax.heart5 : Iconsax.heart,
+                  color:
+                      widget.post.isLiked ? Colors.redAccent : Colors.white60,
+                  size: 22),
+              if (widget.post.likes > 0) ...[
+                const SizedBox(width: 6),
+                Text(widget.post.likes.toString(),
+                    style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600, color: Colors.white60)),
+              ]
+            ]),
+          ),
+        ),
+        InkWell(
+          onTap: widget.onComment,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(children: [
+              Icon(Iconsax.message_text_1, color: Colors.white60, size: 22),
+              if (widget.post.commentCount > 0) ...[
+                const SizedBox(width: 6),
+                Text(widget.post.commentCount.toString(),
+                    style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600, color: Colors.white60)),
+              ]
+            ]),
+          ),
+        ),
         IconButton(
-            icon: const Icon(Iconsax.share, color: AppTheme.textSecondary),
+            icon: const Icon(Iconsax.share, color: Colors.white60, size: 22),
             onPressed: () {}),
       ]),
     );
@@ -717,9 +806,15 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       maxChildSize: 0.9,
       expand: false,
       builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        decoration: BoxDecoration(
+            color: const Color(0xFF1E1E2E), // Premium Dark
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                  color: premiumGold.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5))
+            ]),
         child: Column(children: [
           Padding(
               padding: const EdgeInsets.all(16),
@@ -728,30 +823,33 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     width: 40,
                     height: 5,
                     decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: Colors.white24,
                         borderRadius: BorderRadius.circular(10))),
                 const SizedBox(height: 16),
                 Text("አስተያየቶች (${_comments.length})",
                     style: GoogleFonts.poppins(
-                        fontSize: 20, fontWeight: FontWeight.bold)),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
               ])),
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(
+                    child: CircularProgressIndicator(color: premiumGold))
                 : _comments.isEmpty
                     ? const Center(
-                        child: Text("እስካሁን ምንም አስተያየት የለም። የመጀመሪያው ይሁኑ!"))
+                        child: Text("እስካሁን ምንም አስተያየት የለም። የመጀመሪያው ይሁኑ!",
+                            style: TextStyle(color: Colors.white60)))
                     : ListView.builder(
                         controller: controller,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: _comments.length,
                         itemBuilder: (context, index) {
                           final comment = _comments[index];
-                          return Card(
+                          return Container(
                             margin: const EdgeInsets.only(bottom: 12),
-                            elevation: 0,
-                            color: Colors.white,
-                            shape: RoundedRectangleBorder(
+                            decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(16)),
                             child: Padding(
                               padding: const EdgeInsets.all(12.0),
@@ -759,91 +857,91 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: Colors.white10,
                                     backgroundImage:
                                         (comment.authorAvatar != null)
                                             ? CachedNetworkImageProvider(
                                                 comment.authorAvatar!)
                                             : null,
                                     child: (comment.authorAvatar == null)
-                                        ? Text(comment.author.isNotEmpty
-                                            ? comment.author[0]
-                                            : 'U')
+                                        ? Text(
+                                            comment.author.isNotEmpty
+                                                ? comment.author[0]
+                                                : 'U',
+                                            style: const TextStyle(
+                                                color: Colors.white))
                                         : null,
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
+                                      child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(comment.author,
-                                                style: const TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold)),
+                                                style: GoogleFonts.poppins(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white)),
                                             Text(
-                                                DateFormat.jm()
+                                                DateFormat.MMMd()
                                                     .format(comment.timestamp),
-                                                style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: AppTheme
-                                                        .textSecondary)),
+                                                style: GoogleFonts.poppins(
+                                                    fontSize: 10,
+                                                    color: Colors.white54)),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
                                         Text(comment.text,
-                                            style: const TextStyle(
-                                                color: AppTheme.onSurface)),
-                                      ],
-                                    ),
-                                  ),
+                                            style: GoogleFonts.poppins(
+                                                color: Colors.white70)),
+                                      ]))
                                 ],
                               ),
                             ),
                           );
-                        },
-                      ),
+                        }),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
-                .copyWith(bottom: MediaQuery.of(context).viewInsets.bottom + 8),
-            decoration: BoxDecoration(color: AppTheme.surface, boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5))
-            ]),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
             child: Row(children: [
               Expanded(
                 child: TextField(
                   controller: _commentController,
-                  style: const TextStyle(color: AppTheme.onSurface),
+                  style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    hintText: "አስተያየትዎን ያስገቡ...",
-                    fillColor: AppTheme.background,
-                    filled: true,
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none),
-                  ),
+                      hintText: "አስተያየት ይፃፉ...",
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.1),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12)),
                 ),
               ),
-              const SizedBox(width: 8),
-              _isPosting
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2)))
-                  : IconButton(
-                      icon: const Icon(Iconsax.send_1, color: AppTheme.primary),
-                      onPressed: _addComment),
+              const SizedBox(width: 12),
+              CircleAvatar(
+                backgroundColor: premiumGold,
+                child: IconButton(
+                    icon: _isPosting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.black))
+                        : const Icon(Iconsax.send_1,
+                            color: Colors.black, size: 20),
+                    onPressed: _addComment),
+              )
             ]),
-          ),
+          )
         ]),
       ),
     );

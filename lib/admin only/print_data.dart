@@ -57,11 +57,131 @@ class UserPdfGenerator {
 
   Future<void> generateAndShowPdf() async {
     final doc = pw.Document();
+
+    // Debug: Print what's in userData
+    debugPrint('=== PDF Generation Debug ===');
+    debugPrint('school_name: ${userData['school_name']}');
+    debugPrint('school_logo_url: ${userData['school_logo_url']}');
+    debugPrint('tenant_id: ${userData['tenant_id']}');
+    debugPrint('All userData keys: ${userData.keys.toList()}');
+    debugPrint('===========================');
+
     // Use NotoSansEthiopic fonts
     final notoTtf = await PdfGoogleFonts.notoSansEthiopicRegular();
     final notoTtfBold = await PdfGoogleFonts.notoSansEthiopicBold();
-    final logoImage = pw.MemoryImage(
-        (await rootBundle.load('assets/logo.png')).buffer.asUint8List());
+
+    // Robust Logo Loading Logic for Multi-Platform/Web
+    Uint8List? logoBytes;
+    List<String> possiblePaths = [
+      'assets/images/logo.png', // Standard mobile
+      'images/logo.png', // Web attempt 1
+      'assets/logo.png', // Legacy path
+    ];
+
+    for (final path in possiblePaths) {
+      try {
+        await Future.delayed(Duration.zero);
+        final ByteData data = await rootBundle.load(path);
+        logoBytes = data.buffer.asUint8List();
+        debugPrint('Successfully loaded logo from: $path');
+        break;
+      } catch (e) {
+        debugPrint('Failed to load logo from $path');
+      }
+    }
+
+    if (logoBytes == null) {
+      // Transparent 1x1 pixel fallback
+      logoBytes = Uint8List.fromList([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x0D,
+        0x0A,
+        0x1A,
+        0x0A,
+        0x00,
+        0x00,
+        0x00,
+        0x0D,
+        0x49,
+        0x48,
+        0x44,
+        0x52,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x08,
+        0x06,
+        0x00,
+        0x00,
+        0x00,
+        0x1F,
+        0x15,
+        0xC4,
+        0x89,
+        0x00,
+        0x00,
+        0x00,
+        0x0A,
+        0x49,
+        0x44,
+        0x41,
+        0x54,
+        0x78,
+        0x9C,
+        0x63,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x05,
+        0x00,
+        0x01,
+        0x0D,
+        0x0A,
+        0x2D,
+        0xB4,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x49,
+        0x45,
+        0x4E,
+        0x44,
+        0xAE,
+        0x42,
+        0x60,
+        0x82
+      ]);
+    }
+
+    final logoImage = pw.MemoryImage(logoBytes);
+
+    // Load Sunday School Logo (from user's school)
+    pw.MemoryImage? schoolLogoImage;
+    if (userData['school_logo_url'] != null &&
+        userData['school_logo_url'].toString().isNotEmpty) {
+      try {
+        final schoolLogoUrl = userData['school_logo_url'].toString();
+        // If it's a relative path, prepend the base URL
+        final fullSchoolLogoUrl = schoolLogoUrl.startsWith('http')
+            ? schoolLogoUrl
+            : '${ApiService.baseUrl.replaceAll('/api', '')}/$schoolLogoUrl';
+        schoolLogoImage =
+            (await networkImage(fullSchoolLogoUrl)) as pw.MemoryImage?;
+        debugPrint('Successfully loaded school logo from: $fullSchoolLogoUrl');
+      } catch (e) {
+        debugPrint('Failed to load school logo: $e');
+      }
+    }
 
     pw.MemoryImage? userImage;
     if (userData['profile_image_url'] != null &&
@@ -83,17 +203,58 @@ class UserPdfGenerator {
           final fullName = userData['full_name']?.toString() ?? 'N/A';
           final email = userData['email']?.toString() ?? 'N/A';
           final roles = userData['role']?.toString() ?? 'user';
+          final schoolName = userData['school_name']?.toString() ?? '';
 
           return [
+            // Header with 3 sections: School Logo | Title | App Logo
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
               children: [
-                pw.Text(AmharicStringsPdf.documentTitle, // Translated
-                    style: pw.TextStyle(
-                        font: notoTtfBold,
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold)),
-                pw.Image(logoImage, width: 60, height: 60),
+                // Left: School Logo (only if available)
+                if (schoolLogoImage != null)
+                  pw.Container(
+                    width: 60,
+                    height: 60,
+                    child: pw.Image(schoolLogoImage, fit: pw.BoxFit.contain),
+                  )
+                else
+                  pw.SizedBox(width: 60, height: 60), // Empty space if no logo
+
+                // Center: Title and School Name
+                pw.Expanded(
+                  child: pw.Column(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    children: [
+                      pw.Text(
+                        schoolName,
+                        style: pw.TextStyle(
+                          font: notoTtfBold,
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        AmharicStringsPdf.documentTitle,
+                        style: pw.TextStyle(
+                          font: notoTtf,
+                          fontSize: 14,
+                          color: PdfColors.grey700,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Right: App Logo (Akilesiya)
+                pw.Container(
+                  width: 60,
+                  height: 60,
+                  child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                ),
               ],
             ),
             pw.Divider(thickness: 2),

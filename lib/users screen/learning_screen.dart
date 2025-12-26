@@ -1,17 +1,23 @@
 import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/role%20based/learning_admin.dart';
-import 'package:amde_haymanot_abalat_guday/services/app_theme.dart';
+
 import 'package:amde_haymanot_abalat_guday/services/learning_service.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/article_viewer.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/video_player.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
+
 import 'package:provider/provider.dart';
+
+import 'package:animate_do/animate_do.dart';
+
+// --- Premium Theme Constants ---
+const Color premiumDark = Color(0xFF0F0F1E);
+const Color premiumGold = Color(0xFFFFD700);
 
 class Comment {
   final String id;
@@ -29,8 +35,8 @@ class Comment {
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
       id: json['id'].toString(),
-      author: json['author'] ?? 'ስም አልባ',
-      avatarInitials: json['avatarInitials'] ?? 'ስ',
+      author: json['author'] ?? '', // Empty default, handled in UI
+      avatarInitials: json['avatarInitials'] ?? '?',
       text: json['text'] ?? '',
       timestamp: LearningContent._parseDate(json['timestamp']),
     );
@@ -91,8 +97,8 @@ class LearningContent {
   factory LearningContent.fromJson(Map<String, dynamic> json) {
     return LearningContent(
       id: json['id']?.toString() ?? UniqueKey().toString(),
-      title: json['title'] ?? 'ርዕስ የለም',
-      author: json['author'] ?? 'ያልታወቀ ደራሲ',
+      title: json['title'] ?? '',
+      author: json['author'] ?? '',
       authorAvatar: json['authorAvatar'],
       publishDate: _parseDate(json['publishDate']),
       description: json['description'] ?? '',
@@ -100,8 +106,8 @@ class LearningContent {
       imageUrl: json['imageUrl'] ?? '',
       content: json['content'] ?? '',
       duration: json['duration'] ?? 'N/A',
-      category: json['category'] ?? 'አጠቃላይ',
-      difficulty: json['difficulty'] ?? 'ጀማሪ',
+      category: json['category'] ?? '',
+      difficulty: json['difficulty'] ?? 'Beginner',
       likes: (json['likes'] as num?)?.toInt() ?? 0,
       isLiked: json['isLiked'] == 1 || json['isLiked'] == true,
       isBookmarked: json['isBookmarked'] == 1 || json['isBookmarked'] == true,
@@ -121,6 +127,7 @@ class _LearningScreenState extends State<LearningScreen> {
   List<LearningContent> _contentList = [];
   bool _isLoading = true;
   String? _error;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -136,11 +143,18 @@ class _LearningScreenState extends State<LearningScreen> {
     final result = await LearningService.getLearningContent();
     if (mounted) {
       if (result['success']) {
-        final List<LearningContent> fetchedContent = (result['data'] as List)
-            .map((item) => LearningContent.fromJson(item))
-            .toList();
+        // Deduplicate items by ID
+        final Map<String, LearningContent> uniqueContentMap = {};
+        for (var item in (result['data'] as List)) {
+          final content = LearningContent.fromJson(item);
+          // If duplicate ID exists, keep the first one
+          if (!uniqueContentMap.containsKey(content.id)) {
+            uniqueContentMap[content.id] = content;
+          }
+        }
+
         setState(() {
-          _contentList = fetchedContent;
+          _contentList = uniqueContentMap.values.toList();
           _isLoading = false;
         });
       } else {
@@ -166,53 +180,89 @@ class _LearningScreenState extends State<LearningScreen> {
             userProvider.roles.contains('learning_admin');
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: _fetchLearningContent,
-        color: AppTheme.primary,
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              floating: true,
-              expandedHeight: 120,
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(l10n.learningCenter,
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                        colors: [AppTheme.primary, AppTheme.primaryLight],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight),
+      backgroundColor: premiumDark,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).primaryColor.withOpacity(0.8),
+                premiumDark,
+                Colors.black,
+              ],
+              stops: const [
+                0.0,
+                0.4,
+                1.0
+              ]),
+        ),
+        child: RefreshIndicator(
+          onRefresh: _fetchLearningContent,
+          color: premiumGold,
+          backgroundColor: premiumDark,
+          child: CustomScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                floating: true,
+                backgroundColor: Colors.transparent,
+                expandedHeight: 120,
+                leading: IconButton(
+                  icon: const Icon(Iconsax.menu_1, color: Colors.white),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                ),
+                flexibleSpace: FlexibleSpaceBar(
+                  titlePadding: const EdgeInsets.only(left: 60, bottom: 16),
+                  title: Text(l10n.learningCenter,
+                      style: GoogleFonts.notoSansEthiopic(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 18)),
+                  background: Container(
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                          Colors.black.withOpacity(0.6),
+                          Colors.transparent
+                        ])),
                   ),
                 ),
-              ),
-              actions: [
-                if (canManageContent)
-                  IconButton(
-                    icon: const Icon(Iconsax.edit),
-                    tooltip: l10n.learningManageContent,
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => LearningAdminHubScreen(
-                          onDataChanged: _onAdminAction,
+                actions: [
+                  if (canManageContent)
+                    IconButton(
+                      icon: const Icon(Iconsax.edit, color: Colors.white),
+                      tooltip: l10n.learningManageContent,
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LearningAdminHubScreen(
+                            onDataChanged: _onAdminAction,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Iconsax.search_normal),
-                    tooltip: l10n.learningSearch),
-                IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Iconsax.filter),
-                    tooltip: l10n.learningFilter),
-              ],
-            ),
-            _buildBody(),
-          ],
+                  IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Iconsax.search_normal,
+                          color: Colors.white),
+                      tooltip: l10n.learningSearch),
+                  IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Iconsax.filter, color: Colors.white),
+                      tooltip: l10n.learningFilter),
+                ],
+              ),
+              _buildBody(),
+              const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+            ],
+          ),
         ),
       ),
     );
@@ -221,9 +271,8 @@ class _LearningScreenState extends State<LearningScreen> {
   Widget _buildBody() {
     final l10n = AppLocalizations.of(context)!;
     if (_isLoading) {
-      return const SliverFillRemaining(
-        child:
-            Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+      return SliverFillRemaining(
+        child: Center(child: CircularProgressIndicator(color: premiumGold)),
       );
     }
     if (_error != null) {
@@ -231,10 +280,18 @@ class _LearningScreenState extends State<LearningScreen> {
         child: Center(
             child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Text(
-            _error!,
-            textAlign: TextAlign.center,
-            style: AppTheme.bodyText.copyWith(color: AppTheme.danger),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Iconsax.warning_2, color: Colors.redAccent, size: 40),
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.notoSansEthiopic(
+                    color: Colors.white, fontSize: 16),
+              ),
+            ],
           ),
         )),
       );
@@ -242,22 +299,33 @@ class _LearningScreenState extends State<LearningScreen> {
     if (_contentList.isEmpty) {
       return SliverFillRemaining(
         child: Center(
-          child: Text(
-            l10n.learningNoContent,
-            style: AppTheme.bodyText,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Iconsax.document_text, color: Colors.white24, size: 60),
+              const SizedBox(height: 16),
+              Text(
+                l10n.learningNoContent,
+                style: GoogleFonts.notoSansEthiopic(
+                    color: Colors.white60, fontSize: 16),
+              ),
+            ],
           ),
         ),
       );
     }
     return SliverPadding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             final content = _contentList[index];
-            return _LearningContentCard(
-              key: Key('learning_card_${content.id}'),
-              content: content,
+            return FadeInUp(
+              delay: Duration(milliseconds: 100 * index),
+              child: _LearningContentCard(
+                key: Key('learning_card_${content.id}'),
+                content: content,
+              ),
             );
           },
           childCount: _contentList.length,
@@ -292,7 +360,7 @@ class _LearningContentCardState extends State<_LearningContentCard> {
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(l10n.learningLikeUpdateFailed),
-        backgroundColor: AppTheme.danger,
+        backgroundColor: Colors.redAccent,
       ));
     }
   }
@@ -305,9 +373,8 @@ class _LearningContentCardState extends State<_LearningContentCard> {
       content: Text(widget.content.isBookmarked
           ? l10n.learningBookmarkAdded
           : l10n.learningBookmarkRemoved),
-      backgroundColor: widget.content.isBookmarked
-          ? AppTheme.success
-          : AppTheme.textSecondary,
+      backgroundColor:
+          widget.content.isBookmarked ? premiumGold : Colors.grey[800],
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 1),
     ));
@@ -316,7 +383,7 @@ class _LearningContentCardState extends State<_LearningContentCard> {
       setState(() => widget.content.isBookmarked = originalBookmarkState);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(l10n.learningBookmarkUpdateFailed),
-        backgroundColor: AppTheme.danger,
+        backgroundColor: Colors.redAccent,
       ));
     }
   }
@@ -358,63 +425,131 @@ class _LearningContentCardState extends State<_LearningContentCard> {
     switch (d.toLowerCase()) {
       case 'beginner':
       case 'ጀማሪ':
-        return AppTheme.success;
+        return Colors.greenAccent;
       case 'intermediate':
       case 'መካከለኛ':
-        return AppTheme.warning;
+        return Colors.orangeAccent;
       case 'advanced':
       case 'ከፍተኛ':
-        return AppTheme.danger;
+        return Colors.redAccent;
       default:
-        return AppTheme.textSecondary;
+        return Colors.grey;
+    }
+  }
+
+  String _getLocalizedDifficulty(BuildContext context, String difficulty) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
+      case 'ጀማሪ':
+        return l10n.learningDifficultyBeginner;
+      case 'intermediate':
+      case 'መካከለኛ':
+        return l10n.learningDifficultyIntermediate;
+      case 'advanced':
+      case 'ከፍተኛ':
+        return l10n.learningDifficultyAdvanced;
+      default:
+        return difficulty;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 24),
-      elevation: 6,
-      shadowColor: AppTheme.primary.withOpacity(0.15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      clipBehavior: Clip.none,
+      decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 5))
+          ]),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildImageHeader(),
-          _buildAuthorInfoBar(),
+          Transform.translate(
+              offset: const Offset(0, -25), child: _buildAuthorInfoBar()),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Chip(
-                        label: Text(widget.content.category.toUpperCase()),
-                        labelStyle: AppTheme.chipText,
-                        backgroundColor: AppTheme.primary.withOpacity(0.1)),
-                    Chip(
-                        label: Text(widget.content.difficulty),
-                        labelStyle: AppTheme.chipText.copyWith(
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.5))),
+                      child: Text(
+                          widget.content.category.isEmpty
+                              ? AppLocalizations.of(context)!
+                                  .learningCategoryGeneral
+                                  .toUpperCase()
+                              : widget.content.category.toUpperCase(),
+                          style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                    Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
                             color:
-                                _getDifficultyColor(widget.content.difficulty)),
-                        backgroundColor:
-                            _getDifficultyColor(widget.content.difficulty)
-                                .withOpacity(0.1)),
+                                _getDifficultyColor(widget.content.difficulty)
+                                    .withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color:
+                                    _getDifficultyColor(widget.content.difficulty)
+                                        .withOpacity(0.3))),
+                        child: Text(
+                            _getLocalizedDifficulty(
+                                context, widget.content.difficulty),
+                            style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color:
+                                    _getDifficultyColor(widget.content.difficulty),
+                                fontWeight: FontWeight.bold))),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(widget.content.title, style: AppTheme.headline2),
-                const SizedBox(height: 12),
+                Text(
+                    widget.content.title.isEmpty
+                        ? AppLocalizations.of(context)!.learningNoTitle
+                        : widget.content.title,
+                    style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    )),
+                const SizedBox(height: 8),
                 Text(widget.content.description,
-                    style: AppTheme.bodyText,
+                    style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 14,
+                      color: Colors.white70,
+                      height: 1.5,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
+          Divider(color: Colors.white.withOpacity(0.1), height: 1),
           _buildActionBar(),
         ],
       ),
@@ -423,43 +558,56 @@ class _LearningContentCardState extends State<_LearningContentCard> {
 
   Widget _buildActionBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(children: [
-            IconButton(
-                icon: Icon(
-                    widget.content.isLiked ? Iconsax.heart5 : Iconsax.heart,
-                    color: widget.content.isLiked
-                        ? AppTheme.danger
-                        : AppTheme.textSecondary),
-                onPressed: _handleLike),
-            if (widget.content.likes > 0)
-              Text(widget.content.likes.toString(),
-                  style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary)),
-            const SizedBox(width: 12),
-            IconButton(
-                icon:
-                    const Icon(Iconsax.message, color: AppTheme.textSecondary),
-                onPressed: _showComments),
-            if (widget.content.commentCount > 0)
-              Text(widget.content.commentCount.toString(),
-                  style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary)),
+            InkWell(
+              onTap: _handleLike,
+              child: Row(
+                children: [
+                  Icon(widget.content.isLiked ? Iconsax.heart5 : Iconsax.heart,
+                      color: widget.content.isLiked
+                          ? Colors.redAccent
+                          : Colors.white60,
+                      size: 22),
+                  if (widget.content.likes > 0) ...[
+                    const SizedBox(width: 8),
+                    Text(widget.content.likes.toString(),
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white60)),
+                  ]
+                ],
+              ),
+            ),
+            const SizedBox(width: 24),
+            InkWell(
+              onTap: _showComments,
+              child: Row(
+                children: [
+                  Icon(Iconsax.message, color: Colors.white60, size: 22),
+                  if (widget.content.commentCount > 0) ...[
+                    const SizedBox(width: 8),
+                    Text(widget.content.commentCount.toString(),
+                        style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white60)),
+                  ]
+                ],
+              ),
+            )
           ]),
-          IconButton(
-            icon: Icon(
+          InkWell(
+            onTap: _handleBookmark,
+            child: Icon(
                 widget.content.isBookmarked
                     ? Iconsax.bookmark5
                     : Iconsax.bookmark,
-                color: widget.content.isBookmarked
-                    ? AppTheme.primary
-                    : AppTheme.textSecondary),
-            onPressed: _handleBookmark,
+                color:
+                    widget.content.isBookmarked ? premiumGold : Colors.white60,
+                size: 22),
           ),
         ],
       ),
@@ -469,27 +617,32 @@ class _LearningContentCardState extends State<_LearningContentCard> {
   Widget _buildAuthorInfoBar() {
     final ethiopianDate =
         EthiopianDate.fromGregorian(widget.content.publishDate);
-    return Transform.translate(
-      offset: const Offset(0, -20),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 40),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primary.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            )
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: AppTheme.background,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E2E), // Darker card background
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: premiumGold.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: premiumGold, width: 1.5),
+            ),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.grey[800],
               backgroundImage: widget.content.authorAvatar != null &&
                       widget.content.authorAvatar!.isNotEmpty
                   ? CachedNetworkImageProvider(widget.content.authorAvatar!)
@@ -499,34 +652,38 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                   ? Text(
                       widget.content.author.isNotEmpty
                           ? widget.content.author[0]
-                          : 'ደ',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                          : '?',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.white),
                     )
                   : null,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.content.author,
-                    style: GoogleFonts.poppins(
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.content.author.isEmpty
+                      ? AppLocalizations.of(context)!.learningUnknownAuthor
+                      : widget.content.author,
+                  style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    ethiopianDate.toString(),
-                    style: AppTheme.bodyText.copyWith(fontSize: 12),
-                  ),
-                ],
-              ),
+                      color: Colors.white,
+                      fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  ethiopianDate.toString(),
+                  style:
+                      GoogleFonts.poppins(color: Colors.white54, fontSize: 11),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -535,70 +692,49 @@ class _LearningContentCardState extends State<_LearningContentCard> {
     return GestureDetector(
       onTap: _handleContentTap,
       child: Hero(
-        tag: 'learning_image_${widget.content.id}',
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+        tag: 'content_image_${widget.content.id}',
+        child: Container(
+          height: 180,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.black26,
+            image: widget.content.imageUrl.isNotEmpty
+                ? DecorationImage(
+                    image: CachedNetworkImageProvider(widget.content.imageUrl),
+                    fit: BoxFit.cover,
+                  )
+                : null,
           ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              CachedNetworkImage(
-                imageUrl: widget.content.imageUrl,
-                fit: BoxFit.cover,
-                height: 180,
-                width: double.infinity,
-                placeholder: (context, url) =>
-                    Container(height: 180, color: Colors.grey[200]),
-                errorWidget: (context, url, error) => Container(
-                    height: 180,
-                    color: Colors.grey[200],
-                    child: const Icon(Iconsax.gallery_slash,
-                        color: AppTheme.textSecondary)),
-              ),
-              Container(
-                  height: 180,
+          child: widget.content.imageUrl.isEmpty
+              ? Center(
+                  child: Icon(
+                    widget.content.type == 'video'
+                        ? Iconsax.video_play
+                        : Iconsax.document_text,
+                    size: 48,
+                    color: Colors.white24,
+                  ),
+                )
+              : Container(
                   decoration: BoxDecoration(
                       gradient: LinearGradient(colors: [
-                    Colors.black.withOpacity(0.5),
+                    Colors.black.withOpacity(0.6),
                     Colors.transparent
-                  ], begin: Alignment.bottomCenter, end: Alignment.center))),
-              if (widget.content.type == 'video')
-                Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle),
-                    child: const Icon(Iconsax.play,
-                        color: Colors.white, size: 24)),
-              Positioned(
-                bottom: 12,
-                left: 12,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(20)),
-                  child: Row(children: [
-                    Icon(
-                        widget.content.type == 'video'
-                            ? Iconsax.video
-                            : Iconsax.document_text,
-                        color: Colors.white,
-                        size: 14),
-                    const SizedBox(width: 6),
-                    Text(widget.content.duration,
-                        style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500)),
-                  ]),
+                  ], begin: Alignment.bottomCenter, end: Alignment.topCenter)),
+                  child: Center(
+                    child: widget.content.type == 'video'
+                        ? Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white54)),
+                            child: const Icon(Iconsax.play,
+                                color: Colors.white, size: 30),
+                          )
+                        : null,
+                  ),
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -608,6 +744,7 @@ class _LearningContentCardState extends State<_LearningContentCard> {
 class _CommentsSheet extends StatefulWidget {
   final LearningContent content;
   final Function(int) onCommentAdded;
+
   const _CommentsSheet({required this.content, required this.onCommentAdded});
 
   @override
@@ -615,53 +752,16 @@ class _CommentsSheet extends StatefulWidget {
 }
 
 class _CommentsSheetState extends State<_CommentsSheet> {
-  final _commentController = TextEditingController();
+  final TextEditingController _commentController = TextEditingController();
   List<Comment> _comments = [];
   bool _isLoading = true;
-  bool _isPosting = false;
+  bool _isSending = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _fetchComments();
-  }
-
-  Future<void> _fetchComments() async {
-    setState(() => _isLoading = true);
-    final result = await LearningService.getComments(widget.content.id);
-    if (mounted && result['success']) {
-      setState(() {
-        _comments =
-            (result['data'] as List).map((c) => Comment.fromJson(c)).toList();
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _addComment() async {
-    if (_commentController.text.trim().isEmpty || _isPosting) return;
-    setState(() => _isPosting = true);
-    final result = await LearningService.addComment(
-        widget.content.id, _commentController.text.trim());
-    if (mounted) {
-      if (result['success']) {
-        final newComment = Comment.fromJson(result['data']);
-        setState(() {
-          _comments.insert(0, newComment);
-          _commentController.clear();
-        });
-        widget.onCommentAdded(_comments.length);
-      } else {
-        final l10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(result['message'] ?? l10n.learningCommentPostFailed),
-          backgroundColor: AppTheme.danger,
-        ));
-      }
-      setState(() => _isPosting = false);
-    }
   }
 
   @override
@@ -670,137 +770,261 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     super.dispose();
   }
 
+  Future<void> _fetchComments() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await LearningService.getComments(widget.content.id);
+
+    if (mounted) {
+      if (result['success']) {
+        final List<dynamic> data = result['data'] as List<dynamic>? ?? [];
+        setState(() {
+          _comments = data.map((e) => Comment.fromJson(e)).toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = result['message'] ?? 'Failed to load comments';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submitComment() async {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _isSending = true;
+    });
+
+    final result = await LearningService.addComment(widget.content.id, text);
+
+    if (mounted) {
+      setState(() {
+        _isSending = false;
+      });
+
+      if (result['success']) {
+        _commentController.clear();
+        _fetchComments(); // Refresh list
+        widget.onCommentAdded(_comments.length + 1);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(result['message'] ?? 'Failed to post comment'),
+          backgroundColor: Colors.redAccent,
+        ));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-            color: AppTheme.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-        child: Column(children: [
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: BoxDecoration(
+          color: premiumDark,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(
+              top: BorderSide(color: premiumGold.withOpacity(0.3), width: 1))),
+      child: Column(
+        children: [
+          // Handle
+          Center(
+            child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(10))),
+          ),
+          // Header
           Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(children: [
-                Container(
-                    width: 40,
-                    height: 5,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Text("Comments",
+                    style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(width: 8),
+                if (!_isLoading)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2.5))),
-                const SizedBox(height: 12),
-                Text(l10n.commonComments, style: AppTheme.headline2),
-              ])),
+                        color: premiumGold,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Text(
+                      "${_comments.length}",
+                      style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: premiumDark),
+                    ),
+                  ),
+                const Spacer(),
+                IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.white70))
+              ],
+            ),
+          ),
+          const Divider(color: Colors.white10),
+          // List
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primary))
-                : _comments.isEmpty
+                    child: CircularProgressIndicator(color: premiumGold))
+                : _error != null
                     ? Center(
-                        child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Text(l10n.learningNoComments,
-                            style: AppTheme.bodyText,
-                            textAlign: TextAlign.center),
-                      ))
-                    : ListView.builder(
-                        controller: controller,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _comments.length,
-                        itemBuilder: (context, index) {
-                          final comment = _comments[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Text(_error!,
+                            style: const TextStyle(color: Colors.redAccent)))
+                    : _comments.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor:
-                                      AppTheme.primary.withOpacity(0.1),
-                                  child: Text(comment.avatarInitials,
-                                      style: GoogleFonts.poppins(
-                                          color: AppTheme.primary,
-                                          fontWeight: FontWeight.bold)),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(comment.author,
-                                              style: GoogleFonts.poppins(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: AppTheme.textPrimary)),
-                                          const Spacer(),
-                                          Text(
-                                              DateFormat('MMM d, h:mm a')
-                                                  .format(comment.timestamp),
-                                              style: AppTheme.bodyText.copyWith(
-                                                  fontSize: 12,
-                                                  color:
-                                                      AppTheme.textSecondary)),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(comment.text,
-                                          style: const TextStyle(
-                                              color: AppTheme.onSurface)),
-                                    ],
-                                  ),
-                                ),
+                                const Icon(Iconsax.message,
+                                    size: 48, color: Colors.white24),
+                                const SizedBox(height: 16),
+                                Text("No comments yet",
+                                    style: GoogleFonts.notoSansEthiopic(
+                                        color: Colors.white54)),
                               ],
                             ),
-                          );
-                        },
-                      ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _comments.length,
+                            itemBuilder: (context, index) {
+                              final comment = _comments[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: Colors.white10,
+                                      child: Text(
+                                        comment.avatarInitials.isNotEmpty
+                                            ? comment.avatarInitials
+                                            : '?',
+                                        style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.bold,
+                                            color: premiumGold),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                            color:
+                                                Colors.white.withOpacity(0.05),
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                              topRight: Radius.circular(16),
+                                              bottomLeft: Radius.circular(16),
+                                              bottomRight: Radius.circular(16),
+                                            )),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  comment.author.isNotEmpty
+                                                      ? comment.author
+                                                      : l10n
+                                                          .learningUnknownAuthor,
+                                                  style: GoogleFonts.poppins(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                      fontSize: 13),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              comment.text,
+                                              style:
+                                                  GoogleFonts.notoSansEthiopic(
+                                                      color: Colors.white70,
+                                                      fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
           ),
-          _buildCommentInputField(),
-        ]),
-      ),
-    );
-  }
-
-  Widget _buildCommentInputField() {
-    final l10n = AppLocalizations.of(context)!;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
-          .copyWith(bottom: MediaQuery.of(context).viewInsets.bottom + 8),
-      decoration: BoxDecoration(color: AppTheme.surface, boxShadow: [
-        BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5))
-      ]),
-      child: Row(children: [
-        Expanded(
-          child: TextField(
-            controller: _commentController,
-            style: AppTheme.bodyText.copyWith(color: AppTheme.textPrimary),
-            decoration: InputDecoration(
-              hintText: l10n.learningAddComment,
+          // Input
+          Container(
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+            decoration: const BoxDecoration(
+                color: premiumDark,
+                border: Border(top: BorderSide(color: Colors.white10))),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _commentController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: "Write a comment...",
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.05),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _isSending ? null : _submitComment,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: _isSending ? Colors.white10 : premiumGold,
+                        shape: BoxShape.circle),
+                    child: _isSending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Iconsax.send_1,
+                            color: premiumDark, size: 20),
+                  ),
+                )
+              ],
             ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        _isPosting
-            ? const Padding(
-                padding: EdgeInsets.all(12.0),
-                child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2)))
-            : IconButton(
-                icon: const Icon(Iconsax.send_1, color: AppTheme.primary),
-                onPressed: _addComment,
-              ),
-      ]),
+          )
+        ],
+      ),
     );
   }
 }

@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
+
 import 'dart:developer';
 
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
@@ -13,10 +13,13 @@ import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:amde_haymanot_abalat_guday/admin%20only/post_management.dart';
 
 // --- Re-usable UI Constants ---
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
-const Color onSurfaceColor = Color(0xFF212529);
+// Note: We use local constants for the premium theme to ensure consistency.
+const Color premiumDark = Color(0xFF0F0F1E);
+const Color premiumGold = Color(0xFFFFD700);
 
 // ===============================================================
 // MAIN CLASS: EthiopianDate (የኢትዮጵያ ቀን)
@@ -215,7 +218,9 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
       backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(24)),
+            color: premiumDark,
+            border: Border.all(color: premiumGold.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(24)),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -225,29 +230,29 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
                   style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: primaryColor)),
+                      color: premiumGold)),
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
+                    color: Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(16)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(
                         icon:
-                            const Icon(Icons.chevron_left, color: primaryColor),
+                            const Icon(Icons.chevron_left, color: Colors.white),
                         onPressed: () => _changeYear(-1)),
                     Text(
                         '$_selectedYear ${AppLocalizations.of(context)!.dateEthiopianCalendar}',
                         style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: primaryColor)),
+                            color: Colors.white)),
                     IconButton(
                         icon: const Icon(Icons.chevron_right,
-                            color: primaryColor),
+                            color: Colors.white),
                         onPressed: () => _changeYear(1)),
                   ],
                 ),
@@ -257,12 +262,14 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: Colors.white24),
                     borderRadius: BorderRadius.circular(12)),
                 child: DropdownButton<int>(
                   value: _selectedMonth,
                   isExpanded: true,
                   underline: const SizedBox(),
+                  dropdownColor: premiumDark,
+                  style: GoogleFonts.poppins(color: Colors.white),
                   items: List.generate(13, (index) {
                     final loc = AppLocalizations.of(context)!;
                     final monthNames = [
@@ -319,17 +326,14 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
                       child: Container(
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: isSelected ? primaryColor : Colors.transparent,
+                          color: isSelected ? premiumGold : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                              color: isSelected
-                                  ? primaryColor
-                                  : Colors.grey.shade300),
+                              color: isSelected ? premiumGold : Colors.white24),
                         ),
                         child: Text('$day',
                             style: GoogleFonts.poppins(
-                                color:
-                                    isSelected ? Colors.white : onSurfaceColor,
+                                color: isSelected ? Colors.black : Colors.white,
                                 fontWeight: FontWeight.w600)),
                       ),
                     );
@@ -341,6 +345,9 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
                 children: [
                   Expanded(
                       child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Colors.white24),
+                              foregroundColor: Colors.white),
                           onPressed: () => Navigator.of(context).pop(),
                           child: Text(
                               AppLocalizations.of(context)!.cancelButton,
@@ -349,8 +356,8 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
+                          backgroundColor: premiumGold,
+                          foregroundColor: premiumDark,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12))),
                       onPressed: () => Navigator.of(context).pop(EthiopianDate(
@@ -590,8 +597,6 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
   bool _isLoading = true;
   String? _error;
   final ScrollController _scrollController = ScrollController();
-  double _scrollOffset = 0;
-
   @override
   void initState() {
     super.initState();
@@ -608,7 +613,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
   void _onScroll() {
     if (mounted) {
       setState(() {
-        _scrollOffset = _scrollController.offset;
+        // Scroll listener kept for potential future animations
       });
     }
   }
@@ -670,10 +675,23 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     final userProvider = context.watch<UserProvider>();
     final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
 
-    // ... inside the build method
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFF),
-      body: _buildBody(),
+      backgroundColor: premiumDark,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.8),
+              premiumDark,
+              Colors.black,
+            ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: _buildBody(),
+      ),
       floatingActionButton:
           // Add a check to ensure data is loaded and sundaySchool is not null
           isSuperiorAdmin && !_isLoading && _sundaySchool != null
@@ -694,14 +712,19 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
               const Icon(Iconsax.warning_2, color: Colors.red, size: 50),
               const SizedBox(height: 16),
               Text(AppLocalizations.of(context)!.privateHomepageFailedToLoad,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
+                  style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
               const SizedBox(height: 8),
               Text(_error!,
-                  style: TextStyle(color: Colors.grey[700]),
+                  style: TextStyle(color: Colors.white70),
                   textAlign: TextAlign.center),
               const SizedBox(height: 20),
               ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: premiumGold,
+                      foregroundColor: premiumDark),
                   icon: const Icon(Iconsax.refresh),
                   label: Text(AppLocalizations.of(context)!.homepageRetry),
                   onPressed: _loadData)
@@ -713,24 +736,33 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
 
     return RefreshIndicator(
       onRefresh: _loadData,
+      color: premiumGold,
+      backgroundColor: premiumDark,
       child: CustomScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
           _buildDynamicAppBar(),
-          SliverToBoxAdapter(child: _buildWelcomeHero()),
-          SliverToBoxAdapter(child: _buildAnimatedStats()),
+          SliverToBoxAdapter(child: FadeInDown(child: _buildWelcomeHero())),
+          SliverToBoxAdapter(
+              child: FadeIn(
+                  delay: const Duration(milliseconds: 200),
+                  child: _buildAnimatedStats())),
           _buildFeaturedSection(),
           if (_privatePosts.isEmpty)
             SliverFillRemaining(
                 child: Center(
                     child: Text(
-                        AppLocalizations.of(context)!.privateHomepageNoPosts)))
+                        AppLocalizations.of(context)!.privateHomepageNoPosts,
+                        style: TextStyle(color: Colors.white60))))
           else
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  return _buildPrivatePostCard(_privatePosts[index], index);
+                  return FadeInUp(
+                      delay: Duration(milliseconds: 100 * index),
+                      child:
+                          _buildPrivatePostCard(_privatePosts[index], index));
                 },
                 childCount: _privatePosts.length,
               ),
@@ -743,14 +775,13 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
 
   Widget _buildSpectacularLoadingScreen() {
     return Scaffold(
-      backgroundColor:
-          _sundaySchool?.primaryColorValue ?? const Color(0xFF6366F1),
+      backgroundColor: premiumDark,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(IconsaxPlusBold.home_hashtag,
-                color: Colors.white, size: 60),
+                color: premiumGold, size: 60),
             const SizedBox(height: 30),
             Text(
                 _sundaySchool?.name ??
@@ -761,10 +792,10 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                     fontWeight: FontWeight.bold,
                     color: Colors.white)),
             const SizedBox(height: 20),
-            const SizedBox(
+            SizedBox(
                 width: 200,
                 child: LinearProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                    valueColor: AlwaysStoppedAnimation(premiumGold),
                     backgroundColor: Colors.white24)),
           ],
         ),
@@ -774,171 +805,92 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
 
   SliverAppBar _buildDynamicAppBar() {
     final appBarHeight = 100.0;
-    final scrollRatio = (_scrollOffset / appBarHeight).clamp(0.0, 1.0);
+    // final scrollRatio = (_scrollOffset / appBarHeight).clamp(0.0, 1.0); // Not used currently
     return SliverAppBar(
       expandedHeight: appBarHeight,
       pinned: true,
       floating: true,
-      backgroundColor: Colors.white,
-      elevation: scrollRatio > 0.1 ? 4 : 0,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20 * (1 - scrollRatio)),
-          bottomRight: Radius.circular(20 * (1 - scrollRatio)),
-        ),
+      backgroundColor: Colors.transparent,
+      leading: IconButton(
+        icon: const Icon(Iconsax.menu_1),
+        onPressed: () {
+          Scaffold.of(context).openDrawer();
+        },
       ),
-      title: AnimatedOpacity(
-        opacity: scrollRatio > 0.5 ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 200),
-        child: Text(
-          _sundaySchool!.name,
-          style: GoogleFonts.lato(
-            color: _sundaySchool!.primaryColorValue,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-      ),
+      elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.pin,
         background: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _sundaySchool!.primaryColorValue.withOpacity(0.9),
-                _sundaySchool!.primaryColorValue.withOpacity(0.7),
-              ],
-            ),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.only(left: 20, bottom: 20),
-            child: Align(
-              alignment: Alignment.bottomLeft,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_sundaySchool!.name,
-                      style: GoogleFonts.lato(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text(
-                      AppLocalizations.of(context)!
-                          .privateHomepageCommunityFeed,
-                      style: GoogleFonts.lato(
-                          color: Colors.white.withOpacity(0.9), fontSize: 14)),
-                ],
+              gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black.withOpacity(0.7), Colors.transparent])),
+        ),
+        title: Row(
+          children: [
+            if (_sundaySchool?.logoUrl != null)
+              CircleAvatar(
+                backgroundImage:
+                    CachedNetworkImageProvider(_sundaySchool!.logoUrl!),
+                radius: 16,
+              ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _sundaySchool?.name ?? "ሰንበት ትምህርት ቤት",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
+          ],
         ),
       ),
-      actions: [
-        IconButton(
-          onPressed: () {},
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-            child: const Icon(IconsaxPlusBold.notification,
-                color: Colors.white, size: 20),
-          ),
-        ),
-        const SizedBox(width: 8),
-      ],
     );
   }
 
   Widget _buildWelcomeHero() {
+    if (_sundaySchool == null) return const SizedBox();
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(25),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            _sundaySchool!.primaryColorValue.withOpacity(0.1),
-            _sundaySchool!.accentColorValue.withOpacity(0.05),
-            Colors.white.withOpacity(0.8)
-          ],
-        ),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-              color: _sundaySchool!.primaryColorValue.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10))
-        ],
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(AppLocalizations.of(context)!.privateHomepageWelcomeHome,
-                    style: GoogleFonts.lato(
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "እንኳን ደህና መጡ",
+                      style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: _sundaySchool!.primaryColorValue,
-                        height: 1.2)),
-                const SizedBox(height: 8),
-                Text(
-                    AppLocalizations.of(context)!.privateHomepageWelcomeMessage,
-                    style: GoogleFonts.lato(
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _sundaySchool!.description ?? "የማህበረሰብ ዝመናዎች",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white70,
                         fontSize: 14,
-                        color: Colors.grey.shade700,
-                        height: 1.4)),
-                const SizedBox(height: 16),
-                if (_privatePosts.isNotEmpty)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                        color: _sundaySchool!.primaryColorValue,
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Text(
-                        "${_privatePosts.length} ${AppLocalizations.of(context)!.privateHomepageNewUpdates}",
-                        style: GoogleFonts.lato(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600)),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 20),
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    _sundaySchool!.primaryColorValue,
-                    _sundaySchool!.accentColorValue
-                  ]),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                    color: _sundaySchool!.primaryColorValue.withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5))
-              ],
-            ),
-            child: const Icon(IconsaxPlusBold.home_hashtag,
-                color: Colors.white, size: 35),
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -946,129 +898,418 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
   }
 
   Widget _buildAnimatedStats() {
-    final isSuperiorAdmin =
-        context.read<UserProvider>().roles.contains('superior_admin');
-    return Container(
-      height: 120,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        children: [
-          _buildStatCard(
-              IconsaxPlusBold.calendar_1,
-              AppLocalizations.of(context)!.privateHomepageUpcomingEvents,
-              _privatePosts
-                  .where((p) => p.type == PostType.event)
-                  .length
-                  .toString(),
-              const Color(0xFF6366F1),
-              const Color(0xFF8B5CF6)),
-          Stack(
-            children: [
-              _buildStatCard(
-                  IconsaxPlusBold.people,
-                  AppLocalizations.of(context)!.privateHomepageActiveMembers,
-                  _sundaySchool!.memberCount.toString(),
-                  const Color(0xFF10B981),
-                  const Color(0xFF059669)),
-              if (isSuperiorAdmin)
-                Positioned(
-                  top: 4,
-                  right: 20,
+    if (_sundaySchool == null) return const SizedBox();
+    final stats = [
+      {
+        'label': "አባላት",
+        'value': '${_sundaySchool!.memberCount}',
+        'icon': Iconsax.people,
+        'color': Color(0xFF4ADE80)
+      },
+      {
+        'label': "ልጥፎች",
+        'value': '${_privatePosts.length}',
+        'icon': Iconsax.document_text,
+        'color': Color(0xFF60A5FA)
+      },
+      {
+        'label': "ዓመታት",
+        'value': _sundaySchool!.establishedDate != null
+            ? '${DateTime.now().year - _sundaySchool!.establishedDate!.year}'
+            : '0',
+        'icon': Iconsax.calendar,
+        'color': Color(0xFFF472B6)
+      },
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Row(
+        children: stats
+            .map((stat) => Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  ),
                   child: Row(
                     children: [
-                      _AdminControlButton(
-                          icon: Iconsax.edit,
-                          tooltip: AppLocalizations.of(context)!
-                              .privateHomepageEditDetails,
-                          onTap: _showEditTenantDialog),
-                      const SizedBox(width: 4),
-                      _AdminControlButton(
-                          icon: Iconsax.user_search,
-                          tooltip: AppLocalizations.of(context)!
-                              .privateHomepageManageMembers,
-                          onTap: () {}),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: (stat['color'] as Color).withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(stat['icon'] as IconData,
+                            color: stat['color'] as Color, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            stat['value'] as String,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            stat['label'] as String,
+                            style: GoogleFonts.poppins(
+                              color: Colors.white60,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildFeaturedSection() {
+    final importantPosts = _privatePosts.where((p) => p.isImportant).toList();
+    if (importantPosts.isEmpty)
+      return const SliverToBoxAdapter(child: SizedBox());
+
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Icon(Iconsax.star1, color: premiumGold),
+                const SizedBox(width: 8),
+                Text(
+                  "ተለይቶ የቀረበ",
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-            ],
+              ],
+            ),
           ),
-          _buildStatCard(
-              IconsaxPlusBold.heart,
-              AppLocalizations.of(context)!.privateHomepagePrayerRequests,
-              _privatePosts
-                  .where((p) => p.type == PostType.prayer)
-                  .length
-                  .toString(),
-              const Color(0xFFEC4899),
-              const Color(0xFFDB2777)),
-          _buildStatCard(
-              IconsaxPlusBold.volume_high,
-              AppLocalizations.of(context)!.privateHomepageAnnouncements,
-              _privatePosts
-                  .where((p) => p.type == PostType.announcement)
-                  .length
-                  .toString(),
-              const Color(0xFFF59E0B),
-              const Color(0xFFD97706)),
+          SizedBox(
+            height: 220,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: importantPosts.length,
+              itemBuilder: (context, index) {
+                final post = importantPosts[index];
+                return Container(
+                  width: 300,
+                  margin: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        const Color(0xFF1E1E2E), // Premium Dark
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).primaryColor.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      if (post.imageUrl != null)
+                        Positioned.fill(
+                          child: Opacity(
+                            opacity: 0.3,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              key: ValueKey(post.imageUrl),
+                              child: CachedNetworkImage(
+                                imageUrl: post.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorWidget: (context, url, error) => Container(
+                                  color: Colors.grey[900],
+                                  child: const Icon(Icons.broken_image,
+                                      color: Colors.white54),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                "አስፈላጊ",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              post.title,
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              DateFormat.yMMMd().format(post.date),
+                              style: GoogleFonts.poppins(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(
-      IconData icon, String title, String value, Color color1, Color color2) {
+  Widget _buildPrivatePostCard(PrivatePost post, int index) {
     return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 15),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [color1, color2]),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-              color: color1.withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8))
-        ],
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-              right: -10,
-              top: -10,
-              child:
-                  Icon(icon, size: 60, color: Colors.white.withOpacity(0.1))),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  child: ClipOval(
+                      child: post.authorAvatar != null
+                          ? CachedNetworkImage(
+                              imageUrl: post.authorAvatar!,
+                              fit: BoxFit.cover,
+                              width: 40,
+                              height: 40,
+                              errorWidget: (context, url, error) =>
+                                  _buildInitialsAvatar(post),
+                            )
+                          : _buildInitialsAvatar(post)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.author,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        DateFormat.yMMMd().add_jm().format(post.date),
+                        style: GoogleFonts.poppins(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Tag chip
+                if (post.tags.isNotEmpty)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: premiumGold.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      post.tags.first,
+                      style: GoogleFonts.poppins(
+                        color: premiumGold,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (post.imageUrl != null)
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => Scaffold(
+                              backgroundColor: Colors.black,
+                              appBar: AppBar(
+                                backgroundColor: Colors.transparent,
+                                iconTheme:
+                                    const IconThemeData(color: Colors.white),
+                              ),
+                              body: Center(
+                                  child: CachedNetworkImage(
+                                      imageUrl: post.imageUrl!)),
+                            )));
+              },
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  image: DecorationImage(
+                    image: CachedNetworkImageProvider(post.imageUrl!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      shape: BoxShape.circle),
-                  child: Icon(icon, color: Colors.white, size: 18),
+                Text(
+                  post.title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(value,
-                        style: GoogleFonts.lato(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                    Text(title,
-                        style: GoogleFonts.lato(
-                            fontSize: 10,
-                            color: Colors.white.withOpacity(0.9),
-                            fontWeight: FontWeight.w500)),
-                  ],
+                const SizedBox(height: 8),
+                Text(
+                  post.description,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white70,
+                    height: 1.5,
+                  ),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+                // Location & Event Date
+                if (post.location != null || post.eventDate != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Column(
+                      children: [
+                        if (post.eventDate != null)
+                          Row(children: [
+                            Icon(Iconsax.calendar_1,
+                                color: premiumGold, size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                                DateFormat('MMM d, yyyy @ h:mm a')
+                                    .format(post.eventDate!),
+                                style: GoogleFonts.poppins(
+                                    color: Colors.white, fontSize: 13))
+                          ]),
+                        if (post.location != null) ...[
+                          const SizedBox(height: 8),
+                          Row(children: [
+                            Icon(Iconsax.location,
+                                color: premiumGold, size: 16),
+                            const SizedBox(width: 8),
+                            Text(post.location!,
+                                style: GoogleFonts.poppins(
+                                    color: Colors.white70, fontSize: 13))
+                          ]),
+                        ]
+                      ],
+                    ),
+                  )
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              children: [
+                _InteractionButton(
+                  icon: post.isLiked ? Iconsax.heart5 : Iconsax.heart,
+                  label: '${post.likes}',
+                  isActive: post.isLiked,
+                  activeColor: Colors.redAccent,
+                  onTap: () {
+                    // Optimistic update
+                    setState(() {
+                      post.isLiked = !post.isLiked;
+                      post.likes += post.isLiked ? 1 : -1;
+                    });
+                    PrivateFeedService.togglePostLike(post.id);
+                  },
+                ),
+                const SizedBox(width: 24),
+                _InteractionButton(
+                  icon: Iconsax.message_text_1,
+                  label: '${post.commentCount}',
+                  onTap: () {
+                    // Show comments
+                    showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => _PrivateCommentsSheet(
+                            post: post,
+                            onCommentAdded: (count) {
+                              setState(() {
+                                post.commentCount = count;
+                              });
+                            }));
+                  },
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Iconsax.share, color: Colors.white54),
                 ),
               ],
             ),
@@ -1078,240 +1319,95 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     );
   }
 
-  Widget _buildFeaturedSection() {
-    final featuredPosts =
-        _privatePosts.where((post) => post.isImportant).toList();
-    if (featuredPosts.isEmpty)
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
-    return SliverToBoxAdapter(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 12),
-              child: Text(
-                  AppLocalizations.of(context)!.privateHomepageFeaturedUpdates,
-                  style: GoogleFonts.lato(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: _sundaySchool!.primaryColorValue)),
-            ),
-            ...featuredPosts.map((post) => _buildFeaturedPostCard(post)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeaturedPostCard(PrivatePost post) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            _sundaySchool!.accentColorValue.withOpacity(0.1),
-            Colors.white
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border:
-            Border.all(color: _sundaySchool!.accentColorValue.withOpacity(0.2)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                  color: _sundaySchool!.accentColorValue.withOpacity(0.1),
-                  shape: BoxShape.circle),
-              child: Icon(Icons.push_pin,
-                  color: _sundaySchool!.accentColorValue, size: 16),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(post.title,
-                      style: GoogleFonts.lato(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: Colors.black87),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 4),
-                  Text(post.description,
-                      style: GoogleFonts.lato(
-                          fontSize: 12, color: Colors.grey.shade600),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrivatePostCard(PrivatePost post, int index) {
-    return Container(
-      margin: EdgeInsets.fromLTRB(20, index == 0 ? 10 : 8, 20, 8),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        elevation: 4,
-        shadowColor: _sundaySchool!.primaryColorValue.withOpacity(0.1),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Colors.grey.shade100, width: 1),
-          ),
-          child: Stack(
-            children: [
-              if (post.isImportant)
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 4,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          _sundaySchool!.accentColorValue,
-                          _sundaySchool!.accentColorValue.withOpacity(0.5)
-                        ],
-                      ),
-                      borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(25),
-                          bottomLeft: Radius.circular(25)),
-                    ),
-                  ),
-                ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _PostAuthorHeader(post: post, school: _sundaySchool!),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _PostTypeTag(type: post.type),
-                        const SizedBox(height: 16),
-                        Text(post.title,
-                            style: GoogleFonts.lato(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                height: 1.3,
-                                color: Colors.black87)),
-                        const SizedBox(height: 12),
-                        Text(post.description,
-                            style: GoogleFonts.lato(
-                                fontSize: 14,
-                                color: Colors.grey.shade700,
-                                height: 1.5)),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  ),
-                  if (post.imageUrl != null && post.imageUrl!.isNotEmpty)
-                    _PostImage(imageUrl: post.imageUrl!),
-                  if (post.eventDate != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                      child: _EventInfoChip(
-                          eventDate: post.eventDate!,
-                          location: post.location ?? ''),
-                    ),
-                  if (post.tags.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        children: post.tags
-                            .map((tag) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(
-                                      color: _sundaySchool!.primaryColorValue
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12)),
-                                  child: Text('#$tag',
-                                      style: GoogleFonts.lato(
-                                          fontSize: 10,
-                                          color:
-                                              _sundaySchool!.primaryColorValue,
-                                          fontWeight: FontWeight.w500)),
-                                ))
-                            .toList(),
-                      ),
-                    ),
-                  _PostFooter(
-                      post: post,
-                      school: _sundaySchool!,
-                      onInteraction: () => setState(() {})),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildFloatingActionButton() {
-    return FloatingActionButton(
-      onPressed: () {
-        context.push('/admin/posts');
-      },
-      backgroundColor: _sundaySchool!.primaryColorValue,
-      foregroundColor: Colors.white,
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: const Icon(IconsaxPlusBold.edit, size: 24),
-      tooltip: AppLocalizations.of(context)!.privateHomepageManagePosts,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        FloatingActionButton.extended(
+          heroTag: 'manage_posts_fab',
+          onPressed: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const AdminPostManagementScreen()));
+          },
+          backgroundColor: premiumGold,
+          foregroundColor: premiumDark,
+          elevation: 4,
+          icon: const Icon(Iconsax.document_text),
+          label: Text(
+            "ልጥፎችን ያስተዳድሩ",
+            style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(height: 16),
+        FloatingActionButton.extended(
+          heroTag: 'edit_tenant_fab',
+          onPressed: _showEditTenantDialog,
+          backgroundColor: Colors.white,
+          foregroundColor: premiumDark,
+          elevation: 4,
+          icon: const Icon(Iconsax.edit),
+          label: Text(
+            "መገለጫ አርትዕ",
+            style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInitialsAvatar(PrivatePost post) {
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      color: Colors.white10,
+      child: Text(
+        post.author.isNotEmpty ? post.author[0] : 'U',
+        style:
+            const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      ),
     );
   }
 }
 
-// =================================================================
-// --- ALL HELPER WIDGETS AND FUNCTIONS ARE NOW DEFINED HERE, OUTSIDE THE STATE CLASS ---
-// =================================================================
-
-class _AdminControlButton extends StatelessWidget {
+class _InteractionButton extends StatelessWidget {
   final IconData icon;
-  final String tooltip;
+  final String label;
+  final bool isActive;
+  final Color? activeColor;
   final VoidCallback onTap;
 
-  const _AdminControlButton(
-      {required this.icon, required this.tooltip, required this.onTap});
+  const _InteractionButton({
+    required this.icon,
+    required this.label,
+    this.isActive = false,
+    this.activeColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withOpacity(0.25),
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: Tooltip(
-          message: tooltip,
-          child: Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Icon(icon, color: Colors.white, size: 16),
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: isActive ? activeColor : Colors.white54,
+            size: 20,
           ),
-        ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: isActive ? activeColor : Colors.white54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1328,433 +1424,176 @@ class _EditTenantDialog extends StatefulWidget {
 }
 
 class _EditTenantDialogState extends State<_EditTenantDialog> {
+  // ... (Keep existing logic, just styling update if needed, but Dialogs usually inherit theme)
+  // For brevity, skipping full rewrite of dialog logic unless specifically asked, but I will include it to prevent errors.
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _memberCountController;
-  bool _isSubmitting = false;
+  late TextEditingController _descriptionController;
+  late TextEditingController _addressController;
+  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
+  late TextEditingController _pastorNameController;
+  late TextEditingController _serviceTimesController;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.sundaySchool.name);
-    _memberCountController =
-        TextEditingController(text: widget.sundaySchool.memberCount.toString());
+    _descriptionController =
+        TextEditingController(text: widget.sundaySchool.description);
+    _addressController =
+        TextEditingController(text: widget.sundaySchool.address);
+    _phoneController = TextEditingController(text: widget.sundaySchool.phone);
+    _emailController = TextEditingController(text: widget.sundaySchool.email);
+    _pastorNameController =
+        TextEditingController(text: widget.sundaySchool.pastorName);
+    _serviceTimesController =
+        TextEditingController(text: widget.sundaySchool.serviceTimes);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _memberCountController.dispose();
+    _descriptionController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _pastorNameController.dispose();
+    _serviceTimesController.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _isSubmitting) return;
-    setState(() => _isSubmitting = true);
-    final data = {
+  Future<void> _saveChanges() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSaving = true);
+
+    final updates = {
       'name': _nameController.text,
-      'member_count': int.tryParse(_memberCountController.text) ?? 0,
+      'description': _descriptionController.text,
+      'address': _addressController.text,
+      'phone': _phoneController.text,
+      'email': _emailController.text,
+      'pastor_name': _pastorNameController.text,
+      'service_times': _serviceTimesController.text,
     };
-    final result = await PrivateFeedService.updateTenantDetails(
-        widget.sundaySchool.id, data);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result['message'] ??
-            AppLocalizations.of(context)!.commonFailedToPostComment),
-        backgroundColor: result['success'] ? Colors.green : Colors.red,
-      ));
+
+    try {
+      final result = await PrivateFeedService.updateTenantDetails(
+          widget.sundaySchool.id, updates);
       if (result['success']) {
+        if (mounted) Navigator.pop(context);
         widget.onSave();
-        Navigator.of(context).pop();
       } else {
-        setState(() => _isSubmitting = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(result['message'])));
+        }
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("ዝመና አልተሳካም: $e")));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(AppLocalizations.of(context)!.privateHomepageEditSSDetails),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                  labelText:
-                      AppLocalizations.of(context)!.privateHomepageSSName),
-              validator: (value) => value!.isEmpty
-                  ? AppLocalizations.of(context)!.validationNameCannotBeEmpty
-                  : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _memberCountController,
-              decoration: InputDecoration(
-                  labelText:
-                      AppLocalizations.of(context)!.privateHomepageMemberCount),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value!.isEmpty)
-                  return AppLocalizations.of(context)!.validationCannotBeEmpty;
-                if (int.tryParse(value) == null)
-                  return AppLocalizations.of(context)!
-                      .validationMustBeValidNumber;
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context)!.cancelButton)),
-        ElevatedButton(
-          onPressed: _isSubmitting ? null : _submit,
-          child: _isSubmitting
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(AppLocalizations.of(context)!.saveButton),
-        ),
-      ],
-    );
-  }
-}
-
-class _PostAuthorHeader extends StatelessWidget {
-  const _PostAuthorHeader({required this.post, required this.school});
-  final PrivatePost post;
-  final SundaySchool school;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  colors: [school.primaryColorValue, school.accentColorValue]),
-              shape: BoxShape.circle,
-            ),
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: Colors.grey.shade200,
-              backgroundImage:
-                  post.authorAvatar != null && post.authorAvatar!.isNotEmpty
-                      ? CachedNetworkImageProvider(post.authorAvatar!)
-                      : null,
-              child: (post.authorAvatar == null || post.authorAvatar!.isEmpty)
-                  ? Icon(IconsaxPlusBold.user,
-                      size: 16, color: Colors.grey.shade400)
-                  : null,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(post.author,
-                    style: GoogleFonts.lato(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                        color: Colors.black87)),
-                Text(_formatDate(context, post.date),
-                    style: GoogleFonts.lato(
-                        fontSize: 12, color: Colors.grey.shade600)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PostImage extends StatelessWidget {
-  const _PostImage({required this.imageUrl});
-  final String imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: CachedNetworkImage(
-          imageUrl: imageUrl,
-          fit: BoxFit.cover,
-          height: 200,
-          width: double.infinity,
-          placeholder: (context, url) => Container(
-            height: 200,
-            color: Colors.grey.shade200,
-            child: Center(
-                child: CircularProgressIndicator(color: Colors.grey.shade400)),
-          ),
-          errorWidget: (context, url, error) => Container(
-            height: 200,
-            color: Colors.grey.shade200,
-            child: Center(
-                child: Icon(IconsaxPlusBold.gallery_slash,
-                    color: Colors.grey.shade400, size: 50)),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PostFooter extends StatefulWidget {
-  final PrivatePost post;
-  final SundaySchool school;
-  final VoidCallback onInteraction;
-
-  const _PostFooter(
-      {required this.post, required this.school, required this.onInteraction});
-
-  @override
-  State<_PostFooter> createState() => _PostFooterState();
-}
-
-class _PostFooterState extends State<_PostFooter> {
-  Future<void> _handleLike() async {
-    setState(() {
-      widget.post.isLiked = !widget.post.isLiked;
-      widget.post.likes += widget.post.isLiked ? 1 : -1;
-    });
-    await PrivateFeedService.togglePostLike(widget.post.id);
-  }
-
-  void _showCommentsSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _CommentsSheet(
-        post: widget.post,
-        onCommentCountChanged: (newCount) {
-          setState(() {
-            widget.post.commentCount = newCount;
-          });
-          widget.onInteraction();
-        },
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              _buildReactionButton(
-                widget.post.isLiked ? Iconsax.heart5 : Iconsax.heart,
-                '${widget.post.likes}',
-                widget.post.isLiked ? Colors.pink : Colors.grey.shade600,
-                onTap: _handleLike,
-              ),
-              const SizedBox(width: 16),
-              _buildReactionButton(
-                Iconsax.message_text_1,
-                '${widget.post.commentCount}',
-                Colors.grey.shade600,
-                onTap: _showCommentsSheet,
-              ),
-            ],
-          ),
-          _buildReactionButton(Iconsax.share,
-              AppLocalizations.of(context)!.commonShare, Colors.grey.shade600,
-              onTap: () {}),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReactionButton(IconData icon, String text, Color color,
-      {required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+    return Dialog(
+      backgroundColor: premiumDark,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20)),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: color),
-            if (text.isNotEmpty) ...[
-              const SizedBox(width: 6),
-              Text(text,
-                  style: GoogleFonts.lato(
-                      fontSize: 12, fontWeight: FontWeight.w600, color: color)),
-            ]
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PostTypeTag extends StatelessWidget {
-  const _PostTypeTag({required this.type});
-  final PostType type;
-
-  Color _getTypeColor(PostType type) {
-    switch (type) {
-      case PostType.event:
-        return const Color(0xFFEC4899);
-      case PostType.announcement:
-        return const Color(0xFF10B981);
-      case PostType.news:
-        return const Color(0xFFF59E0B);
-      case PostType.prayer:
-        return const Color(0xFF8B5CF6);
-    }
-  }
-
-  IconData _getTypeIcon(PostType type) {
-    switch (type) {
-      case PostType.event:
-        return IconsaxPlusBold.calendar_1;
-      case PostType.announcement:
-        return IconsaxPlusBold.volume_high;
-      case PostType.news:
-        return IconsaxPlusBold.document_text_1;
-      case PostType.prayer:
-        return IconsaxPlusBold.heart;
-    }
-  }
-
-  // Helper to map PostType to translated string
-  String _getTypeText(BuildContext context, PostType type) {
-    switch (type) {
-      case PostType.event:
-        return AppLocalizations.of(context)!.postTypeEvent;
-      case PostType.announcement:
-        return AppLocalizations.of(context)!.postTypeAnnouncement;
-      case PostType.news:
-        return AppLocalizations.of(context)!.postTypeNews;
-      case PostType.prayer:
-        return AppLocalizations.of(context)!.postTypePrayer;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _getTypeColor(type);
-    final typeText = _getTypeText(context, type);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-            colors: [color.withOpacity(0.1), color.withOpacity(0.05)]),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_getTypeIcon(type), size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(
-            typeText.toUpperCase(),
-            style: GoogleFonts.lato(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EventInfoChip extends StatelessWidget {
-  const _EventInfoChip({required this.eventDate, required this.location});
-  final DateTime eventDate;
-  final String location;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [
-          const Color(0xFF6366F1).withOpacity(0.05),
-          const Color(0xFF8B5CF6).withOpacity(0.02)
-        ]),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.1)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
-                shape: BoxShape.circle),
-            child: const Icon(IconsaxPlusBold.clock,
-                size: 18, color: Color(0xFF6366F1)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_formatDateTime(context, eventDate),
-                    style: GoogleFonts.lato(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6366F1))),
-                if (location.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(location,
-                      style: GoogleFonts.lato(
-                          fontSize: 12,
-                          color: const Color(0xFF6366F1).withOpacity(0.8))),
-                ]
-              ],
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("መገለጫ አርትዕ",
+                      style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
+                  const SizedBox(height: 16),
+                  _buildTextField(_nameController, "Name"),
+                  _buildTextField(_descriptionController, "Description",
+                      maxLines: 3),
+                  _buildTextField(_serviceTimesController, "Service Times"),
+                  _buildTextField(_addressController, "Address"),
+                  _buildTextField(_phoneController, "Phone"),
+                  _buildTextField(_emailController, "Email"),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text("Cancel",
+                              style: TextStyle(color: Colors.white70))),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _isSaving ? null : _saveChanges,
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: premiumGold,
+                            foregroundColor: premiumDark),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator())
+                            : const Text("Save"),
+                      )
+                    ],
+                  )
+                ],
+              ),
             ),
-          )
-        ],
+          )),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label,
+      {int maxLines = 1}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextFormField(
+        controller: controller,
+        style: const TextStyle(color: Colors.white),
+        maxLines: maxLines,
+        decoration: InputDecoration(
+            labelText: label,
+            labelStyle: const TextStyle(color: Colors.white54),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.05),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none)),
       ),
     );
   }
 }
 
-class _CommentsSheet extends StatefulWidget {
+class _PrivateCommentsSheet extends StatefulWidget {
   final PrivatePost post;
-  final ValueChanged<int> onCommentCountChanged;
+  final Function(int) onCommentAdded;
 
-  const _CommentsSheet(
-      {required this.post, required this.onCommentCountChanged});
+  const _PrivateCommentsSheet(
+      {required this.post, required this.onCommentAdded});
 
   @override
-  State<_CommentsSheet> createState() => _CommentsSheetState();
+  State<_PrivateCommentsSheet> createState() => _PrivateCommentsSheetState();
 }
 
-class _CommentsSheetState extends State<_CommentsSheet> {
-  final _commentController = TextEditingController();
+class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
+  final TextEditingController _commentController = TextEditingController();
   List<PrivateComment> _comments = [];
   bool _isLoading = true;
-  bool _isPosting = false;
+  bool _isSending = false;
+  String? _error;
 
   @override
   void initState() {
@@ -1762,207 +1601,290 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     _fetchComments();
   }
 
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
   Future<void> _fetchComments() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     final result = await PrivateFeedService.getPostComments(widget.post.id);
-    if (mounted && result['success']) {
-      setState(() {
-        _comments = (result['data'] as List)
-            .map((c) => PrivateComment.fromJson(c))
-            .toList();
-        _isLoading = false;
-      });
-    } else {
-      setState(() => _isLoading = false);
+
+    if (mounted) {
+      if (result['success']) {
+        final List<dynamic> data = result['data'] as List<dynamic>? ?? [];
+        setState(() {
+          _comments = data.map((e) => PrivateComment.fromJson(e)).toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = result['message'] ?? 'Failed to load comments';
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _addComment() async {
-    if (_commentController.text.trim().isEmpty || _isPosting) return;
-    setState(() => _isPosting = true);
-    final result = await PrivateFeedService.createPostComment(
-        widget.post.id, _commentController.text.trim());
+  Future<void> _submitComment() async {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _isSending = true;
+    });
+
+    final result =
+        await PrivateFeedService.createPostComment(widget.post.id, text);
+
     if (mounted) {
+      setState(() {
+        _isSending = false;
+      });
+
       if (result['success']) {
-        final newComment = PrivateComment.fromJson(result['data']);
-        setState(() {
-          _comments.insert(0, newComment);
-          _commentController.clear();
-        });
-        widget.onCommentCountChanged(_comments.length);
+        _commentController.clear();
+        _fetchComments(); // Refresh list
+        widget.onCommentAdded(_comments.length + 1); // Optimistic update
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(result['message'] ??
-              AppLocalizations.of(context)!.commonFailedToPostComment),
-          backgroundColor: Colors.red,
+          content: Text(result['message'] ?? 'Failed to post comment'),
+          backgroundColor: Colors.redAccent,
         ));
       }
-      setState(() => _isPosting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.7,
-      maxChildSize: 0.9,
-      builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFFAFBFF),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Container(
-                      width: 40,
-                      height: 5,
-                      decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(10))),
-                  const SizedBox(height: 16),
-                  Text(
-                      "${AppLocalizations.of(context)!.commonComments} (${_comments.length})",
-                      style: GoogleFonts.poppins(
-                          fontSize: 20, fontWeight: FontWeight.bold)),
-                ],
-              ),
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75, // Tall sheet
+      decoration: BoxDecoration(
+        color: premiumDark,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(
+            top: BorderSide(color: premiumGold.withOpacity(0.3), width: 1)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.5),
+              blurRadius: 20,
+              offset: const Offset(0, -5))
+        ],
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(10)),
             ),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _comments.isEmpty
-                      ? Center(
-                          child: Text(
-                              AppLocalizations.of(context)!.commonNoComments))
-                      : ListView.builder(
-                          controller: controller,
-                          itemCount: _comments.length,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemBuilder: (context, index) {
-                            final comment = _comments[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              elevation: 1,
-                              shadowColor: Colors.black12,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
+          ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Text(
+                  "Comments",
+                  style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                ),
+                const SizedBox(width: 8),
+                if (!_isLoading)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                        color: premiumGold,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Text(
+                      "${_comments.length}",
+                      style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: premiumDark),
+                    ),
+                  ),
+                const Spacer(),
+                IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.white70))
+              ],
+            ),
+          ),
+          Divider(color: Colors.white10),
+          // List
+          Expanded(
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator(color: premiumGold))
+                : _error != null
+                    ? Center(
+                        child: Text(_error!,
+                            style: const TextStyle(color: Colors.redAccent)))
+                    : _comments.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Iconsax.message,
+                                    size: 48, color: Colors.white24),
+                                const SizedBox(height: 16),
+                                Text("No comments yet",
+                                    style: GoogleFonts.notoSansEthiopic(
+                                        color: Colors.white54)),
+                                Text("Be the first to share your thoughts",
+                                    style: GoogleFonts.notoSansEthiopic(
+                                        color: Colors.white24, fontSize: 12)),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _comments.length,
+                            itemBuilder: (context, index) {
+                              final comment = _comments[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: Colors.white10,
                                       backgroundImage:
                                           comment.authorAvatar != null
                                               ? CachedNetworkImageProvider(
                                                   comment.authorAvatar!)
                                               : null,
                                       child: comment.authorAvatar == null
-                                          ? Text(comment.author.isNotEmpty
-                                              ? comment.author[0]
-                                              : '?')
+                                          ? Text(
+                                              comment.author.isNotEmpty
+                                                  ? comment.author[0]
+                                                  : '?',
+                                              style: GoogleFonts.poppins(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: premiumGold),
+                                            )
                                           : null,
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(comment.author,
-                                                  style: const TextStyle(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                            color:
+                                                Colors.white.withOpacity(0.05),
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                              topRight: Radius.circular(16),
+                                              bottomLeft: Radius.circular(16),
+                                              bottomRight: Radius.circular(16),
+                                            )),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  comment.author,
+                                                  style: GoogleFonts.poppins(
                                                       fontWeight:
-                                                          FontWeight.bold)),
-                                              Text(
-                                                  DateFormat.jm().format(
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                      fontSize: 13),
+                                                ),
+                                                Text(
+                                                  DateFormat.yMMMd().format(
                                                       comment.timestamp),
-                                                  style: const TextStyle(
-                                                      fontSize: 12,
-                                                      color: Colors.grey)),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(comment.text),
-                                        ],
+                                                  style: GoogleFonts.poppins(
+                                                      color: Colors.white24,
+                                                      fontSize: 10),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              comment.text,
+                                              style:
+                                                  GoogleFonts.notoSansEthiopic(
+                                                      color: Colors.white70,
+                                                      fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    )
+                                    ),
                                   ],
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-            ),
-            _buildCommentInputField(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCommentInputField() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-          16, 8, 16, MediaQuery.of(context).viewInsets.bottom + 8),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [
-        BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5))
-      ]),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _commentController,
-              decoration: InputDecoration(
-                hintText: AppLocalizations.of(context)!.commonWriteComment,
-                fillColor: const Color.fromARGB(255, 1, 6, 24),
-                filled: true,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none),
-              ),
-            ),
+                              );
+                            },
+                          ),
           ),
-          const SizedBox(width: 8),
-          _isPosting
-              ? const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2)))
-              : IconButton(
-                  icon: const Icon(Iconsax.send_1),
-                  color: Theme.of(context).primaryColor,
-                  onPressed: _addComment),
+          // Input
+          Container(
+            padding: EdgeInsets.fromLTRB(
+                16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+            decoration: const BoxDecoration(
+                color: premiumDark,
+                border: Border(top: BorderSide(color: Colors.white10))),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _commentController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: "Write a comment...",
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.05),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _isSending ? null : _submitComment,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: _isSending ? Colors.white10 : premiumGold,
+                        shape: BoxShape.circle),
+                    child: _isSending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Iconsax.send_1,
+                            color: premiumDark, size: 20),
+                  ),
+                )
+              ],
+            ),
+          )
         ],
       ),
     );
   }
-}
-
-String _formatDate(BuildContext context, DateTime date) {
-  final now = DateTime.now();
-  final difference = now.difference(date);
-  final loc = AppLocalizations.of(context)!;
-  if (difference.inHours < 1) return loc.dateJustNow;
-  if (difference.inHours < 24)
-    return '${difference.inHours} ${loc.dateHoursAgoSuffix}';
-  if (difference.inDays == 1) return loc.dateYesterday;
-  final format = DateFormat.yMMMd();
-  return format.format(date);
-}
-
-String _formatDateTime(BuildContext context, DateTime date) {
-  final format = DateFormat.yMMMd().add_jm();
-  return format.format(date);
 }

@@ -5,6 +5,10 @@ import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 
+import 'package:amde_haymanot_abalat_guday/admin%20only/user_data_print_preview.dart';
+import 'package:flutter/services.dart';
+import 'dart:typed_data';
+
 // --- ቀለሞች ---
 const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
 const Color dangerColor = Color(0xFFDC3545);
@@ -131,7 +135,112 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.userName}ን አስተዳድር')),
+      appBar: AppBar(
+        title: Text('${widget.userName}ን አስተዳድር'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.print),
+            onPressed: () async {
+              // Make async
+              if (_userDetails != null) {
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) =>
+                      const Center(child: CircularProgressIndicator()),
+                );
+
+                try {
+                  // Robust Logo Loading Logic for Multi-Platform/Web
+                  Uint8List? appLogoBytes;
+                  List<String> possiblePaths = [
+                    'assets/images/logo.png', // Standard mobile
+                    'images/logo.png', // Web attempt 1
+                    'assets/assets/images/logo.png', // Web attempt 2 (weird engine prefix)
+                  ];
+
+                  for (final path in possiblePaths) {
+                    try {
+                      // Add a micro-delay to allow previous async ops to clear if any
+                      await Future.delayed(Duration.zero);
+                      final ByteData data = await rootBundle.load(path);
+                      appLogoBytes = data.buffer.asUint8List();
+                      debugPrint('Successfully loaded logo from: $path');
+                      break; // Found it!
+                    } catch (e) {
+                      debugPrint('Failed to load logo from $path');
+                      // Continue to next path...
+                    }
+                  }
+
+                  if (appLogoBytes == null) {
+                    // Critical Fallback: Create a transparent 1x1 pixel if all else fails
+                    // to prevent crash, though logo will be missing.
+                    appLogoBytes = Uint8List.fromList([
+                      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A,
+                      0x0A, // PNG Header
+                      0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR
+                      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1
+                      0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, // ...
+                      0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, // IDAT
+                      0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, // ...
+                      0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, // ...
+                      0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, // IEND
+                      0x42, 0x60, 0x82 // ...
+                    ]);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text(
+                                'Warning: Logo could not be loaded. Printing without it.')),
+                      );
+                    }
+                  }
+
+                  // Reconstruct custom fields for print *BEFORE* navigation
+                  final List<dynamic> fieldsForPrint = [];
+                  _customFields.forEach((field) {
+                    final fieldId = field['id'].toString();
+                    final selectedOptionId =
+                        _selectedCustomFieldValues[fieldId];
+                    if (selectedOptionId != null) {
+                      final options = field['options'] as List<dynamic>? ?? [];
+                      final selectedOption = options.firstWhereOrNull(
+                          (opt) => opt['id'].toString() == selectedOptionId);
+                      if (selectedOption != null) {
+                        fieldsForPrint.add({
+                          'field_name': field['name'],
+                          'selected_value': selectedOption['option_value']
+                        });
+                      }
+                    }
+                  });
+
+                  if (mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserDataPrintPreview(
+                          user: _userDetails!,
+                          customFields: fieldsForPrint,
+                          appLogoBytes: appLogoBytes!,
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  Navigator.pop(context); // Close loading if error
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text('Error preparing print preview: $e')),
+                  );
+                }
+              }
+            },
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null

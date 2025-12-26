@@ -113,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildInfoRow(
                       context,
                       Iconsax.user,
-                      l10n.settingsName,
+                      l10n.settingsName, // "Full Name"
                       userProvider.userProfile?['full_name']?.toString() ??
                           'N/A',
                       isAmharic,
@@ -121,11 +121,105 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 8),
                     _buildInfoRow(
                       context,
-                      Iconsax.sms,
-                      l10n.settingsEmail,
-                      userProvider.userProfile?['email']?.toString() ?? 'N/A',
+                      Iconsax.user_tick,
+                      "Christian Name",
+                      userProvider.userProfile?['christian_name']?.toString() ??
+                          'Not Set',
                       isAmharic,
                     ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      Iconsax.call,
+                      "Phone",
+                      userProvider.userProfile?['phone_number']?.toString() ??
+                          'N/A',
+                      isAmharic,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      Iconsax.woman,
+                      "Mother's Name",
+                      userProvider.userProfile?['mother_name']?.toString() ??
+                          'Not Set',
+                      isAmharic,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      Iconsax.user_cirlce_add,
+                      "Confession Father",
+                      userProvider.userProfile?['confession_father_name']
+                              ?.toString() ??
+                          'Not Set',
+                      isAmharic,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      Iconsax.man,
+                      "Gender",
+                      userProvider.userProfile?['gender']?.toString() ??
+                          'Not Set',
+                      isAmharic,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      Iconsax.calendar,
+                      "Date of Birth",
+                      userProvider.userProfile?['dob']?.toString() ?? 'Not Set',
+                      isAmharic,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      Iconsax.teacher,
+                      "Academic Level",
+                      userProvider.userProfile?['academic_level']?.toString() ??
+                          'Not Set',
+                      isAmharic,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      Iconsax.people,
+                      "Guardian Name",
+                      userProvider.userProfile?['parent_name']?.toString() ??
+                          'Not Set',
+                      isAmharic,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(
+                      context,
+                      Iconsax.call_add,
+                      "Guardian Phone",
+                      userProvider.userProfile?['parent_phone_number']
+                              ?.toString() ??
+                          'Not Set',
+                      isAmharic,
+                    ),
+                    // Display Custom Fields (Matching Style)
+                    if (userProvider.userProfile != null &&
+                        userProvider.userProfile!['custom_fields_detail'] !=
+                            null)
+                      ...(userProvider.userProfile!['custom_fields_detail']
+                              as List)
+                          .map((field) {
+                        return Column(
+                          children: [
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              context,
+                              Iconsax.tag, // Generic tag icon for custom fields
+                              field['field_name']?.toString() ?? 'Field',
+                              field['field_value']?.toString() ?? 'Not Set',
+                              isAmharic,
+                            ),
+                          ],
+                        );
+                      }).toList(),
                   ],
                 ),
               ),

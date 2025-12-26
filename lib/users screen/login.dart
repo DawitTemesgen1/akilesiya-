@@ -1,19 +1,16 @@
 // lib/users screen/login.dart
 
+import 'package:animate_do/animate_do.dart';
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
+import 'package:amde_haymanot_abalat_guday/providers/tenant_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/language_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/auth_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/tenant_service.dart';
-import 'package:amde_haymanot_abalat_guday/providers/tenant_provider.dart';
-import 'package:amde_haymanot_abalat_guday/providers/language_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// ... (Your color constants and StatefulWidget definition)
-const Color primaryLoginColor = Color.fromARGB(255, 1, 37, 100);
-const Color accentLoginColor = Color(0xFFFFD700);
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -23,9 +20,8 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-// ... (Your state variables and initState method)
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -35,6 +31,9 @@ class _LoginState extends State<Login> {
   List<TenantSummary> _tenants = [];
   bool _tenantsLoading = true;
   String? _tenantsError;
+
+  final Color premiumDark = const Color(0xFF0F0F1E);
+  final Color premiumGold = const Color(0xFFFFD700);
 
   @override
   void initState() {
@@ -68,12 +67,11 @@ class _LoginState extends State<Login> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  // This is your original _signIn method
   Future<void> _signIn() async {
     final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
@@ -88,25 +86,30 @@ class _LoginState extends State<Login> {
 
     setState(() => _isLoading = true);
 
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    // Call Login API with password
     final result = await AuthService.login(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
+      phone: phone,
+      password: password,
       tenantName: _selectedTenantName!,
     );
 
     if (!mounted) return;
 
     if (result['success']) {
+      // Set tenant and authenticate
       final data = result['data'];
-      Provider.of<TenantProvider>(context, listen: false)
-          .setTenant(data['tenant']);
-      await Provider.of<UserProvider>(context, listen: false)
-          .handleSuccessfulAuth();
+      if (data != null && data['tenant'] != null) {
+        context.read<TenantProvider>().setTenant(data['tenant']);
+      }
+      await context.read<UserProvider>().handleSuccessfulAuth();
       if (mounted) context.go('/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('${l10n.loginFailedPrefix}${result['message']}'),
+            content: Text('${result['message']}'), // Use API message
             backgroundColor: Colors.red),
       );
     }
@@ -114,7 +117,6 @@ class _LoginState extends State<Login> {
     if (mounted) setState(() => _isLoading = false);
   }
 
-  // ... (Rest of your original login.dart file)
   void _togglePasswordVisibility() {
     setState(() => _obscurePassword = !_obscurePassword);
   }
@@ -123,15 +125,29 @@ class _LoginState extends State<Login> {
     return Consumer<LanguageProvider>(
       builder: (context, languageProvider, child) {
         final isAmharic = languageProvider.currentLocale.languageCode == 'am';
-        return OutlinedButton.icon(
-          onPressed: () => languageProvider.toggleLocale(),
-          icon: const Icon(Icons.translate, size: 20),
-          label: Text(isAmharic ? 'English' : 'አማርኛ'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.white70,
-            side: const BorderSide(color: Colors.white30),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: InkWell(
+            onTap: () => languageProvider.toggleLocale(),
+            borderRadius: BorderRadius.circular(30),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.language, size: 20, color: premiumGold),
+                  const SizedBox(width: 8),
+                  Text(
+                    isAmharic ? 'English' : 'አማርኛ',
+                    style: GoogleFonts.poppins(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -143,127 +159,209 @@ class _LoginState extends State<Login> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      backgroundColor: primaryLoginColor,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned(
-              top: 16,
-              right: 16,
-              child: _buildLanguageToggle(context),
-            ),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Icon(Icons.lock_open_rounded,
-                            size: 80, color: accentLoginColor),
-                        const SizedBox(height: 24),
-                        Text(l10n.loginWelcome,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.notoSansEthiopic(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white)),
-                        const SizedBox(height: 8),
-                        Text(l10n.loginPrompt,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.notoSansEthiopic(
-                                fontSize: 16, color: Colors.white70)),
-                        const SizedBox(height: 32),
-                        _buildTenantsDropdown(),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: _buildInputDecoration(
-                              labelText: l10n.loginEmail,
-                              prefixIcon: Icons.email),
-                          style: const TextStyle(color: Colors.black87),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) {
-                            if (value == null || value.isEmpty)
-                              return l10n.errorRequiredField;
-                            if (!value.contains('@'))
-                              return l10n.errorInvalidEmail;
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          decoration: _buildInputDecoration(
-                              labelText: l10n.loginPassword,
-                              prefixIcon: Icons.lock,
-                              isPassword: true),
-                          style: const TextStyle(color: Colors.black87),
-                          obscureText: _obscurePassword,
-                          validator: (value) {
-                            if (value == null || value.isEmpty)
-                              return l10n.errorRequiredField;
-                            if (value.length < 6)
-                              return l10n.loginPasswordLengthError;
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {/* Forgot password logic */},
-                            child: Text(l10n.loginForgotPassword,
-                                style: TextStyle(color: accentLoginColor)),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _signIn,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentLoginColor,
-                            foregroundColor: primaryLoginColor,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 3, color: primaryLoginColor))
-                              : Text(l10n.loginButton,
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(l10n.loginNoAccount,
-                                style: GoogleFonts.notoSansEthiopic(
-                                    color: Colors.white70)),
-                            TextButton(
-                              onPressed: () => context.go('/signup'),
-                              child: Text(l10n.signupButton,
-                                  style: GoogleFonts.notoSansEthiopic(
-                                      color: accentLoginColor,
-                                      fontWeight: FontWeight.bold)),
+      extendBodyBehindAppBar: true,
+      body: Container(
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.8),
+              premiumDark,
+              Colors.black,
+            ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 16,
+                right: 16,
+                child: FadeInDown(
+                    duration: const Duration(milliseconds: 800),
+                    child: _buildLanguageToggle(context)),
+              ),
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Logo Section
+                          ZoomIn(
+                            duration: const Duration(milliseconds: 1000),
+                            child: Hero(
+                              tag: 'app_logo',
+                              child: Container(
+                                height: 100,
+                                width: 100,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: premiumGold.withOpacity(0.3),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                padding: const EdgeInsets.all(16),
+                                child: Image.asset(
+                                  'assets/images/logo.png',
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          const SizedBox(height: 32),
+
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 200),
+                            child: Text(
+                              l10n.loginWelcome,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.notoSansEthiopic(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 300),
+                            child: Text(
+                              "Login with Phone Number",
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.notoSansEthiopic(
+                                  fontSize: 16, color: Colors.white70),
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 400),
+                            child: _buildTenantsDropdown(),
+                          ),
+                          const SizedBox(height: 16),
+
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 500),
+                            child: TextFormField(
+                              controller: _phoneController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: _buildInputDecoration(
+                                  labelText: "Phone Number",
+                                  prefixIcon: Icons.phone_android),
+                              keyboardType: TextInputType.phone,
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return l10n.errorRequiredField;
+                                // Simple phone validation?
+                                if (value.length < 9)
+                                  return "Invalid phone number";
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 600),
+                            child: TextFormField(
+                              controller: _passwordController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: _buildInputDecoration(
+                                  labelText: "Password",
+                                  prefixIcon: Icons.lock,
+                                  isPassword: true),
+                              obscureText: _obscurePassword,
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return l10n.errorRequiredField;
+                                if (value.length < 6)
+                                  return "Password must be at least 6 characters";
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 650),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () =>
+                                    context.push('/forgot-password'),
+                                child: Text("Forgot Password?",
+                                    style: TextStyle(color: premiumGold)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 700),
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _signIn,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: premiumGold,
+                                foregroundColor: premiumDark,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 18),
+                                elevation: 8,
+                                shadowColor: premiumGold.withOpacity(0.4),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16)),
+                              ),
+                              child: _isLoading
+                                  ? SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 3, color: premiumDark))
+                                  : Text("Login",
+                                      style: GoogleFonts.poppins(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          FadeInUp(
+                            delay: const Duration(milliseconds: 800),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(l10n.loginNoAccount,
+                                    style: GoogleFonts.notoSansEthiopic(
+                                        color: Colors.white70)),
+                                TextButton(
+                                  onPressed: () => context.go('/signup'),
+                                  child: Text(l10n.signupButton,
+                                      style: GoogleFonts.notoSansEthiopic(
+                                          color: premiumGold,
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -275,28 +373,27 @@ class _LoginState extends State<Login> {
       bool isPassword = false}) {
     return InputDecoration(
       labelText: labelText,
-      labelStyle: const TextStyle(color: Colors.black54),
-      prefixIcon: Icon(prefixIcon, color: Colors.black54),
+      labelStyle: const TextStyle(color: Colors.white70),
+      prefixIcon: Icon(prefixIcon, color: premiumGold),
       suffixIcon: isPassword
           ? IconButton(
               icon: Icon(
                   _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.black54),
+                  color: Colors.white70),
               onPressed: _togglePasswordVisibility,
             )
           : null,
       border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.grey)),
+          borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.grey)),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
       focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryLoginColor, width: 2)),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: premiumGold, width: 1.5)),
       filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      fillColor: Colors.white.withOpacity(0.08),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
     );
   }
 
@@ -308,14 +405,15 @@ class _LoginState extends State<Login> {
     if (_tenantsLoading) {
       return DropdownButtonFormField<String>(
         hint: Text(l10n.loginLoadingSchools,
-            style: TextStyle(color: Colors.black54)),
+            style: TextStyle(color: Colors.white70)),
         decoration: dropdownDecoration,
         items: const [],
         onChanged: null,
         icon: const SizedBox(
             width: 20,
             height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2)),
+            child:
+                CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
       );
     }
 
@@ -324,7 +422,7 @@ class _LoginState extends State<Login> {
         children: [
           DropdownButtonFormField<String>(
             hint: Text(l10n.loginNoSchoolsAvailable,
-                style: TextStyle(color: Colors.black54)),
+                style: TextStyle(color: Colors.white70)),
             decoration: dropdownDecoration.copyWith(
                 prefixIcon:
                     const Icon(Icons.error_outline, color: Colors.orange)),
@@ -343,7 +441,7 @@ class _LoginState extends State<Login> {
                 TextButton(
                     onPressed: _loadTenants,
                     child: Text(l10n.retryButton,
-                        style: TextStyle(color: accentLoginColor))),
+                        style: TextStyle(color: premiumGold))),
               ],
             ),
           )
@@ -354,7 +452,7 @@ class _LoginState extends State<Login> {
     return DropdownButtonFormField<String>(
       value: _selectedTenantId,
       hint: Text(l10n.loginSchoolName,
-          style: const TextStyle(color: Colors.black54)),
+          style: const TextStyle(color: Colors.white70)),
       isExpanded: true,
       items: _tenants
           .map((tenant) => DropdownMenuItem(
@@ -372,7 +470,7 @@ class _LoginState extends State<Login> {
         }
       },
       dropdownColor: Colors.white,
-      icon: const Icon(Icons.arrow_drop_down, color: Colors.black54),
+      icon: Icon(Icons.arrow_drop_down, color: premiumGold),
       style: const TextStyle(color: Colors.black87),
       validator: (value) => value == null ? l10n.errorRequiredField : null,
       decoration: dropdownDecoration,

@@ -16,8 +16,7 @@ import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/language_provider.dart';
 
 // Constants
-import 'package:amde_haymanot_abalat_guday/constants/hero_tags.dart';
-import 'package:amde_haymanot_abalat_guday/constants/app_colors.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // #########################################################################
 // SCREEN: HomeScreen (Main Container)
@@ -25,6 +24,9 @@ import 'package:amde_haymanot_abalat_guday/constants/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  static final GlobalKey<ScaffoldState> scaffoldKey =
+      GlobalKey<ScaffoldState>();
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -102,14 +104,9 @@ class _MobileLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final pageTitles = [
-      l10n.homePageTitle,
-      l10n.managementPageTitle,
-      l10n.learningPageTitle,
-      l10n.profilePageTitle,
-    ];
 
     return Scaffold(
+      key: HomeScreen.scaffoldKey,
       // =========== THE FIX IS HERE ===========
       // Assign the AppDrawer to the Scaffold's drawer property.
       drawer: AppDrawer(
@@ -117,12 +114,7 @@ class _MobileLayout extends StatelessWidget {
         onItemTapped: onItemTapped,
       ),
       // =======================================
-      appBar: ModernAppBar(
-        title: pageTitles[selectedIndex],
-        onProfileTap: () {},
-        currentLocale: languageProvider.currentLocale,
-        languageProvider: languageProvider,
-      ),
+      // AppBar removed to allow child screens to control their own headers
       body: IndexedStack(
         index: selectedIndex,
         children: pages,
@@ -195,11 +187,12 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: AppColors.surfaceColor,
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       elevation: 0,
       leading: Builder(
         builder: (context) => IconButton(
-          icon: const Icon(Iconsax.menu, color: AppColors.primaryColor),
+          icon: Icon(Iconsax.menu,
+              color: Theme.of(context).appBarTheme.foregroundColor),
           onPressed: () => Scaffold.of(context).openDrawer(),
           tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
         ),
@@ -208,20 +201,30 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
         title,
         style: currentLocale.languageCode == 'am'
             ? GoogleFonts.notoSansEthiopic(
-                color: AppColors.textPrimary,
+                color: Theme.of(context).appBarTheme.foregroundColor,
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
               )
             : GoogleFonts.roboto(
-                color: AppColors.textPrimary,
+                color: Theme.of(context).appBarTheme.foregroundColor,
                 fontSize: 20,
                 fontWeight: FontWeight.w500,
               ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.language, color: AppColors.primaryColor),
-          tooltip: 'Switch Language',
+          icon: Icon(
+              context.watch<ThemeProvider>().isDarkMode(context)
+                  ? Iconsax.sun_1
+                  : Iconsax.moon,
+              color: Theme.of(context).appBarTheme.foregroundColor),
+          tooltip: AppLocalizations.of(context)!.settingsTheme,
+          onPressed: () => context.read<ThemeProvider>().toggleTheme(),
+        ),
+        IconButton(
+          icon: Icon(Icons.language,
+              color: Theme.of(context).appBarTheme.foregroundColor),
+          tooltip: AppLocalizations.of(context)!.settingsLanguageToggleTooltip,
           onPressed: () {
             languageProvider.toggleLocale();
           },
@@ -238,6 +241,10 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
 // WIDGET 3: AppBottomNavBar (Restored and Fixed)
 // #########################################################################
 
+// --- Constants ---
+const Color premiumDark = Color(0xFF0F0F1E);
+const Color premiumGold = Color(0xFFFFD700);
+
 class AppBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onItemTapped;
@@ -253,42 +260,49 @@ class AppBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.primaryColor,
-        borderRadius: BorderRadius.circular(24),
+        color: premiumDark.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: premiumGold.withOpacity(0.2), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 20,
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 25,
+            spreadRadius: 2,
             offset: const Offset(0, 10),
           )
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _NavBarItem(
             icon: Iconsax.home_2,
+            activeIcon: Iconsax.home_25,
             label: l10n.homePageTitle,
             isSelected: selectedIndex == 0,
             onTap: () => onItemTapped(0),
           ),
           _NavBarItem(
-            icon: Iconsax.shield_tick,
-            label: l10n.managementPageTitle,
+            icon: Iconsax
+                .cloud_connection, // Changed to better represent "Private" or "Connect"
+            activeIcon: Iconsax.cloud_connection5,
+            label: "ማህበረሰብ", // Updated label for "Community/Private"
             isSelected: selectedIndex == 1,
             onTap: () => onItemTapped(1),
           ),
           _NavBarItem(
             icon: Iconsax.teacher,
+            activeIcon: Iconsax.teacher5,
             label: l10n.learningPageTitle,
             isSelected: selectedIndex == 2,
             onTap: () => onItemTapped(2),
           ),
           _NavBarItem(
             icon: Iconsax.user,
+            activeIcon: Iconsax.user5, // Filled version
             label: l10n.profilePageTitle,
             isSelected: selectedIndex == 3,
             onTap: () => onItemTapped(3),
@@ -301,12 +315,14 @@ class AppBottomNavBar extends StatelessWidget {
 
 class _NavBarItem extends StatelessWidget {
   final IconData icon;
+  final IconData activeIcon;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _NavBarItem({
     required this.icon,
+    required this.activeIcon,
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -315,26 +331,22 @@ class _NavBarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutQuart,
+        padding: EdgeInsets.symmetric(
+            horizontal: isSelected ? 20 : 12, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.accentColor.withOpacity(0.2)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? premiumGold : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           children: [
             Icon(
-              icon,
-              color: isSelected
-                  ? AppColors.accentColor
-                  : Colors.white.withOpacity(0.7),
+              isSelected ? activeIcon : icon,
+              color: isSelected ? premiumDark : Colors.white54,
               size: 24,
             ),
             AnimatedSize(
@@ -350,12 +362,12 @@ class _NavBarItem extends StatelessWidget {
                       label,
                       style: l10n.localeName == 'am'
                           ? GoogleFonts.notoSansEthiopic(
-                              color: AppColors.accentColor,
-                              fontWeight: FontWeight.bold,
+                              color: premiumDark,
+                              fontWeight: FontWeight.w800,
                               fontSize: 14,
                             )
-                          : GoogleFonts.roboto(
-                              color: AppColors.accentColor,
+                          : GoogleFonts.poppins(
+                              color: premiumDark,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -391,61 +403,63 @@ class AppNavigationRail extends StatelessWidget {
     final currentLocale =
         l10n.localeName == 'am' ? const Locale('am') : const Locale('en');
 
-    return Hero(
-      tag: HeroTags.navRail(userId),
-      child: Material(
-        child: NavigationRail(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: onDestinationSelected,
-          backgroundColor: AppColors.surfaceColor,
-          selectedIconTheme:
-              const IconThemeData(color: AppColors.primaryColor, size: 28),
-          unselectedIconTheme: IconThemeData(color: Colors.grey[600], size: 26),
-          labelType: NavigationRailLabelType.all,
-          useIndicator: true,
-          indicatorColor: AppColors.primaryColor.withOpacity(0.1),
-          leading: Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Hero(
-              tag: 'app_logo',
-              child: Material(
-                color: Colors.transparent,
-                child: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppColors.primaryColor,
-                  child:
-                      const Icon(Iconsax.home_2, color: Colors.white, size: 28),
-                ),
+    return Material(
+      child: NavigationRail(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: onDestinationSelected,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        selectedIconTheme:
+            IconThemeData(color: Theme.of(context).primaryColor, size: 28),
+        unselectedIconTheme:
+            IconThemeData(color: Theme.of(context).disabledColor, size: 26),
+        labelType: NavigationRailLabelType.all,
+        useIndicator: true,
+        indicatorColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+        leading: Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Hero(
+            tag: 'app_logo',
+            child: Material(
+              color: Colors.transparent,
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: Theme.of(context).primaryColor,
+                child: Icon(Iconsax.home_2,
+                    color: Theme.of(context).colorScheme.onPrimary, size: 28),
               ),
             ),
           ),
-          destinations: [
-            _buildNavRailDestination(
-              icon: Iconsax.home_2,
-              label: l10n.homePageTitle,
-              isSelected: selectedIndex == 0,
-              locale: currentLocale,
-            ),
-            _buildNavRailDestination(
-              icon: Iconsax.category,
-              label: l10n.managementPageTitle,
-              isSelected: selectedIndex == 1,
-              locale: currentLocale,
-            ),
-            _buildNavRailDestination(
-              icon: Iconsax.book_1,
-              label: l10n.learningPageTitle,
-              isSelected: selectedIndex == 2,
-              locale: currentLocale,
-            ),
-            _buildNavRailDestination(
-              icon: Iconsax.profile_circle,
-              label: l10n.profilePageTitle,
-              isSelected: selectedIndex == 3,
-              locale: currentLocale,
-            ),
-          ],
         ),
+        destinations: [
+          _buildNavRailDestination(
+            context: context,
+            icon: Iconsax.home_2,
+            label: l10n.homePageTitle,
+            isSelected: selectedIndex == 0,
+            locale: currentLocale,
+          ),
+          _buildNavRailDestination(
+            context: context,
+            icon: Iconsax.category,
+            label: l10n.managementPageTitle,
+            isSelected: selectedIndex == 1,
+            locale: currentLocale,
+          ),
+          _buildNavRailDestination(
+            context: context,
+            icon: Iconsax.book_1,
+            label: l10n.learningPageTitle,
+            isSelected: selectedIndex == 2,
+            locale: currentLocale,
+          ),
+          _buildNavRailDestination(
+            context: context,
+            icon: Iconsax.profile_circle,
+            label: l10n.profilePageTitle,
+            isSelected: selectedIndex == 3,
+            locale: currentLocale,
+          ),
+        ],
       ),
     );
   }
@@ -456,14 +470,17 @@ NavigationRailDestination _buildNavRailDestination({
   required String label,
   required bool isSelected,
   required Locale? locale,
+  required BuildContext context,
 }) {
   return NavigationRailDestination(
-    icon: Icon(icon, size: 24, color: Colors.grey[600]),
-    selectedIcon: Icon(icon, size: 26, color: AppColors.primaryColor),
+    icon: Icon(icon, size: 24, color: Theme.of(context).disabledColor),
+    selectedIcon: Icon(icon, size: 26, color: Theme.of(context).primaryColor),
     label: Text(
       label,
       style: TextStyle(
-        color: isSelected ? AppColors.primaryColor : Colors.grey[600],
+        color: isSelected
+            ? Theme.of(context).primaryColor
+            : Theme.of(context).disabledColor,
         fontSize: 12,
         fontFamily:
             locale?.languageCode == 'am' ? 'NotoSansEthiopic' : 'Roboto',

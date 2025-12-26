@@ -3,6 +3,7 @@ import 'dart:ui'; // Required for ImageFilter
 
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 import 'package:amde_haymanot_abalat_guday/role%20based/private.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/otp_verification_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,7 +36,10 @@ import 'package:amde_haymanot_abalat_guday/users%20screen/home_screen.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/login.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/settings_screen.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/signup.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/forgot_password_screen.dart';
+
 import 'package:amde_haymanot_abalat_guday/users%20screen/start_screen.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/splash_screen.dart';
 
 // Your existing colors, now primarily for the Light Theme
 const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
@@ -50,6 +54,11 @@ Future<void> main() async {
     await dotenv.load(fileName: ".env");
 
     final apiBaseUrl = _getApiBaseUrl();
+    // DEBUG LOG
+    print('----------------------------------------------------');
+    print('🔌 API URL Configured: $apiBaseUrl');
+    print('----------------------------------------------------');
+
     ApiService.initialize(baseUrl: apiBaseUrl);
 
     await initializeDateFormatting('am', null);
@@ -81,7 +90,17 @@ Future<void> main() async {
 }
 
 String _getApiBaseUrl() {
-  return 'http://akilesiya.amdehaymanot.com/api';
+  if (kIsWeb) {
+    return 'http://localhost:3000/api';
+  }
+
+  // 10.0.2.2 is required for Android Emulator to access host machine
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    return 'http://10.0.2.2:3000/api';
+  }
+
+  // Default fallback for iOS etc.
+  return 'http://localhost:3000/api';
 }
 
 class MyApp extends StatelessWidget {
@@ -97,71 +116,98 @@ class MyApp extends StatelessWidget {
     final router = GoRouter(
       navigatorKey: navigatorKey,
       refreshListenable: userProvider,
+      initialLocation: '/splash',
       routes: <RouteBase>[
         GoRoute(
           path: '/',
           builder: (BuildContext context, GoRouterState state) =>
               const AuthGate(),
-          routes: [
-            GoRoute(
-              path: 'start',
-              builder: (context, state) => const StartScreen(),
-            ),
-            GoRoute(
-              path: 'login',
-              builder: (context, state) => const Login(),
-            ),
-            GoRoute(
-              path: 'signup',
-              builder: (context, state) => const SignUpScreen(),
-            ),
-            GoRoute(
-              path: 'home',
-              builder: (context, state) => const HomeScreen(),
-            ),
-            GoRoute(
-              path: 'settings',
-              builder: (context, state) => const SettingsScreen(),
-            ),
-            GoRoute(
-              path: 'admin/development-hub',
-              builder: (context, state) => const MemberDevelopmentHubScreen(),
-            ),
-            GoRoute(
-              path: 'admin/member-development/notes',
-              builder: (context, state) {
-                final user = state.extra as Map<String, dynamic>;
-                return AdminMemberDevelopmentScreen(user: user);
-              },
-            ),
-            GoRoute(
-              path: '/admin/posts',
-              builder: (context, state) => const AdminPostManagementScreen(),
-            ),
-            GoRoute(
-              path: 'system-admin',
-              builder: (context, state) => const SystemAdminDashboard(),
-            ),
-            GoRoute(
-              path: 'system-admin/user-management',
-              builder: (context, state) => const UserManagementScreen(),
-            ),
-            GoRoute(
-              path: 'system-admin/user-details/:userId',
-              builder: (context, state) {
-                final userId = state.pathParameters['userId']!;
-                return UserDetailsScreen(userId: userId);
-              },
-            ),
-            GoRoute(
-              path: 'system-admin/analytics',
-              builder: (context, state) => const PlatformAnalyticsScreen(),
-            ),
-            GoRoute(
-              path: 'system-admin/settings',
-              builder: (context, state) => const SystemSettingsScreen(),
-            ),
-          ],
+        ),
+        GoRoute(
+          path: '/splash',
+          builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: '/start',
+          builder: (context, state) => const StartScreen(),
+        ),
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const Login(),
+        ),
+        GoRoute(
+          path: '/signup',
+          builder: (context, state) => const SignUpScreen(),
+        ),
+        GoRoute(
+          path: '/forgot-password',
+          builder: (context, state) => const ForgotPasswordScreen(),
+        ),
+        GoRoute(
+          path: '/otp-verify',
+          builder: (context, state) {
+            // Handle both String (forgot password) and Map (signup with password)
+            final extra = state.extra;
+            if (extra is Map<String, dynamic>) {
+              // From signup with password
+              return OtpVerificationScreen(
+                phone: extra['phone'] as String,
+                password: extra['password'] as String?,
+              );
+            } else if (extra is String) {
+              // From forgot password (legacy)
+              return OtpVerificationScreen(phone: extra);
+            } else {
+              // Fallback - shouldn't happen
+              return OtpVerificationScreen(phone: '');
+            }
+          },
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/development-hub',
+          builder: (context, state) => const MemberDevelopmentHubScreen(),
+        ),
+        GoRoute(
+          path: '/admin/member-development/notes',
+          builder: (context, state) {
+            final user = state.extra as Map<String, dynamic>;
+            return AdminMemberDevelopmentScreen(user: user);
+          },
+        ),
+        GoRoute(
+          path: '/admin/posts',
+          builder: (context, state) => const AdminPostManagementScreen(),
+        ),
+        GoRoute(
+          path: '/system-admin',
+          builder: (context, state) => const SystemAdminDashboard(),
+        ),
+        GoRoute(
+          path: '/system-admin/user-management',
+          builder: (context, state) => const UserManagementScreen(),
+        ),
+        GoRoute(
+          path: '/system-admin/user-details/:userId',
+          builder: (context, state) {
+            final userId = state.pathParameters['userId']!;
+            return UserDetailsScreen(userId: userId);
+          },
+        ),
+        GoRoute(
+          path: '/system-admin/analytics',
+          builder: (context, state) => const PlatformAnalyticsScreen(),
+        ),
+        GoRoute(
+          path: '/system-admin/settings',
+          builder: (context, state) => const SystemSettingsScreen(),
         ),
       ],
       redirect: (BuildContext context, GoRouterState state) {
@@ -169,10 +215,13 @@ class MyApp extends StatelessWidget {
         final isLoading = userProvider.isLoading;
 
         if (isLoading) return null;
+        if (state.uri.path == '/splash') return null;
 
         final isAuthPath = state.uri.path == '/login' ||
             state.uri.path == '/signup' ||
-            state.uri.path == '/start';
+            state.uri.path == '/start' ||
+            state.uri.path == '/otp-verify' ||
+            state.uri.path == '/forgot-password';
 
         if (isLoggedIn && isAuthPath) return '/home';
         if (!isLoggedIn && !isAuthPath && state.uri.path != '/')
@@ -223,16 +272,21 @@ class MyApp extends StatelessWidget {
     final Color appBarColor;
     final Color appBarTextColor;
 
+    // FORCE DARK THEME (As requested: "keep the dark only")
+    // Use Midnight Gold Dark Theme for both Light and Dark modes
+    scaffoldBg = const Color(
+        0xFF0A0E17); // Premium Deep Midnight Blue/Black (Distinct from specific logo blue)
+    surfaceColor = const Color(0xFF1C2230); // Lighter shade for cards/surfaces
+    textColor = accentColor; // GOLDEN TEXT for dark theme!
+    secondaryTextColor =
+        const Color(0xFF9E9E9E); // Silver/Grey for secondary text
+    inputFillColor = const Color(0xFF232936);
+    appBarColor = const Color(0xFF0A0E17); // Match scaffold for seamless look
+    appBarTextColor = accentColor; // Golden app bar text
+
+    /* LIGHT THEME COMMENTED OUT AS REQUESTED
     if (isDark) {
-      // --- ENHANCED "MIDNIGHT GOLD" DARK THEME ---
-      scaffoldBg = const Color(0xFF0F0F1E); // Deeper dark blue-black
-      surfaceColor = const Color(0xFF1E1E2E); // Elevated surface for cards
-      textColor = accentColor; // GOLDEN TEXT for dark theme!
-      secondaryTextColor =
-          const Color(0xFFD4D4D8); // Light grey for secondary text
-      inputFillColor = const Color(0xFF2A2A3E);
-      appBarColor = const Color(0xFF1A1A2E);
-      appBarTextColor = accentColor; // Golden app bar text
+      // ... dark theme logic above ...
     } else {
       // --- ENHANCED LIGHT THEME WITH PROPER CONTRAST ---
       scaffoldBg = const Color(0xFFF8F9FA); // Very light grey
@@ -244,6 +298,7 @@ class MyApp extends StatelessWidget {
       appBarColor = primaryColor; // Your brand's main blue color
       appBarTextColor = accentColor; // Golden text on dark blue appbar
     }
+    */
 
     final baseTextTheme =
         isDark ? Typography.whiteHelsinki : Typography.blackHelsinki;

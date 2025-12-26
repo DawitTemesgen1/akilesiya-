@@ -3,17 +3,32 @@
 import 'package:amde_haymanot_abalat_guday/providers/profile_config_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/profile_service.dart';
+import 'package:amde_haymanot_abalat_guday/services/auth_service.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
+
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
-const Color accentColor = Color(0xFFFFD700);
-const Color dangerColor = Color(0xFFDC3545);
-const Color successColor = Color(0xFF198754);
+// AppTheme import removed
+// Colors removed, using Theme.of(context) instead
+
+// Spiritual class options (from grade management)
+const List<String> spiritualClassOptions = [
+  '1ኛ ክፍል',
+  '2ኛ ክፍል',
+  '3ኛ ክፍል',
+  '4ኛ ክፍል',
+  '5ኛ ክፍል',
+  '6ኛ ክፍል',
+  '7ኛ ክፍል',
+  '8ኛ ክፍል',
+  '9ኛ ክፍል',
+  '10ኛ ክፍል',
+  '11ኛ ክፍል',
+  '12ኛ ክፍል'
+];
 
 class UserEditProfileScreen extends StatefulWidget {
   const UserEditProfileScreen({super.key});
@@ -37,7 +52,10 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
   late TextEditingController _parentPhoneController;
   String? _gender;
   DateTime? _dob;
+  String? _spiritualClass;
   Map<String, String?> _selectedCustomFieldValues = {};
+  List<dynamic> _localCustomFields = [];
+  bool _isLoadingFields = false;
 
   @override
   void initState() {
@@ -47,39 +65,78 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     });
   }
 
-  void _initializeState() {
-    final profile = context.read<UserProvider>().userProfile;
-    if (profile != null) {
-      _fullNameController = TextEditingController(text: profile['full_name']);
-      _christianNameController =
-          TextEditingController(text: profile['christian_name']);
-      _phoneController = TextEditingController(text: profile['phone_number']);
-      _motherNameController =
-          TextEditingController(text: profile['mother_name']);
-      _confessionFatherController =
-          TextEditingController(text: profile['confession_father_name']);
-      _academicLevelController =
-          TextEditingController(text: profile['academic_level']);
-      _kifilController = TextEditingController(text: profile['kifil']);
-      _parentNameController =
-          TextEditingController(text: profile['parent_name']);
-      _parentPhoneController =
-          TextEditingController(text: profile['parent_phone_number']);
-      _gender = profile['gender'];
-      _dob = (profile['dob'] != null && profile['dob'].toString().isNotEmpty)
-          ? DateTime.tryParse(profile['dob'].toString())
-          : null;
+  Future<void> _initializeState() async {
+    // Force fetch config to ensure we have the latest fields (and retry if prev failed)
+    context.read<ProfileConfigProvider>().fetchConfig();
 
-      // ======================= THE FIX =======================
-      // The UserProvider now stores 'custom_field_values' as a Map.
-      // This line now correctly reads that Map instead of a List.
-      _selectedCustomFieldValues = Map<String, String?>.from(
-          profile['custom_field_values'] as Map? ?? {});
-      // =======================================================
+    final profile = context.read<UserProvider>().userProfile;
+    if (profile == null) return;
+
+    // 1. Setup Controllers
+    _fullNameController = TextEditingController(text: profile['full_name']);
+    _christianNameController =
+        TextEditingController(text: profile['christian_name']);
+    _phoneController = TextEditingController(text: profile['phone_number']);
+    _motherNameController = TextEditingController(text: profile['mother_name']);
+    _confessionFatherController =
+        TextEditingController(text: profile['confession_father_name']);
+    _academicLevelController =
+        TextEditingController(text: profile['academic_level']);
+    _kifilController = TextEditingController(text: profile['kifil']);
+    _parentNameController = TextEditingController(text: profile['parent_name']);
+    _parentPhoneController =
+        TextEditingController(text: profile['parent_phone_number']);
+    _gender = profile['gender'];
+    _dob = (profile['dob'] != null && profile['dob'].toString().isNotEmpty)
+        ? DateTime.tryParse(profile['dob'].toString())
+        : null;
+    _spiritualClass = profile['spiritual_class'];
+
+    // 2. Parse Saved Values
+    final rawCustomValues = profile['custom_field_values'];
+    if (rawCustomValues is List) {
+      _selectedCustomFieldValues = {
+        for (var item in rawCustomValues)
+          if (item['field_id'] != null && item['option_id'] != null)
+            item['field_id'].toString(): item['option_id'].toString()
+      };
+    } else if (rawCustomValues is Map) {
+      _selectedCustomFieldValues = Map<String, String?>.from(rawCustomValues);
+    } else {
+      _selectedCustomFieldValues = {};
+    }
+
+    setState(() {
+      _isInitialized = true;
+    });
+
+    // 3. Fetch Custom Fields Definitions Directly (Bypassing Provider)
+    if (profile['tenant_id'] != null) {
+      await _fetchCustomFieldsDirectly(profile['tenant_id'].toString());
+    } else {
+      print("DEBUG: No tenant_id found for fields fetch.");
+    }
+  }
+
+  Future<void> _fetchCustomFieldsDirectly(String tenantId) async {
+    if (!mounted) return;
+    setState(() => _isLoadingFields = true);
+    try {
+      final fields = await AuthService.getTenantCustomFields(tenantId);
+      if (!mounted) return;
+
+      final userFields = fields.where((f) {
+        final managedBy = f['managed_by']?.toString().toUpperCase();
+        return managedBy == 'USER' || managedBy == null || managedBy == 'NULL';
+      }).toList();
 
       setState(() {
-        _isInitialized = true;
+        _localCustomFields = userFields;
+        _isLoadingFields = false;
       });
+    } catch (e) {
+      print("DEBUG: Error fetching custom fields: $e");
+      if (mounted) setState(() => _isLoadingFields = false);
     }
   }
 
@@ -117,6 +174,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
       'parent_phone_number': _parentPhoneController.text,
       'gender': _gender,
       'dob': _dob?.toIso8601String().substring(0, 10),
+      'spiritual_class': _spiritualClass,
       'custom_field_values': _selectedCustomFieldValues,
     };
 
@@ -126,7 +184,9 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
       final wasSuccessful = result['success'] ?? false;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(result['message']!),
-          backgroundColor: wasSuccessful ? successColor : dangerColor));
+          backgroundColor: wasSuccessful
+              ? Colors.green
+              : Theme.of(context).colorScheme.error));
       if (wasSuccessful) Navigator.of(context).pop(true);
     }
     if (mounted) setState(() => _isSaving = false);
@@ -135,9 +195,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileConfig = context.watch<ProfileConfigProvider>();
-    final userCustomFields = profileConfig.customFields
-        .where((f) => f['managed_by'] == 'USER')
-        .toList();
+    final userCustomFields = _localCustomFields;
 
     if (!_isInitialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -145,9 +203,11 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-          title: Text(AppLocalizations.of(context)!.profileEditTitle),
-          backgroundColor: primaryColor,
-          foregroundColor: accentColor),
+          title: Text(AppLocalizations.of(context)!.profileEditTitle,
+              style: TextStyle(
+                  color: Theme.of(context).appBarTheme.foregroundColor)),
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+          foregroundColor: Theme.of(context).appBarTheme.foregroundColor),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -175,15 +235,27 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   Iconsax.call,
                   keyboardType: TextInputType.phone),
             if (profileConfig.isWidgetVisible('gender'))
-              _buildDropdownFormField(
-                  value: _gender,
-                  label: AppLocalizations.of(context)!.profileGender,
-                  icon: Iconsax.people,
-                  items: [
-                    AppLocalizations.of(context)!.profileGenderMale,
-                    AppLocalizations.of(context)!.profileGenderFemale
-                  ],
-                  onChanged: (val) => setState(() => _gender = val)),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: DropdownButtonFormField<String>(
+                    value:
+                        _gender, // Ensure this matches one of the values below
+                    decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.profileGender,
+                        prefixIcon: const Icon(Iconsax.people),
+                        border: const OutlineInputBorder()),
+                    items: [
+                      DropdownMenuItem(
+                          value: 'Male',
+                          child: Text(
+                              AppLocalizations.of(context)!.profileGenderMale)),
+                      DropdownMenuItem(
+                          value: 'Female',
+                          child: Text(AppLocalizations.of(context)!
+                              .profileGenderFemale)),
+                    ],
+                    onChanged: (val) => setState(() => _gender = val)),
+              ),
             if (profileConfig.isWidgetVisible('dob')) _buildDatePicker(),
             _buildSectionHeader(
                 AppLocalizations.of(context)!.profileSpiritualAcademic),
@@ -192,6 +264,13 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   _confessionFatherController,
                   AppLocalizations.of(context)!.profileConfessionFather,
                   Iconsax.user_square),
+            if (profileConfig.isWidgetVisible('spiritual_class'))
+              _buildDropdownFormField(
+                  value: _spiritualClass,
+                  label: 'የመንፈሳዊ ትምህርት ክፍል',
+                  icon: Iconsax.teacher,
+                  items: spiritualClassOptions,
+                  onChanged: (val) => setState(() => _spiritualClass = val)),
             if (profileConfig.isWidgetVisible('academic_level'))
               _buildTextFormField(
                   _academicLevelController,
@@ -213,16 +292,30 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   AppLocalizations.of(context)!.profileGuardianPhone,
                   Iconsax.call_calling,
                   keyboardType: TextInputType.phone),
+            if (_isLoadingFields)
+              const Center(
+                  child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator())),
             if (userCustomFields.isNotEmpty) ...[
               _buildSectionHeader(
                   AppLocalizations.of(context)!.profileAdditionalInfo),
               ...userCustomFields.map((field) {
                 final fieldId = field['id'].toString();
                 final options = field['options'] as List<dynamic>? ?? [];
+
+                // Validate value exists in options to prevent Dropdown crash
+                var val = _selectedCustomFieldValues[fieldId];
+                if (val != null && options.isNotEmpty) {
+                  final exists =
+                      options.any((opt) => opt['id'].toString() == val);
+                  if (!exists) val = null;
+                }
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedCustomFieldValues[fieldId],
+                    value: val,
                     decoration: InputDecoration(
                         labelText: field['name'],
                         border: const OutlineInputBorder(),
@@ -249,12 +342,13 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   : const Icon(Iconsax.save_2),
               onPressed: _isSaving ? null : _submitForm,
               label: _isSaving
-                  ? const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(primaryColor))
+                  ? CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary))
                   : Text(AppLocalizations.of(context)!.profileSaveChanges),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: accentColor,
-                  foregroundColor: primaryColor,
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16)),
             ),
           ],
@@ -293,7 +387,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
       Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
           child: DropdownButtonFormField<String>(
-              value: value,
+              initialValue: value,
               decoration: InputDecoration(
                   labelText: label,
                   prefixIcon: Icon(icon),

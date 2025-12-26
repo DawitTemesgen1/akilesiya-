@@ -132,21 +132,23 @@ class _ProfileTemplateBuilderScreenState
     _showEditDialog(
       title: 'ለ"${field['name']}" አማራጭ ያክሉ',
       label: 'የአማራጭ ስም',
-      onSave: (value) async {
-        final result =
-            await TemplateService.createFieldOption(field['id'], value);
-        _handleApiResponse(result, dialogContext: context);
+      onSave: (value, dialogCtx) async {
+        final fieldId = int.tryParse(field['id'].toString()) ?? 0;
+        final result = await TemplateService.createFieldOption(fieldId, value);
+        _handleApiResponse(result, dialogContext: dialogCtx);
       },
       parentCtx: context,
     );
   }
 
-  void _deleteField(int fieldId) async {
+  void _deleteField(dynamic id) async {
+    final fieldId = int.tryParse(id.toString()) ?? 0;
     final result = await TemplateService.deleteCustomField(fieldId);
     _handleApiResponse(result);
   }
 
-  void _deleteOption(int optionId) async {
+  void _deleteOption(dynamic id) async {
+    final optionId = int.tryParse(id.toString()) ?? 0;
     final result = await TemplateService.deleteFieldOption(optionId);
     _handleApiResponse(result);
   }
@@ -224,7 +226,7 @@ class _ProfileTemplateBuilderScreenState
   void _showEditDialog(
       {required String title,
       required String label,
-      required Function(String) onSave,
+      required Function(String, BuildContext) onSave,
       BuildContext? parentCtx}) {
     final controller = TextEditingController();
     showDialog(
@@ -243,7 +245,7 @@ class _ProfileTemplateBuilderScreenState
                 ElevatedButton(
                   onPressed: () {
                     if (controller.text.trim().isNotEmpty) {
-                      onSave(controller.text.trim());
+                      onSave(controller.text.trim(), ctx);
                     }
                   },
                   child: Text('አስቀምጥ', style: GoogleFonts.notoSansEthiopic()),

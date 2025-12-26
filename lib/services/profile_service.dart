@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
+import 'package:amde_haymanot_abalat_guday/services/grade_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart'; // Assuming you might need this for profile picture uploads
@@ -54,7 +55,8 @@ class ProfileService {
   }
 
   static Future<Map<String, dynamic>> getMyGrades() {
-    return _handleResponse(ApiService.get('/profile/my-grades'));
+    // Use GradeService which fetches from the working /grades endpoint
+    return GradeService.getMyGrades();
   }
 
   static Future<Map<String, dynamic>> getMyBooks() {

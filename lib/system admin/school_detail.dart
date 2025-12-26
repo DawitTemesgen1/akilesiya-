@@ -83,6 +83,17 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (school?['logo_url'] != null)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: CircleAvatar(
+                          radius: 40,
+                          backgroundColor: Colors.grey[200],
+                          backgroundImage: NetworkImage(school!['logo_url']),
+                        ),
+                      ),
+                    ),
                   Text(
                     'መሰረታዊ መረጃ',
                     style: GoogleFonts.notoSansEthiopic(
@@ -90,6 +101,11 @@ class _SchoolDetailScreenState extends State<SchoolDetailScreen>
                   ),
                   const SizedBox(height: 16),
                   _buildInfoRow('የት/ቤት ስም', _safeParseString(school?['name'])),
+                  if (school?['motto'] != null)
+                    _buildInfoRow('መሪ ቃል', _safeParseString(school?['motto'])),
+                  if (school?['founding_year'] != null)
+                    _buildInfoRow('የተመሰረተበት ዓ.ም',
+                        _safeParseString(school?['founding_year'])),
                   _buildInfoRow(
                       'ፓስተር', _safeParseString(school?['pastor_name'])),
                   _buildInfoRow('ኢሜል', _safeParseString(school?['email'])),

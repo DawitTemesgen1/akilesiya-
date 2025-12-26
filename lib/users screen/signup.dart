@@ -1,8 +1,11 @@
+// lib/users screen/signup.dart
+
 import 'dart:io';
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/tenant_service.dart';
@@ -23,7 +26,7 @@ const List<String> serviceDepartments = [
   'ልማት ክፍል',
   'ቁጥጥር ክፍል',
   'መብዓና መስተነግዶ',
-  'אבאלאט ጉዳይ',
+  'አባላት ጉዳይ',
   'ሂሳብ ክፍል',
   'ፅህፈት ቤት',
   'ግንኙነት ክፍል',
@@ -48,18 +51,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   int _currentStep = 0;
   bool _isLoading = false;
 
-  final _step1FormKey = GlobalKey<FormState>();
-  final _step2FormKey = GlobalKey<FormState>();
-  final _step3FormKey = GlobalKey<FormState>();
-  final _step4FormKey = GlobalKey<FormState>();
+  final _step1FormKey = GlobalKey<FormState>(); // Account (Phone)
+  final _step2FormKey = GlobalKey<FormState>(); // Personal
+  final _step3FormKey = GlobalKey<FormState>(); // Guardian
+  final _step4FormKey = GlobalKey<FormState>(); // Service
+  // Step 5 is Agreement (no form key)
 
-  // Step 1
+  // Step 1: Account
   String? _selectedTenantId;
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
-  // Step 2
+  // Step 2: Personal
   final _fullNameController = TextEditingController();
   final _christianNameController = TextEditingController();
   final _confessionFatherController = TextEditingController();
@@ -67,12 +73,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _gender;
   final _ageController = TextEditingController();
   final _academicLevelController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
   EthiopianDate? _selectedDob;
   XFile? _profileImageFile;
 
-  // Step 3
+  // Step 3: Guardian
   final _parentNameController = TextEditingController();
   final _parentPhoneController = TextEditingController();
 
@@ -83,11 +88,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _previousResponsibility;
   String? _previousServiceLevel;
 
-  // Step 5: Agreement
+  // Step 5: Custom Fields (New)
+  List<Map<String, dynamic>> _customFields = [];
+  Map<String, String> _customFieldValues = {};
+  bool _isLoadingCustomFields = false;
+  final _step5FormKey = GlobalKey<FormState>();
+
+  // Step 6: Pledge (Renamed from Step 5)
   bool _hasAgreed = false;
 
   late Future<List<TenantSummary>> _tenantsFuture;
   List<String> _availableResponsibilities = generalResponsibilities;
+
+  // Premium Theme Colors matching Login/Start screens
+  final Color premiumDark = const Color(0xFF0F0F1E);
+  final Color premiumGold = const Color(0xFFFFD700);
 
   @override
   void initState() {
@@ -97,7 +112,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _fullNameController.dispose();
@@ -106,7 +121,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _motherNameController.dispose();
     _ageController.dispose();
     _academicLevelController.dispose();
-    _phoneController.dispose();
     _dobController.dispose();
     _parentNameController.dispose();
     _parentPhoneController.dispose();
@@ -129,6 +143,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  Future<void> _fetchCustomFields(String tenantId) async {
+    setState(() => _isLoadingCustomFields = true);
+    final fields = await AuthService.getTenantCustomFields(tenantId);
+    setState(() {
+      // Filter out ADMIN managed fields for user signup
+      _customFields = fields
+          .where((f) => f['managed_by'] == 'USER' || f['managed_by'] == null)
+          .toList();
+      _isLoadingCustomFields = false;
+      _customFieldValues.clear();
+      // Initialize with empty values if needed, or leave null
+    });
+  }
+
   Future<void> _pickProfileImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
@@ -140,32 +168,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  // --- FIX: THIS IS THE CORRECTED SUBMISSION LOGIC ---
   Future<void> _onFormSubmitted() async {
-    // Validate all form steps before proceeding
-    if (!(_step1FormKey.currentState?.validate() ?? false)) {
-      _showError('Please complete all required fields in the Account step.');
-      setState(() => _currentStep = 0); // Go back to the invalid step
-      return;
-    }
-    if (!(_step2FormKey.currentState?.validate() ?? false)) {
-      _showError('Please complete all required fields in the Personal step.');
-      setState(() => _currentStep = 1);
-      return;
-    }
-    // Note: Steps 3 and 4 (Guardian/Service) might not have required fields, so validation is optional
-    // but good practice if they become mandatory.
+    // Validate Current Step before submitting? Or validate all?
+    // User can only reach here if previous steps valid.
 
     if (!_hasAgreed) {
       _showError('You must agree to the pledge to complete registration.');
-      setState(() => _currentStep = 4);
       return;
     }
 
     setState(() => _isLoading = true);
 
-    // Your backend's registerUser function expects the school's NAME, not its ID.
-    // We must find the name from the list of tenants we fetched earlier.
     String? selectedTenantName;
     try {
       final tenants = await _tenantsFuture;
@@ -178,43 +191,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    // This map contains all the fields your backend is expecting individually.
-    final userProfileData = {
-      'tenantName': selectedTenantName, // Crucially, send the name
-      'email': _emailController.text.trim(),
-      'password': _passwordController.text.trim(),
-      'fullName': _fullNameController.text.trim(),
-      'christianName': _christianNameController.text.trim(),
-      'confessionFatherName': _confessionFatherController.text.trim(),
-      'motherName': _motherNameController.text.trim(),
-      'gender': _gender,
-      'age': _ageController.text.trim(),
-      'academicLevel': _academicLevelController.text.trim(),
-      'phoneNumber': _phoneController.text.trim(),
-      'dob': _selectedDob?.toDatabaseString(),
-      'parentName': _parentNameController.text.trim(),
-      'parentPhoneNumber': _parentPhoneController.text.trim(),
-      'hadPreviousService': _hadPreviousService,
-      'previousDepartment': _previousDepartment == 'Other'
-          ? _otherDepartmentController.text.trim()
-          : _previousDepartment,
-      'previousResponsibility': _previousResponsibility,
-      'previousServiceLevel': _previousServiceLevel,
-    };
-
-    // This call now works because the (corrected) AuthService will send each field separately.
+    // Call Register API (Phone + OTP flow)
     final result = await AuthService.register(
-      userProfileData: userProfileData,
-      profileImageFile: _profileImageFile, // Pass the image file
+      fullName: _fullNameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      tenantName: selectedTenantName,
+      christianName: _christianNameController.text.trim(),
+      confessionFatherName: _confessionFatherController.text.trim(),
+      motherName: _motherNameController.text.trim(),
+      gender: _gender,
+      dob: _dobController.text.trim(),
+      academicLevel: _academicLevelController.text.trim(),
+      parentName: _parentNameController.text.trim(),
+      parentPhone: _parentPhoneController.text.trim(),
+      // Combining service info into spiritual class if needed or separate
+      // For now, spiritualClass isn't explicitly collected, but we have service history
+      // We can map service history if needed, but for now just sending what we have
+      customFields: _customFieldValues,
     );
+
+    // Note: Other profile fields are currently not sent to API
+    // as we switched to simplified Phone Auth.
+    // They can be updated later via Edit Profile.
 
     if (mounted) {
       if (result['success']) {
-        final data = result['data'];
-        Provider.of<TenantProvider>(context, listen: false)
-            .setTenant(data['tenant']);
-        Provider.of<UserProvider>(context, listen: false)
-            .handleSuccessfulAuth();
+        // Navigate to OTP Screen with phone and password
+        context.push('/otp-verify', extra: {
+          'phone': _phoneController.text.trim(),
+          'password': _passwordController.text.trim(),
+        });
       } else {
         _showError(result['message'] ?? 'An unknown error occurred.');
       }
@@ -230,6 +236,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  InputDecoration _buildInputDecoration(
+      {required String labelText, IconData? suffixIcon, IconData? prefixIcon}) {
+    return InputDecoration(
+      labelText: labelText,
+      labelStyle: const TextStyle(color: Colors.white70),
+      prefixIcon:
+          prefixIcon != null ? Icon(prefixIcon, color: premiumGold) : null,
+      suffixIcon:
+          suffixIcon != null ? Icon(suffixIcon, color: premiumGold) : null,
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: premiumGold, width: 1.5)),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.08),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -238,73 +267,128 @@ class _SignUpScreenState extends State<SignUpScreen> {
         !responsibilitiesWithoutLevel.contains(_previousResponsibility);
 
     return Scaffold(
-      backgroundColor: primarySignupColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-          title: Text(l10n.signupCreateAccount),
-          backgroundColor: Colors.transparent,
-          elevation: 0),
-      body: Stepper(
-        type: StepperType.horizontal,
-        currentStep: _currentStep,
-        onStepTapped: (step) => setState(() => _currentStep = step),
-        onStepContinue: () {
-          bool isStepValid = false;
-          if (_currentStep == 0)
-            isStepValid = _step1FormKey.currentState?.validate() ?? false;
-          if (_currentStep == 1)
-            isStepValid = _step2FormKey.currentState?.validate() ?? false;
-          if (_currentStep == 2)
-            isStepValid = _step3FormKey.currentState?.validate() ?? false;
-          if (_currentStep == 3)
-            isStepValid = _step4FormKey.currentState?.validate() ?? false;
-          if (_currentStep == 4) isStepValid = true;
+        title: Text(l10n.signupCreateAccount,
+            style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Container(
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.8),
+              premiumDark,
+              Colors.black,
+            ],
+            stops: const [0.0, 0.4, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Theme(
+            data: ThemeData.dark().copyWith(
+              colorScheme: ColorScheme.dark(
+                primary: premiumGold,
+                secondary: premiumGold,
+                surface: Colors.transparent,
+                onSurface: Colors.white,
+              ),
+              canvasColor: premiumDark.withOpacity(0.8),
+            ),
+            child: Stepper(
+              type: StepperType.horizontal,
+              currentStep: _currentStep,
+              onStepTapped: (step) => setState(() => _currentStep = step),
+              onStepContinue: () {
+                bool isStepValid = false;
+                if (_currentStep == 0) {
+                  isStepValid = _step1FormKey.currentState?.validate() ?? false;
+                  if (isStepValid && _selectedTenantId != null) {
+                    _fetchCustomFields(_selectedTenantId!);
+                  }
+                }
+                if (_currentStep == 1)
+                  isStepValid = _step2FormKey.currentState?.validate() ?? false;
+                if (_currentStep == 2)
+                  isStepValid = _step3FormKey.currentState?.validate() ?? false;
+                if (_currentStep == 3)
+                  isStepValid = _step4FormKey.currentState?.validate() ?? false;
+                if (_currentStep == 4)
+                  isStepValid = _step5FormKey.currentState?.validate() ?? false;
+                if (_currentStep == 5) isStepValid = true; // Pledge
 
-          if (isStepValid) {
-            if (_currentStep < 4) {
-              setState(() => _currentStep += 1);
-            } else {
-              _onFormSubmitted();
-            }
-          }
-        },
-        onStepCancel: () {
-          if (_currentStep > 0) {
-            setState(() => _currentStep -= 1);
-          }
-        },
-        controlsBuilder: (context, details) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 24.0),
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: accentSignupColor))
-                : Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: 12.0,
-                    children: [
-                      if (_currentStep > 0)
-                        TextButton(
-                            onPressed: details.onStepCancel,
-                            child: const Text('BACK')),
-                      ElevatedButton(
-                        onPressed: details.onStepContinue,
-                        child: Text(_currentStep == 4 ? 'FINISH' : 'NEXT'),
-                      ),
-                    ],
-                  ),
-          );
-        },
-        steps: [
-          _buildStep1(l10n),
-          _buildStep2(l10n),
-          _buildStep3(l10n),
-          _buildStep4(l10n, showServiceLevel: showServiceLevel),
-          _buildStep5(l10n),
-        ],
+                if (isStepValid) {
+                  if (_currentStep < 5) {
+                    setState(() => _currentStep += 1);
+                  } else {
+                    _onFormSubmitted();
+                  }
+                }
+              },
+              onStepCancel: () {
+                if (_currentStep > 0) {
+                  setState(() => _currentStep -= 1);
+                }
+              },
+              controlsBuilder: (context, details) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 24.0),
+                  child: _isLoading
+                      ? Center(
+                          child: CircularProgressIndicator(color: premiumGold))
+                      : Wrap(
+                          alignment: WrapAlignment.end,
+                          spacing: 12.0,
+                          children: [
+                            if (_currentStep > 0)
+                              OutlinedButton(
+                                  onPressed: details.onStepCancel,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white70,
+                                    side:
+                                        const BorderSide(color: Colors.white30),
+                                  ),
+                                  child: const Text('BACK')),
+                            ElevatedButton(
+                              onPressed: details.onStepContinue,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: premiumGold,
+                                foregroundColor: premiumDark,
+                                textStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              child:
+                                  Text(_currentStep == 5 ? 'FINISH' : 'NEXT'),
+                            ),
+                          ],
+                        ),
+                );
+              },
+              steps: [
+                _buildStep1(l10n),
+                _buildStep2(l10n),
+                _buildStep3(l10n),
+                _buildStep4(l10n, showServiceLevel: showServiceLevel),
+                _buildStep5(l10n),
+                _buildStep6(l10n),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
+  // STEP 1: Account (School + Phone)
   Step _buildStep1(AppLocalizations l10n) {
     return Step(
       title: const Text('Account'),
@@ -314,7 +398,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         key: _step1FormKey,
         child: Column(
           children: [
-            Text('First, select your school and create your login credentials.',
+            Text('Create your account with phone number and password.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(color: Colors.white70)),
             const SizedBox(height: 24),
@@ -322,9 +406,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
               future: _tenantsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child:
-                          CircularProgressIndicator(color: accentSignupColor));
+                  return Center(
+                      child: CircularProgressIndicator(color: premiumGold));
                 }
                 if (snapshot.hasError ||
                     !snapshot.hasData ||
@@ -335,50 +418,98 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 return DropdownButtonFormField<String>(
                   value: _selectedTenantId,
                   hint: Text(l10n.loginSchoolName,
-                      style: GoogleFonts.notoSansEthiopic()),
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: Colors.white70)),
                   items: snapshot.data!
                       .map((school) => DropdownMenuItem(
                           value: school.id, child: Text(school.name)))
                       .toList(),
-                  onChanged: (val) => setState(() => _selectedTenantId = val),
+                  onChanged: (val) {
+                    setState(() => _selectedTenantId = val);
+                    if (val != null) _fetchCustomFields(val);
+                  },
                   validator: (v) =>
                       v == null ? 'Please select your school' : null,
+                  decoration: _buildInputDecoration(
+                      labelText: "", prefixIcon: Icons.school),
+                  dropdownColor: const Color(0xFF1C2230),
                 );
               },
             ),
             const SizedBox(height: 16),
             TextFormField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: l10n.signupEmail),
+              controller: _phoneController,
+              style: const TextStyle(color: Colors.white),
+              decoration: _buildInputDecoration(
+                  labelText: "Phone Number", prefixIcon: Icons.phone_android),
+              keyboardType: TextInputType.phone,
               validator: (v) {
                 if (v == null || v.isEmpty) return l10n.errorRequiredField;
-                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v))
-                  return l10n.errorInvalidEmail;
+                if (v.length < 9) return "Invalid phone number";
                 return null;
               },
             ),
             const SizedBox(height: 16),
             TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(labelText: l10n.signupPassword),
-                obscureText: true,
-                validator: (v) =>
-                    (v?.length ?? 0) < 6 ? l10n.errorPasswordTooShort : null),
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              style: const TextStyle(color: Colors.white),
+              decoration: _buildInputDecoration(
+                labelText: "Password",
+                prefixIcon: Icons.lock,
+                suffixIcon: Icons.visibility,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                    color: premiumGold,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                ),
+              ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return l10n.errorRequiredField;
+                if (v.length < 6)
+                  return "Password must be at least 6 characters";
+                return null;
+              },
+            ),
             const SizedBox(height: 16),
             TextFormField(
-                controller: _confirmPasswordController,
-                decoration:
-                    InputDecoration(labelText: l10n.signupConfirmPassword),
-                obscureText: true,
-                validator: (v) => v != _passwordController.text
-                    ? l10n.errorPasswordsDoNotMatch
-                    : null),
+              controller: _confirmPasswordController,
+              obscureText: _obscureConfirmPassword,
+              style: const TextStyle(color: Colors.white),
+              decoration: _buildInputDecoration(
+                labelText: "Confirm Password",
+                prefixIcon: Icons.lock,
+                suffixIcon: Icons.visibility,
+              ).copyWith(
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscureConfirmPassword
+                        ? Icons.visibility_off
+                        : Icons.visibility,
+                    color: premiumGold,
+                  ),
+                  onPressed: () => setState(
+                      () => _obscureConfirmPassword = !_obscureConfirmPassword),
+                ),
+              ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return l10n.errorRequiredField;
+                if (v != _passwordController.text)
+                  return "Passwords do not match";
+                return null;
+              },
+            ),
           ],
         ),
       ),
     );
   }
 
+  // STEP 2: Personal Info (Name, etc.)
   Step _buildStep2(AppLocalizations l10n) {
     return Step(
       title: const Text('Personal'),
@@ -388,8 +519,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         key: _step2FormKey,
         child: Column(
           children: [
-            Text(
-                'Please fill in your personal details as per the registration form.',
+            Text('Please fill in your personal details.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(color: Colors.white70)),
             const SizedBox(height: 24),
@@ -399,7 +529,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundColor: Colors.white24,
+                    backgroundColor: Colors.white10,
                     backgroundImage: _profileImageFile != null
                         ? FileImage(File(_profileImageFile!.path))
                             as ImageProvider
@@ -410,15 +540,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         : null,
                   ),
                   Material(
-                    color: accentSignupColor,
+                    color: premiumGold,
                     shape: const CircleBorder(),
                     child: InkWell(
                       onTap: _pickProfileImage,
                       customBorder: const CircleBorder(),
-                      child: const Padding(
-                        padding: EdgeInsets.all(8.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
                         child: Icon(Icons.camera_alt,
-                            color: primarySignupColor, size: 20),
+                            color: premiumDark, size: 20),
                       ),
                     ),
                   )
@@ -428,42 +558,50 @@ class _SignUpScreenState extends State<SignUpScreen> {
             const SizedBox(height: 24),
             TextFormField(
                 controller: _fullNameController,
-                decoration: const InputDecoration(
+                style: const TextStyle(color: Colors.white),
+                decoration: _buildInputDecoration(
                     labelText: '1. Full Name (with Grandfather)*'),
                 validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 16),
             TextFormField(
                 controller: _christianNameController,
+                style: const TextStyle(color: Colors.white),
                 decoration:
-                    const InputDecoration(labelText: '2. Christian Name')),
+                    _buildInputDecoration(labelText: '2. Christian Name')),
             const SizedBox(height: 16),
             TextFormField(
                 controller: _confessionFatherController,
-                decoration: const InputDecoration(
+                style: const TextStyle(color: Colors.white),
+                decoration: _buildInputDecoration(
                     labelText: '3. Confession Father\'s Name')),
             const SizedBox(height: 16),
             TextFormField(
                 controller: _motherNameController,
+                style: const TextStyle(color: Colors.white),
                 decoration:
-                    const InputDecoration(labelText: '4. Mother\'s Name')),
+                    _buildInputDecoration(labelText: '4. Mother\'s Name')),
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _gender,
-                    hint: const Text('5. Gender'),
+                    hint: const Text('5. Gender',
+                        style: TextStyle(color: Colors.white70)),
                     items: ['Male', 'Female']
                         .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                         .toList(),
                     onChanged: (val) => setState(() => _gender = val),
+                    decoration: _buildInputDecoration(labelText: ""),
+                    dropdownColor: const Color(0xFF1C2230),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
                       controller: _ageController,
-                      decoration: const InputDecoration(labelText: 'Age'),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _buildInputDecoration(labelText: 'Age'),
                       keyboardType: TextInputType.number),
                 ),
               ],
@@ -471,20 +609,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
             const SizedBox(height: 16),
             TextFormField(
                 controller: _academicLevelController,
+                style: const TextStyle(color: Colors.white),
                 decoration:
-                    const InputDecoration(labelText: '6. Academic Level')),
+                    _buildInputDecoration(labelText: '6. Academic Level')),
             const SizedBox(height: 16),
-            TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: '8. Phone Number'),
-                keyboardType: TextInputType.phone),
-            const SizedBox(height: 16),
+            // Phone removed from here (Moved to Step 1)
             TextFormField(
               controller: _dobController,
               readOnly: true,
-              decoration: const InputDecoration(
+              style: const TextStyle(color: Colors.white),
+              decoration: _buildInputDecoration(
                   labelText: '10. Date of Birth (Ethiopian)',
-                  suffixIcon: Icon(Icons.calendar_today)),
+                  suffixIcon: Icons.calendar_today),
               onTap: () => _selectEthiopianDate(
                   _dobController, (date) => _selectedDob = date),
             ),
@@ -509,12 +645,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
             const SizedBox(height: 24),
             TextFormField(
                 controller: _parentNameController,
-                decoration: const InputDecoration(
+                style: const TextStyle(color: Colors.white),
+                decoration: _buildInputDecoration(
                     labelText: '1. Parent/Guardian\'s Name')),
             const SizedBox(height: 16),
             TextFormField(
                 controller: _parentPhoneController,
-                decoration: const InputDecoration(
+                style: const TextStyle(color: Colors.white),
+                decoration: _buildInputDecoration(
                     labelText: '5. Parent/Guardian\'s Phone'),
                 keyboardType: TextInputType.phone),
           ],
@@ -524,6 +662,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Step _buildStep4(AppLocalizations l10n, {required bool showServiceLevel}) {
+    // Service History (Same as before)
     return Step(
       title: const Text('Service'),
       isActive: _currentStep >= 3,
@@ -536,29 +675,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(color: Colors.white70)),
             const SizedBox(height: 16),
-            SwitchListTile(
-              title: Text('ከዚህ በፊት ሲያገለግሉ ነበር?',
-                  style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
-              value: _hadPreviousService,
-              onChanged: (val) {
-                setState(() {
-                  _hadPreviousService = val;
-                  if (!val) {
-                    _previousDepartment = null;
-                    _previousResponsibility = null;
-                    _previousServiceLevel = null;
-                    _otherDepartmentController.clear();
-                  }
-                });
-              },
-              activeColor: accentSignupColor,
+            Container(
+              decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16)),
+              child: SwitchListTile(
+                title: Text('ከዚህ በፊት ሲያገለግሉ ነበር?',
+                    style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
+                value: _hadPreviousService,
+                onChanged: (val) {
+                  setState(() {
+                    _hadPreviousService = val;
+                    if (!val) {
+                      _previousDepartment = null;
+                      _previousResponsibility = null;
+                      _previousServiceLevel = null;
+                      _otherDepartmentController.clear();
+                    }
+                  });
+                },
+                activeColor: premiumGold,
+              ),
             ),
             if (_hadPreviousService) ...[
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
                 value: _previousDepartment,
                 hint: Text('የሚያገለግሉበት ክፍል',
-                    style: GoogleFonts.notoSansEthiopic()),
+                    style: GoogleFonts.notoSansEthiopic(color: Colors.white70)),
                 items: serviceDepartments
                     .map((d) => DropdownMenuItem(
                         value: d,
@@ -579,14 +723,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 validator: (v) => _hadPreviousService && v == null
                     ? 'Please select a department'
                     : null,
+                decoration: _buildInputDecoration(labelText: ""),
+                dropdownColor: const Color(0xFF1C2230),
               ),
               if (_previousDepartment == 'Other') ...[
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _otherDepartmentController,
-                  decoration: InputDecoration(
-                      labelText: 'Please specify other department',
-                      labelStyle: GoogleFonts.poppins()),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _buildInputDecoration(
+                      labelText: 'Please specify other department'),
                   validator: (v) =>
                       _previousDepartment == 'Other' && (v == null || v.isEmpty)
                           ? 'Required'
@@ -597,7 +743,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               DropdownButtonFormField<String>(
                 value: _previousResponsibility,
                 hint: Text('የሚያገለግሉት ኃላፊነት',
-                    style: GoogleFonts.notoSansEthiopic()),
+                    style: GoogleFonts.notoSansEthiopic(color: Colors.white70)),
                 items: _availableResponsibilities
                     .map((r) => DropdownMenuItem(
                         value: r,
@@ -615,12 +761,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 validator: (v) => _hadPreviousService && v == null
                     ? 'Please select a responsibility'
                     : null,
+                decoration: _buildInputDecoration(labelText: ""),
+                dropdownColor: const Color(0xFF1C2230),
               ),
               if (showServiceLevel) ...[
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: _previousServiceLevel,
-                  hint: Text('Service Level', style: GoogleFonts.poppins()),
+                  hint: Text('Service Level',
+                      style: GoogleFonts.poppins(color: Colors.white70)),
                   items: serviceLevels
                       .map((l) => DropdownMenuItem(value: l, child: Text(l)))
                       .toList(),
@@ -629,6 +778,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   validator: (v) => showServiceLevel && v == null
                       ? 'Please select a level'
                       : null,
+                  decoration: _buildInputDecoration(labelText: ""),
+                  dropdownColor: const Color(0xFF1C2230),
                 ),
               ]
             ],
@@ -638,39 +789,100 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
+  // STEP 5: Custom Fields
   Step _buildStep5(AppLocalizations l10n) {
+    return Step(
+      title: const Text('More Info'),
+      isActive: _currentStep >= 4,
+      state: _currentStep > 4 ? StepState.complete : StepState.indexed,
+      content: Form(
+        key: _step5FormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                'Please provide additional information required by your school.',
+                style: GoogleFonts.poppins(color: Colors.white70)),
+            const SizedBox(height: 16),
+            if (_isLoadingCustomFields)
+              Center(child: CircularProgressIndicator(color: premiumGold))
+            else if (_customFields.isEmpty)
+              Text("No additional information required.",
+                  style: GoogleFonts.poppins(
+                      color: Colors.white60, fontStyle: FontStyle.italic))
+            else
+              ..._customFields.map((field) {
+                final options = field['options'] as List<dynamic>;
+                return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: DropdownButtonFormField<String>(
+                      value: _customFieldValues[field['id'].toString()],
+                      style: GoogleFonts.notoSansEthiopic(color: Colors.white),
+                      items: options.map<DropdownMenuItem<String>>((opt) {
+                        return DropdownMenuItem<String>(
+                          value: opt['id'].toString(),
+                          child: Text(opt['option_value'],
+                              style: GoogleFonts.notoSansEthiopic()),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          if (val != null)
+                            _customFieldValues[field['id'].toString()] = val;
+                        });
+                      },
+                      decoration:
+                          _buildInputDecoration(labelText: field['name']),
+                      dropdownColor: const Color(0xFF1C2230),
+                      validator: (v) => v == null ? 'Required' : null,
+                    ));
+              }).toList()
+          ],
+        ),
+      ),
+    );
+  }
+
+  // STEP 6: Pledge
+  Step _buildStep6(AppLocalizations l10n) {
     const pledgeText =
         "እኔ ... እውነተኛይቱ የኢትዮጵያ ኦርቶዶክስ ተዋህዶ ቤ/ያን እምነትና ስርዓት ተከታይ የሆንኩኝ ... በፍፁም ልብ ለማገልገል ... ቃል እየገባሁ ... የበኩሌን ሁሉ ለመወጣት ቃል እገባለሁ።";
     return Step(
-      title: const Text('Agreement'),
-      isActive: _currentStep >= 4,
+      title: const Text('Pledge'),
+      isActive: _currentStep >= 5,
+      state: _currentStep > 5 ? StepState.complete : StepState.indexed,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Membership Pledge',
-              style: Theme.of(context).textTheme.titleLarge),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(color: premiumGold, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
             height: 200,
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.2),
-              border: Border.all(color: Colors.white30),
-              borderRadius: BorderRadius.circular(8),
+              color: Colors.black.withOpacity(0.3),
+              border: Border.all(color: premiumGold.withOpacity(0.5)),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: SingleChildScrollView(
               child: Text(pledgeText,
                   style: GoogleFonts.notoSansEthiopic(
-                      height: 1.7, color: Colors.white)),
+                      height: 1.7, color: Colors.white, fontSize: 15)),
             ),
           ),
           const SizedBox(height: 16),
           CheckboxListTile(
-            title: const Text('I have read and agree to the pledge.'),
+            title: const Text('I have read and agree to the pledge.',
+                style: TextStyle(color: Colors.white)),
             value: _hasAgreed,
             onChanged: (val) => setState(() => _hasAgreed = val ?? false),
             controlAffinity: ListTileControlAffinity.leading,
-            activeColor: accentSignupColor,
+            activeColor: premiumGold,
+            checkColor: premiumDark,
           ),
         ],
       ),

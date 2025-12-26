@@ -16,7 +16,8 @@ const Color kAdminSecondaryText = Color(0xFFFFD700);
 // --- View Modes ---
 const String kRolePermissionView = 'የሚና ፈቃድ';
 const String kDepartmentPermissionView = 'የዕቅድ ክፍል ፈቃድ';
-const String kScreenPermissionView = 'የስክሪን ፈቃድ';
+const String kScreenPermissionView = 'የሚና ስክሪን ፈቃድ';
+const String kUserScreenPermissionView = 'የተጠቃሚ ስክሪን ፈቃድ';
 
 class SuperAdminDashboardScreen extends StatefulWidget {
   const SuperAdminDashboardScreen({super.key});
@@ -59,17 +60,22 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
     try {
       // --- ROBUST, SEQUENTIAL DATA FETCHING ---
       final usersResponse = await ApiService.get('/admin/permissions/users');
-      final deptsResponse = await ApiService.get('/admin/permissions/departments');
-      final screensResponse = await ApiService.get('/admin/permissions/screens');
+      final deptsResponse =
+          await ApiService.get('/admin/permissions/departments');
+      final screensResponse =
+          await ApiService.get('/admin/permissions/screens');
 
       if (mounted) {
         setState(() {
           final usersData = json.decode(usersResponse.body);
           final deptsData = json.decode(deptsResponse.body);
           final screensData = json.decode(screensResponse.body);
-          _allUsers = List<Map<String, dynamic>>.from(usersData is List ? usersData : (usersData['data'] ?? []));
-          _allDepartments = List<Map<String, dynamic>>.from(deptsData is List ? deptsData : (deptsData['data'] ?? []));
-          _allScreens = List<Map<String, dynamic>>.from(screensData is List ? screensData : (screensData['data'] ?? []));
+          _allUsers = List<Map<String, dynamic>>.from(
+              usersData is List ? usersData : (usersData['data'] ?? []));
+          _allDepartments = List<Map<String, dynamic>>.from(
+              deptsData is List ? deptsData : (deptsData['data'] ?? []));
+          _allScreens = List<Map<String, dynamic>>.from(
+              screensData is List ? screensData : (screensData['data'] ?? []));
         });
       }
     } catch (e, s) {
@@ -110,7 +116,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
     }
 
     return DefaultTabController(
-      length: 1,
+      length: 2,
       child: Scaffold(
         backgroundColor: kAdminBackgroundColor,
         appBar: AppBar(
@@ -130,6 +136,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                 GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w600),
             tabs: const [
               Tab(text: kScreenPermissionView),
+              Tab(text: kUserScreenPermissionView),
             ],
           ),
         ),
@@ -147,6 +154,10 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                           users: _allUsers,
                           allScreens: _allScreens,
                           allRoles: _allRoles,
+                          showSnackbar: _showSnackbar),
+                      UserScreenManagerView(
+                          users: _allUsers,
+                          allScreens: _allScreens,
                           showSnackbar: _showSnackbar),
                     ],
                   ),
@@ -253,8 +264,7 @@ class _RoleManagerViewState extends State<RoleManagerView> {
 
   Future<void> _updateUserRole(String userId, String newRole) async {
     try {
-      await ApiService.post(
-          '/admin/permissions/update-role',
+      await ApiService.post('/admin/permissions/update-role',
           {'target_user_id': userId, 'new_role': newRole});
       widget.showSnackbar('የአባሉ ሚና በተሳካ ሁኔታ ተቀይሯል።');
       await widget.onRefresh();
@@ -528,8 +538,7 @@ class _DepartmentManagerViewState extends State<DepartmentManagerView> {
     setState(() => _isSaving = true);
     try {
       await ApiService.post(
-          '/admin/permissions/update-department-permissions',
-          {
+          '/admin/permissions/update-department-permissions', {
         'target_user_id': _selectedUser!['id'],
         'department_ids': _currentUserDeptPerms.toList()
       });
@@ -670,8 +679,8 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
       if (mounted) {
         final data = json.decode(response.body);
         final permissions = data is List ? data : (data['data'] ?? []);
-        setState(() =>
-            _currentScreenPerms = Set<int>.from(permissions.map((e) => e as int)));
+        setState(() => _currentScreenPerms =
+            Set<int>.from(permissions.map((e) => e as int)));
       }
     } catch (e, s) {
       final msg = 'የስክሪን ፈቃዶችን በማምጣት ላይ ስህተት ተፈጥሯል: $e';
@@ -709,8 +718,8 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
-      children: [
-        Expanded(
+            children: [
+              Expanded(
                 child: DropdownButtonFormField<String>(
                   value: _selectedRoleName,
                   decoration: InputDecoration(
@@ -728,9 +737,9 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
                       .toList(),
                   onChanged: (value) {
                     if (value != null) _selectRole(value);
-            },
-          ),
-        ),
+                  },
+                ),
+              ),
               const SizedBox(width: 12),
               ElevatedButton(
                 onPressed: _isSaving || _selectedRoleName == null
@@ -738,8 +747,7 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
                     : _saveScreenPerms,
                 child: _isSaving
                     ? const CircularProgressIndicator()
-                    : Text('አስቀምጥ',
-                        style: GoogleFonts.notoSansEthiopic()),
+                    : Text('አስቀምጥ', style: GoogleFonts.notoSansEthiopic()),
               ),
             ],
           ),
@@ -749,40 +757,39 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
           child: _selectedRoleName == null
               ? Center(
                   child: Text('ሚና ይምረጡ',
-                      style:
-                          GoogleFonts.notoSansEthiopic(color: kAdminPrimaryAccent)))
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: kAdminPrimaryAccent)))
               : _isDetailLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
-                            itemCount: widget.allScreens.length,
-                            itemBuilder: (context, index) {
-                              final screen = widget.allScreens[index];
+                      itemCount: widget.allScreens.length,
+                      itemBuilder: (context, index) {
+                        final screen = widget.allScreens[index];
                         return Card(
                           color: kAdminCardColor,
                           child: CheckboxListTile(
-                                title: Text(screen['display_name'],
-                                    style: GoogleFonts.notoSansEthiopic(
-                                        color: Colors.white)),
-                                subtitle: Text(screen['screen_key'],
-                                    style: const TextStyle(
-                                        color: kAdminSecondaryText)),
-                                value:
-                                    _currentScreenPerms.contains(screen['id']),
-                                onChanged: (isChecked) {
-                                  setState(() {
+                            title: Text(screen['display_name'],
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: Colors.white)),
+                            subtitle: Text(screen['screen_key'],
+                                style: const TextStyle(
+                                    color: kAdminSecondaryText)),
+                            value: _currentScreenPerms.contains(screen['id']),
+                            onChanged: (isChecked) {
+                              setState(() {
                                 if (isChecked == true) {
-                                      _currentScreenPerms.add(screen['id']);
+                                  _currentScreenPerms.add(screen['id']);
                                 } else {
-                                      _currentScreenPerms.remove(screen['id']);
+                                  _currentScreenPerms.remove(screen['id']);
                                 }
-                                  });
-                                },
-                          ),
-                              );
+                              });
                             },
                           ),
-                        ),
+                        );
+                      },
+                    ),
+        ),
       ],
     );
   }
@@ -791,7 +798,8 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
 class AttendancePreviewView extends StatefulWidget {
   final List<Map<String, dynamic>> users;
   final Function(String, {bool isError}) showSnackbar;
-  const AttendancePreviewView({super.key, required this.users, required this.showSnackbar});
+  const AttendancePreviewView(
+      {super.key, required this.users, required this.showSnackbar});
 
   @override
   State<AttendancePreviewView> createState() => _AttendancePreviewViewState();
@@ -801,7 +809,12 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
   final Set<String> _selectedUserIds = {};
   bool _isComputing = false;
   Map<String, Map<String, int>> _perUserStats = {};
-  Map<String, int> _overallStats = {'present': 0, 'absent': 0, 'late': 0, 'permission': 0};
+  Map<String, int> _overallStats = {
+    'present': 0,
+    'absent': 0,
+    'late': 0,
+    'permission': 0
+  };
 
   void _toggleSelection(Map<String, dynamic> user) {
     final id = user['id'].toString();
@@ -823,11 +836,18 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
     });
     try {
       for (final uid in _selectedUserIds) {
-        final history = await AttendanceService.getAttendanceHistoryForUser(uid);
-        final Map<String, int> counters = {'present': 0, 'absent': 0, 'late': 0, 'permission': 0};
+        final history =
+            await AttendanceService.getAttendanceHistoryForUser(uid);
+        final Map<String, int> counters = {
+          'present': 0,
+          'absent': 0,
+          'late': 0,
+          'permission': 0
+        };
         for (final rec in history) {
           final status = (rec['status'] as String?) ?? 'unknown';
-          if (counters.containsKey(status)) counters[status] = counters[status]! + 1;
+          if (counters.containsKey(status))
+            counters[status] = counters[status]! + 1;
         }
         _perUserStats[uid] = counters;
         _overallStats.update('present', (v) => v + counters['present']!);
@@ -856,11 +876,16 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
               final id = user['id'].toString();
               final selected = _selectedUserIds.contains(id);
               return Card(
-                color: selected ? kAdminPrimaryAccent.withOpacity(0.25) : kAdminCardColor,
+                color: selected
+                    ? kAdminPrimaryAccent.withOpacity(0.25)
+                    : kAdminCardColor,
                 child: CheckboxListTile(
                   value: selected,
-                  title: Text(user['full_name'] ?? '', style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
-                  subtitle: Text(user['email'] ?? '', style: GoogleFonts.notoSansEthiopic(color: kAdminSecondaryText)),
+                  title: Text(user['full_name'] ?? '',
+                      style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
+                  subtitle: Text(user['email'] ?? '',
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: kAdminSecondaryText)),
                   onChanged: (_) => _toggleSelection(user),
                 ),
               );
@@ -871,16 +896,21 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
         Expanded(
           flex: 3,
           child: Padding(
-                          padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Expanded(
-                              child: ElevatedButton(
-                        onPressed: _isComputing || _selectedUserIds.isEmpty ? null : _computeSummary,
-                        child: _isComputing ? const CircularProgressIndicator() : Text('ማጠቃለያ አስላ', style: GoogleFonts.notoSansEthiopic()),
+                      child: ElevatedButton(
+                        onPressed: _isComputing || _selectedUserIds.isEmpty
+                            ? null
+                            : _computeSummary,
+                        child: _isComputing
+                            ? const CircularProgressIndicator()
+                            : Text('ማጠቃለያ አስላ',
+                                style: GoogleFonts.notoSansEthiopic()),
                       ),
                     ),
                   ],
@@ -888,7 +918,9 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
                 const SizedBox(height: 16),
                 if (_selectedUserIds.isEmpty)
                   Center(
-                    child: Text('ተጠቃሚዎችን ይምረጡ', style: GoogleFonts.notoSansEthiopic(color: kAdminPrimaryAccent)),
+                    child: Text('ተጠቃሚዎችን ይምረጡ',
+                        style: GoogleFonts.notoSansEthiopic(
+                            color: kAdminPrimaryAccent)),
                   )
                 else if (_isComputing)
                   const Center(child: CircularProgressIndicator())
@@ -897,10 +929,12 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
                     spacing: 12,
                     runSpacing: 12,
                     children: [
-                      _statChip('የተገኙ', _overallStats['present']!, Colors.green),
+                      _statChip(
+                          'የተገኙ', _overallStats['present']!, Colors.green),
                       _statChip('የቀሩ', _overallStats['absent']!, Colors.red),
                       _statChip('ያረፈዱ', _overallStats['late']!, Colors.orange),
-                      _statChip('በፍቃድ', _overallStats['permission']!, Colors.blue),
+                      _statChip(
+                          'በፍቃድ', _overallStats['permission']!, Colors.blue),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -909,15 +943,21 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
                       children: _perUserStats.entries.map((entry) {
                         final uid = entry.key;
                         final stats = entry.value;
-                        final user = widget.users.firstWhere((u) => u['id'].toString() == uid, orElse: () => {});
+                        final user = widget.users.firstWhere(
+                            (u) => u['id'].toString() == uid,
+                            orElse: () => {});
                         final name = user['full_name'] ?? uid;
                         return Card(
                           color: kAdminCardColor,
                           margin: const EdgeInsets.only(bottom: 12),
                           child: ListTile(
-                            title: Text(name, style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
-                            subtitle: Text('ተገኘ: ${stats['present']} • ቀረ: ${stats['absent']} • አርፈደ: ${stats['late']} • በፍቃድ: ${stats['permission']}',
-                                style: GoogleFonts.notoSansEthiopic(color: kAdminSecondaryText)),
+                            title: Text(name,
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: Colors.white)),
+                            subtitle: Text(
+                                'ተገኘ: ${stats['present']} • ቀረ: ${stats['absent']} • አርፈደ: ${stats['late']} • በፍቃድ: ${stats['permission']}',
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: kAdminSecondaryText)),
                           ),
                         );
                       }).toList(),
@@ -926,7 +966,7 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
                 ],
               ],
             ),
-                    ),
+          ),
         ),
       ],
     );
@@ -934,7 +974,8 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
 
   Widget _statChip(String label, int value, Color color) {
     return Chip(
-      label: Text('$label: $value', style: const TextStyle(color: Colors.white)),
+      label:
+          Text('$label: $value', style: const TextStyle(color: Colors.white)),
       backgroundColor: Color.alphaBlend(Colors.black.withOpacity(0.2), color),
       side: BorderSide.none,
     );
@@ -967,4 +1008,171 @@ Future<bool?> _showConfirmationDialog(
               ),
             ],
           ));
+}
+
+// --- WIDGET FOR USER SCREEN PERMISSION VIEW (New Tab) ---
+class UserScreenManagerView extends StatefulWidget {
+  final List<Map<String, dynamic>> users;
+  final List<Map<String, dynamic>> allScreens;
+  final Function(String, {bool isError}) showSnackbar;
+  const UserScreenManagerView(
+      {super.key,
+      required this.users,
+      required this.allScreens,
+      required this.showSnackbar});
+
+  @override
+  State<UserScreenManagerView> createState() => _UserScreenManagerViewState();
+}
+
+class _UserScreenManagerViewState extends State<UserScreenManagerView> {
+  Map<String, dynamic>? _selectedUser;
+  Set<int> _currentUserScreenPerms = {}; // Using Screen IDs (int)
+  bool _isDetailLoading = false;
+  bool _isSaving = false;
+
+  Future<void> _selectUser(Map<String, dynamic> user) async {
+    setState(() {
+      _selectedUser = user;
+      _isDetailLoading = true;
+      _currentUserScreenPerms.clear();
+    });
+    try {
+      final response = await ApiService.get(
+          '/admin/permissions/screen-permissions-for-user/${user['id']}');
+      if (mounted) {
+        final data = json.decode(response.body);
+        final permissions = data is List ? data : (data['data'] ?? []);
+        setState(() => _currentUserScreenPerms =
+            Set<int>.from(permissions.map((e) => e as int)));
+      }
+    } catch (e, s) {
+      final msg = 'የተጠቃሚ ስክሪን ፈቃዶችን በማምጣት ላይ ስህተት ተፈጥሯል: $e';
+      developer.log(msg,
+          name: 'UserScreenManager._selectUser', error: e, stackTrace: s);
+      widget.showSnackbar(msg, isError: true);
+    } finally {
+      if (mounted) setState(() => _isDetailLoading = false);
+    }
+  }
+
+  Future<void> _saveUserScreenPerms() async {
+    if (_selectedUser == null) return;
+    setState(() => _isSaving = true);
+    try {
+      await ApiService.post(
+          '/admin/permissions/update-user-screen-permissions', {
+        'user_id': _selectedUser!['id'],
+        'screen_ids': _currentUserScreenPerms.toList()
+      });
+      widget.showSnackbar('የተጠቃሚ ስክሪን ፈቃዶች በተሳካ ሁኔታ ተቀምጠዋል');
+    } catch (e, s) {
+      final msg = 'ፈቃዶችን በማስቀመጥ ላይ ስህተት ተፈጥሯል: $e';
+      developer.log(msg,
+          name: 'UserScreenManager._saveUserScreenPerms',
+          error: e,
+          stackTrace: s);
+      widget.showSnackbar(msg, isError: true);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: widget.users.length,
+            itemBuilder: (context, index) {
+              final user = widget.users[index];
+              final isSelected = _selectedUser?['id'] == user['id'];
+              return Card(
+                color: isSelected
+                    ? kAdminPrimaryAccent.withOpacity(0.25)
+                    : kAdminCardColor,
+                child: ListTile(
+                  title: Text(user['full_name'] ?? 'No Name',
+                      style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
+                  subtitle: Text(user['role'] ?? '',
+                      style: const TextStyle(
+                          color: kAdminSecondaryText, fontSize: 12)),
+                  onTap: () => _selectUser(user),
+                ),
+              );
+            },
+          ),
+        ),
+        const VerticalDivider(width: 1, color: kAdminCardColor),
+        Expanded(
+          flex: 3,
+          child: _selectedUser == null
+              ? Center(
+                  child: Text("ፈቃዶችን ለማስተዳደር ተጠቃሚ ይምረጡ",
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: kAdminPrimaryAccent)))
+              : _isDetailLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                              "የ'${_selectedUser!['full_name']}' ስክሪን ፈቃዶች",
+                              style: GoogleFonts.notoSansEthiopic(
+                                  color: kAdminPrimaryAccent,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: widget.allScreens.length,
+                            itemBuilder: (context, index) {
+                              final screen = widget.allScreens[index];
+                              return CheckboxListTile(
+                                title: Text(screen['display_name'],
+                                    style: GoogleFonts.notoSansEthiopic(
+                                        color: Colors.white)),
+                                subtitle: Text(screen['screen_key'],
+                                    style: const TextStyle(
+                                        color: Colors.white30, fontSize: 10)),
+                                value: _currentUserScreenPerms
+                                    .contains(screen['id']),
+                                onChanged: (isChecked) {
+                                  setState(() {
+                                    if (isChecked == true)
+                                      _currentUserScreenPerms.add(screen['id']);
+                                    else
+                                      _currentUserScreenPerms
+                                          .remove(screen['id']);
+                                  });
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                  onPressed:
+                                      _isSaving ? null : _saveUserScreenPerms,
+                                  child: _isSaving
+                                      ? const CircularProgressIndicator(
+                                          color: kAdminBackgroundColor,
+                                        )
+                                      : Text("አስቀምጥ",
+                                          style:
+                                              GoogleFonts.notoSansEthiopic()))),
+                        )
+                      ],
+                    ),
+        ),
+      ],
+    );
+  }
 }

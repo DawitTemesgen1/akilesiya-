@@ -95,6 +95,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen>
       ),
       // --- FIX: This now navigates to the Admin Hub ---
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'admin_user_mgmt_fab', // Unique tag
         onPressed: () => Navigator.of(context)
             .push(MaterialPageRoute(builder: (_) => const AdminHubScreen())),
         label: Text(AmharicStringsUserAdmin.settingsButton,

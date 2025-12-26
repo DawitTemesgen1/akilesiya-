@@ -8,8 +8,6 @@ import 'package:iconsax_plus/iconsax_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:developer';
-
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/providers/tenant_provider.dart';
 
@@ -141,12 +139,15 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                   selectedImageXFile = pickedFile;
                   selectedImageBytes = bytes;
                   imageUrlController.clear();
+                  print('Debug: Selected Image Byte Length: ${bytes.length}');
+                  print('Debug: Selected Image Path: ${pickedFile.path}');
                 });
               }
             }
 
             Future<void> handleSubmit() async {
               if (!formKey.currentState!.validate() || isSubmitting) return;
+              final currentPost = post;
               setDialogState(() => isSubmitting = true);
               Map<String, String> fields = {
                 'title': titleController.text,
@@ -159,8 +160,16 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
               try {
                 Map<String, dynamic> result;
                 if (isEditing) {
-                  result = await PrivateFeedService.updatePrivatePost(
-                      post!.id, Map<String, dynamic>.from(fields));
+                  if (selectedImageXFile != null) {
+                    result = await PrivateFeedService.updatePostWithImage(
+                      postId: currentPost!.id,
+                      fields: fields,
+                      file: selectedImageXFile!,
+                    );
+                  } else {
+                    result = await PrivateFeedService.updatePrivatePost(
+                        currentPost!.id, Map<String, dynamic>.from(fields));
+                  }
                 } else {
                   if (selectedImageXFile != null) {
                     result = await PrivateFeedService.createPostWithImage(

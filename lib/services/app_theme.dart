@@ -19,9 +19,11 @@ class AppTheme {
   static const Color darkAccent = Color(0xFFFFD700); // Gold accent (same)
 
   // --- Text Colors (Light) ---
-  static const Color textPrimary = Color.fromARGB(255, 250, 250, 255);
-  static const Color textSecondary = Color.fromARGB(255, 251, 251, 255);
-  static const Color textLight = Colors.white;
+  static const Color textPrimary =
+      Color(0xFF0D253C); // Dark Blue/Black for visibility
+  static const Color textSecondary = Color(0xFF555555); // Dark Gray
+  static const Color textLight =
+      Colors.white; // Keep white for text on dark backgrounds (buttons)
 
   // --- Text Colors (Dark) ---
   static const Color darkTextPrimary = Color(0xFFEAEAF1);
@@ -37,25 +39,25 @@ class AppTheme {
   static final TextStyle headline1 = GoogleFonts.poppins(
     fontSize: 24,
     fontWeight: FontWeight.bold,
-    color: const Color.fromARGB(255, 245, 245, 250),
+    color: textPrimary,
   );
 
   static final TextStyle headline2 = GoogleFonts.poppins(
     fontSize: 18,
     fontWeight: FontWeight.bold,
-    color: const Color.fromARGB(255, 243, 243, 248),
+    color: textPrimary,
   );
 
   static final TextStyle bodyText = GoogleFonts.lato(
     fontSize: 14,
-    color: const Color.fromARGB(255, 253, 253, 253),
+    color: textSecondary,
     height: 1.5,
   );
 
   static final TextStyle chipText = GoogleFonts.poppins(
     fontSize: 10,
     fontWeight: FontWeight.bold,
-    color: const Color.fromARGB(255, 255, 255, 255),
+    color: textPrimary,
   );
 
   // --- Text Styles for Dark Theme ---

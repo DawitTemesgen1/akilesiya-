@@ -22,11 +22,13 @@ class ApiService {
   }
 
   static String _getDefaultBaseUrl() {
-    if (kIsWeb) {
-      return 'http://akilesiya.amdehaymanot.com/api';
-    } else {
-      return 'http://akilesiya.amdehaymanot.com/api';
-    }
+    if (kIsWeb) return 'http://localhost:3000/api';
+
+    // For local dev on Android Emulator
+    if (Platform.isAndroid) return 'http://10.0.2.2:3000/api';
+
+    // Default/iOS
+    return 'http://localhost:3000/api';
   }
 
   static Future<void> saveToken(String token) async {
@@ -119,7 +121,6 @@ class ApiService {
   // ==========================================================
   // --- CORE HTTP GET METHOD: UPGRADED FOR FILTERS ---
   // ==========================================================
-  @protected
   static Future<http.Response> get(String endpoint,
       {Map<String, String>? queryParams}) async {
     final formattedEndpoint =
@@ -145,7 +146,6 @@ class ApiService {
     }
   }
 
-  @protected
   static Future<http.Response> post(
       String endpoint, Map<String, dynamic> body) async {
     final formattedEndpoint =
@@ -165,7 +165,6 @@ class ApiService {
     }
   }
 
-  @protected
   static Future<http.Response> put(
       String endpoint, Map<String, dynamic> body) async {
     final formattedEndpoint =
@@ -185,7 +184,6 @@ class ApiService {
     }
   }
 
-  @protected
   static Future<http.Response> patch(
       String endpoint, Map<String, dynamic> body) async {
     final formattedEndpoint =
@@ -205,7 +203,6 @@ class ApiService {
     }
   }
 
-  @protected
   static Future<http.Response> delete(String endpoint) async {
     final formattedEndpoint =
         endpoint.startsWith('/') ? endpoint : '/$endpoint';
