@@ -33,6 +33,9 @@ class ProfileConfigProvider with ChangeNotifier {
       final settingsResult = results[0];
       final fieldsResult = results[1];
 
+      print('DEBUG ProfileConfig: Settings result = $settingsResult');
+      print('DEBUG ProfileConfig: Fields result = $fieldsResult');
+
       if (settingsResult['success'] == true) {
         _widgetVisibility = Map<String, bool>.from(settingsResult['data']);
       } else {
@@ -42,7 +45,9 @@ class ProfileConfigProvider with ChangeNotifier {
 
       if (fieldsResult['success'] == true) {
         _customFields = fieldsResult['data'];
+        print('DEBUG ProfileConfig: Loaded ${_customFields.length} custom fields');
       } else {
+        print('DEBUG ProfileConfig: Fields API failed - ${fieldsResult['message']}');
         throw Exception(
             fieldsResult['message'] ?? 'Failed to load custom fields.');
       }
