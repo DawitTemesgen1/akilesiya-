@@ -434,7 +434,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     print('DEBUG: Custom fields data: ${config.customFields}');
 
     final personalFields = config.customFields
-        .where((f) => f is Map && f['category'] == 'personal')
+        .where((f) =>
+            f is Map &&
+            f['profile_tab']?.toString().toUpperCase() == 'PERSONAL')
         .toList();
 
     print('DEBUG: Personal fields found: ${personalFields.length}');
@@ -444,13 +446,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (rows.isNotEmpty) rows.add(_buildDivider());
       final fieldMap = field as Map<String, dynamic>;
       print(
-          'DEBUG: Adding personal field: ${fieldMap['label']} = ${profile[fieldMap['field_name']]}');
+          'DEBUG: Adding personal field: ${fieldMap['name']} (${fieldMap['field_name']}) = ${profile[fieldMap['name']]}');
       rows.add(_buildDetailRow(
           Icons.info_outline,
-          fieldMap['label']?.toString() ??
-              fieldMap['field_name']?.toString() ??
-              'Custom Field',
-          profile[fieldMap['field_name']]));
+          fieldMap['name']?.toString() ?? 'Custom Field',
+          profile[fieldMap['name']]));
     }
 
     return ListView(
@@ -497,17 +497,17 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     // Add custom fields from config
     final spiritualFields = config.customFields
-        .where((f) => f is Map && f['category'] == 'spiritual')
+        .where((f) =>
+            f is Map &&
+            f['profile_tab']?.toString().toUpperCase() == 'SPIRITUAL')
         .toList();
     for (var field in spiritualFields) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
       final fieldMap = field as Map<String, dynamic>;
       rows.add(_buildDetailRow(
           Icons.info_outline,
-          fieldMap['label']?.toString() ??
-              fieldMap['field_name']?.toString() ??
-              'Custom Field',
-          profile[fieldMap['field_name']]));
+          fieldMap['name']?.toString() ?? 'Custom Field',
+          profile[fieldMap['name']]));
     }
 
     return ListView(
