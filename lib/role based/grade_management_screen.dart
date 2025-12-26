@@ -1334,6 +1334,7 @@ class _NewStudentRegistrationTabState
   String? _newStudentClass;
   int? _newStudentYear;
   final Set<String> _selectedStudentIds = {};
+  String _searchQuery = "";
 
   @override
   void initState() {
@@ -1345,7 +1346,8 @@ class _NewStudentRegistrationTabState
   Future<void> _fetchUserListForRegistration() async {
     setState(() => _isLoadingUsers = true);
     try {
-      final response = await BatchService.getUnregisteredUsers();
+      // Changed to getAllUsers to allow re-registering existing students/users
+      final response = await UserAdminService.getAllUsers();
       if (mounted) {
         setState(() {
           _allUsers = List<Map<String, dynamic>>.from(response);
@@ -1386,6 +1388,7 @@ class _NewStudentRegistrationTabState
       setState(() {
         _selectedStudentIds.clear();
       });
+      // Refresh list to reflect changes if needed
       await _fetchUserListForRegistration();
     } catch (e) {
       _showResultDialog(
@@ -1439,6 +1442,13 @@ class _NewStudentRegistrationTabState
 
   @override
   Widget build(BuildContext context) {
+    final filteredUsers = _allUsers.where((user) {
+      final name = (user['full_name'] ?? '').toString().toLowerCase();
+      final email = (user['email'] ?? '').toString().toLowerCase();
+      final query = _searchQuery.toLowerCase();
+      return name.contains(query) || email.contains(query);
+    }).toList();
+
     return Column(
       children: [
         Padding(
@@ -1478,8 +1488,19 @@ class _NewStudentRegistrationTabState
             ])),
         const Divider(height: 1),
         Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TextField(
+            decoration: const InputDecoration(
+                labelText: "ተማሪ ይፈልጉ (Search User)",
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 10)),
+            onChanged: (val) => setState(() => _searchQuery = val),
+          ),
+        ),
+        Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text('ለመመዝገብ ተማሪዎችን ይምረጡ',
@@ -1489,14 +1510,14 @@ class _NewStudentRegistrationTabState
         Expanded(
             child: _isLoadingUsers
                 ? const Center(child: CircularProgressIndicator())
-                : _allUsers.isEmpty
+                : filteredUsers.isEmpty
                     ? Center(
-                        child: Text("ምንም ያልተመዘገቡ ተጠቃሚዎች አልተገኙም።",
+                        child: Text("ምንም ተጠቃሚዎች አልተገኙም።",
                             style: GoogleFonts.poppins(color: onSurfaceColor)))
                     : ListView.builder(
-                        itemCount: _allUsers.length,
+                        itemCount: filteredUsers.length,
                         itemBuilder: (context, index) {
-                          final user = _allUsers[index];
+                          final user = filteredUsers[index];
                           final userId = user['id'];
                           return CheckboxListTile(
                               title: Text(user['full_name'] ?? 'ስም የለም',
