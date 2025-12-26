@@ -259,6 +259,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildStatusTab(Map<String, dynamic> profile) {
     bool inService = profile['service_sector'] != null;
     return ListView(
+      primary: false, // Fix ScrollController conflict
       key: const PageStorageKey('status_tab'),
       padding: const EdgeInsets.all(16),
       children: [
@@ -454,6 +455,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     return ListView(
+      primary: false, // Fix ScrollController conflict
       key: const PageStorageKey('personal_tab'),
       padding: const EdgeInsets.all(16),
       children: [
@@ -511,6 +513,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     return ListView(
+      primary: false, // Fix ScrollController conflict
       key: const PageStorageKey('spiritual_tab'),
       padding: const EdgeInsets.all(16),
       children: [
@@ -529,29 +532,67 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildEducationTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
     return ListView(
+      primary: false, // Fix ScrollController conflict
       key: const PageStorageKey('education_tab'),
       padding: const EdgeInsets.all(16),
       children: [
         FutureBuilder<dynamic>(
           future: _gradesFuture,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              print(
-                  "DEBUG ProfileScreen: Grades snapshot data: ${snapshot.data}");
+            // Handle Loading
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                  child: CircularProgressIndicator(color: kGoldColor));
             }
-            if (!snapshot.hasData) return const SizedBox.shrink();
-            List<Map<String, dynamic>> courses = [];
-            try {
-              final d = snapshot.data['data'];
-              if (d is Map)
-                d.forEach((k, v) {
-                  if (v is List)
-                    courses.addAll(List<Map<String, dynamic>>.from(v));
-                });
-              else if (d is List) courses = List<Map<String, dynamic>>.from(d);
-            } catch (e) {}
 
-            if (courses.isEmpty) return const SizedBox.shrink();
+            List<Map<String, dynamic>> courses = [];
+            bool hasError = false;
+
+            if (snapshot.hasData) {
+              final data = snapshot.data;
+              if (data['success'] == false) {
+                hasError = true;
+              } else {
+                try {
+                  final d = data['data'];
+                  if (d is Map) {
+                    d.forEach((k, v) {
+                      if (v is List) {
+                        courses.addAll(List<Map<String, dynamic>>.from(v));
+                      }
+                    });
+                  } else if (d is List) {
+                    courses = List<Map<String, dynamic>>.from(d);
+                  }
+                } catch (e) {
+                  print("Error parsing grades: $e");
+                }
+              }
+            }
+
+            if (courses.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                    color: kCardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white10)),
+                child: Column(
+                  children: [
+                    Icon(Iconsax.book, size: 40, color: Colors.white38),
+                    const SizedBox(height: 10),
+                    Text(
+                      hasError
+                          ? "ውጤት አልተገኘም ወይም ይህ ተጠቃሚ ተማሪ አይደለም"
+                          : "ምንም ውጤት የለም",
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: Colors.white60),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
 
             return Container(
               decoration: BoxDecoration(
