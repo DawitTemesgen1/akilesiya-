@@ -10,6 +10,7 @@ import 'dart:developer';
 
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
@@ -674,19 +675,28 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode(context);
+    final bgColor = themeProvider.getBackgroundColor(context);
 
     return Scaffold(
-      backgroundColor: premiumDark,
+      backgroundColor: bgColor,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor.withOpacity(0.8),
-              premiumDark,
-              Colors.black,
-            ],
+            colors: isDark
+                ? [
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                    premiumDark,
+                    Colors.black,
+                  ]
+                : [
+                    Theme.of(context).primaryColor.withOpacity(0.1),
+                    bgColor,
+                    bgColor,
+                  ],
             stops: const [0.0, 0.4, 1.0],
           ),
         ),
@@ -715,10 +725,14 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                   style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white)),
+                      color: Provider.of<ThemeProvider>(context)
+                          .getOnSurfaceColor(context))),
               const SizedBox(height: 8),
               Text(_error!,
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(
+                      color: Provider.of<ThemeProvider>(context)
+                          .getOnSurfaceColor(context)
+                          .withOpacity(0.7)),
                   textAlign: TextAlign.center),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -736,8 +750,9 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      color: premiumGold,
-      backgroundColor: premiumDark,
+      color: Theme.of(context).primaryColor,
+      backgroundColor:
+          Provider.of<ThemeProvider>(context).getSurfaceColor(context),
       child: CustomScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
@@ -754,7 +769,10 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                 child: Center(
                     child: Text(
                         AppLocalizations.of(context)!.privateHomepageNoPosts,
-                        style: TextStyle(color: Colors.white60))))
+                        style: TextStyle(
+                            color: Provider.of<ThemeProvider>(context)
+                                .getOnSurfaceColor(context)
+                                .withOpacity(0.6)))))
           else
             SliverList(
               delegate: SliverChildBuilderDelegate(
@@ -775,13 +793,14 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
 
   Widget _buildSpectacularLoadingScreen() {
     return Scaffold(
-      backgroundColor: premiumDark,
+      backgroundColor:
+          Provider.of<ThemeProvider>(context).getBackgroundColor(context),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(IconsaxPlusBold.home_hashtag,
-                color: premiumGold, size: 60),
+            Icon(IconsaxPlusBold.home_hashtag,
+                color: Theme.of(context).primaryColor, size: 60),
             const SizedBox(height: 30),
             Text(
                 _sundaySchool?.name ??
@@ -790,13 +809,18 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                 style: GoogleFonts.lato(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white)),
+                    color: Provider.of<ThemeProvider>(context)
+                        .getOnSurfaceColor(context))),
             const SizedBox(height: 20),
             SizedBox(
                 width: 200,
                 child: LinearProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation(premiumGold),
-                    backgroundColor: Colors.white24)),
+                    valueColor:
+                        AlwaysStoppedAnimation(Theme.of(context).primaryColor),
+                    backgroundColor:
+                        Provider.of<ThemeProvider>(context).isDarkMode(context)
+                            ? Colors.white24
+                            : Colors.black12)),
           ],
         ),
       ),
@@ -805,6 +829,9 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
 
   SliverAppBar _buildDynamicAppBar() {
     final appBarHeight = 100.0;
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final gradientColor = Theme.of(context).primaryColor;
+    final titleColor = isDark ? Colors.black87 : Colors.white;
     // final scrollRatio = (_scrollOffset / appBarHeight).clamp(0.0, 1.0); // Not used currently
     return SliverAppBar(
       expandedHeight: appBarHeight,
@@ -812,19 +839,34 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
       floating: true,
       backgroundColor: Colors.transparent,
       leading: IconButton(
-        icon: const Icon(Iconsax.menu_1),
+        icon: Icon(Icons.sort, color: titleColor),
         onPressed: () {
           Scaffold.of(context).openDrawer();
         },
       ),
       elevation: 0,
+      actions: [
+        IconButton(
+          onPressed: () =>
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme(),
+          icon: Icon(
+            Provider.of<ThemeProvider>(context).isDarkMode(context)
+                ? Iconsax.sun_1
+                : Iconsax.moon,
+            color: titleColor,
+          ),
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: BoxDecoration(
               gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.black.withOpacity(0.7), Colors.transparent])),
+                  colors: [
+                gradientColor.withOpacity(0.9),
+                Colors.transparent
+              ])),
         ),
         title: Row(
           children: [
@@ -841,7 +883,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.white,
+                  color: titleColor,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -854,13 +896,20 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
 
   Widget _buildWelcomeHero() {
     if (_sundaySchool == null) return const SizedBox();
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtleText = isDark ? Colors.white70 : Colors.black54;
+    final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.1) : Colors.grey.withOpacity(0.2);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         children: [
@@ -875,14 +924,14 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       _sundaySchool!.description ?? "የማህበረሰብ ዝመናዎች",
                       style: GoogleFonts.poppins(
-                        color: Colors.white70,
+                        color: subtleText,
                         fontSize: 14,
                         height: 1.5,
                       ),
@@ -899,18 +948,25 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
 
   Widget _buildAnimatedStats() {
     if (_sundaySchool == null) return const SizedBox();
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtleText = isDark ? Colors.white60 : Colors.black54;
+    final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.2);
+
     final stats = [
       {
         'label': "አባላት",
         'value': '${_sundaySchool!.memberCount}',
         'icon': Iconsax.people,
-        'color': Color(0xFF4ADE80)
+        'color': const Color(0xFF4ADE80)
       },
       {
         'label': "ልጥፎች",
         'value': '${_privatePosts.length}',
         'icon': Iconsax.document_text,
-        'color': Color(0xFF60A5FA)
+        'color': const Color(0xFF60A5FA)
       },
       {
         'label': "ዓመታት",
@@ -932,9 +988,9 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: cardColor,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    border: Border.all(color: borderColor),
                   ),
                   child: Row(
                     children: [
@@ -956,13 +1012,13 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                             style: GoogleFonts.poppins(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
-                              color: Colors.white,
+                              color: textColor,
                             ),
                           ),
                           Text(
                             stat['label'] as String,
                             style: GoogleFonts.poppins(
-                              color: Colors.white60,
+                              color: subtleText,
                               fontSize: 12,
                             ),
                           ),
@@ -989,14 +1045,20 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                Icon(Iconsax.star1, color: premiumGold),
+                Icon(Iconsax.star1,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? premiumGold
+                        : Theme.of(context).primaryColor),
                 const SizedBox(width: 8),
                 Text(
                   "ተለይቶ የቀረበ",
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color:
+                        Provider.of<ThemeProvider>(context).isDarkMode(context)
+                            ? Colors.white
+                            : Colors.black87,
                   ),
                 ),
               ],
@@ -1108,12 +1170,19 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
   }
 
   Widget _buildPrivatePostCard(PrivatePost post, int index) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtleText = isDark ? Colors.white54 : Colors.black54;
+    final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.2);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1144,13 +1213,13 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                         post.author,
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: textColor,
                         ),
                       ),
                       Text(
                         DateFormat.yMMMd().add_jm().format(post.date),
                         style: GoogleFonts.poppins(
-                          color: Colors.white54,
+                          color: subtleText,
                           fontSize: 12,
                         ),
                       ),
@@ -1163,13 +1232,13 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: premiumGold.withOpacity(0.2),
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       post.tags.first,
                       style: GoogleFonts.poppins(
-                        color: premiumGold,
+                        color: Theme.of(context).primaryColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1218,14 +1287,14 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   post.description,
                   style: GoogleFonts.poppins(
-                    color: Colors.white70,
+                    color: subtleText,
                     height: 1.5,
                   ),
                   maxLines: 4,
@@ -1309,7 +1378,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                 const Spacer(),
                 IconButton(
                   onPressed: () {},
-                  icon: const Icon(Iconsax.share, color: Colors.white54),
+                  icon: Icon(Iconsax.share, color: subtleText),
                 ),
               ],
             ),
@@ -1330,7 +1399,9 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => const AdminPostManagementScreen()));
+                    builder: (_) => AdminPostManagementScreen(
+                          tenantId: _sundaySchool?.id,
+                        )));
           },
           backgroundColor: premiumGold,
           foregroundColor: premiumDark,
@@ -1363,11 +1434,11 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
       width: 40,
       height: 40,
       alignment: Alignment.center,
-      color: Colors.white10,
+      color: Theme.of(context).primaryColor.withOpacity(0.1),
       child: Text(
         post.author.isNotEmpty ? post.author[0] : 'U',
-        style:
-            const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        style: TextStyle(
+            fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
       ),
     );
   }
@@ -1390,20 +1461,22 @@ class _InteractionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final subtleText = isDark ? Colors.white54 : Colors.black54;
     return GestureDetector(
       onTap: onTap,
       child: Row(
         children: [
           Icon(
             icon,
-            color: isActive ? activeColor : Colors.white54,
+            color: isActive ? activeColor : subtleText,
             size: 20,
           ),
           const SizedBox(width: 6),
           Text(
             label,
             style: GoogleFonts.poppins(
-              color: isActive ? activeColor : Colors.white54,
+              color: isActive ? activeColor : subtleText,
               fontWeight: FontWeight.w600,
             ),
           ),

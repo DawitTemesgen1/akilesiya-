@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/public_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 
@@ -232,57 +233,53 @@ class _HomePageState extends State<HomePage> {
     final userName = userProfile != null
         ? (userProfile['christian_name'] ?? userProfile['full_name'] ?? 'ምዕመን')
         : 'ምዕመን';
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode(context);
+    final bgColor = themeProvider.getBackgroundColor(context);
+    final primaryColor = themeProvider.getPrimaryColor(context);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+    final textColor = themeProvider.getOnSurfaceColor(context);
+    final subtleText = isDark ? Colors.white54 : const Color(0xFF64748B);
 
     return Scaffold(
-      backgroundColor: premiumDark,
+      backgroundColor: bgColor,
       drawer: AppDrawer(
         selectedIndex: 0,
-        onItemTapped: (index) {
-          // Handle navigation if needed, or if this drawer is just for side menu tools
-          // For now, since this is the global drawer, we might want to navigate
-          // But HomePage usually resets to 0.
-        },
+        onItemTapped: (index) {},
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF1A1A2E), // Slightly lighter dark at top
-              premiumDark,
-              Colors.black,
-            ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
-        ),
+        color: bgColor,
         child: RefreshIndicator(
           onRefresh: _loadData,
-          color: premiumGold,
-          backgroundColor: premiumDark,
+          color: primaryColor,
+          backgroundColor: surfaceColor,
           child: CustomScrollView(
             slivers: [
-              _buildSliverAppBar(userName),
+              _buildSliverAppBar(userName, primaryColor, surfaceColor,
+                  textColor, subtleText, isDark, themeProvider.toggleTheme),
               if (_isLoading)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: Center(
-                      child: CircularProgressIndicator(color: premiumGold)),
+                      child: CircularProgressIndicator(color: primaryColor)),
                 )
               else if (_error != null)
-                SliverFillRemaining(child: _buildErrorWidget())
+                SliverFillRemaining(
+                    child: _buildErrorWidget(primaryColor, subtleText))
               else ...[
                 if (_featuredPosts.isNotEmpty) ...[
                   SliverToBoxAdapter(
-                      child: _buildSectionHeader("ልዩ ትኩረት", Iconsax.star1)),
+                      child: _buildSectionHeader(
+                          "ልዩ ትኩረት", Iconsax.star1, primaryColor, textColor)),
                   SliverToBoxAdapter(child: _buildFeaturedCarousel()),
                 ],
                 SliverToBoxAdapter(
-                    child: _buildSectionHeader("የቅርብ ጊዜ", Iconsax.activity)),
+                    child: _buildSectionHeader(
+                        "የቅርብ ጊዜ", Iconsax.activity, primaryColor, textColor)),
                 if (_posts.isEmpty)
-                  const SliverFillRemaining(
+                  SliverFillRemaining(
                       child: Center(
                           child: Text("ምንም መረጃ የለም",
-                              style: TextStyle(color: Colors.white60))))
+                              style: TextStyle(color: subtleText))))
                 else
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -327,13 +324,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSliverAppBar(String userName) {
+  Widget _buildSliverAppBar(
+      String userName,
+      Color primaryColor,
+      Color surfaceColor,
+      Color textColor,
+      Color subtleText,
+      bool isDark,
+      VoidCallback onToggleTheme) {
     return SliverAppBar(
       expandedHeight: 140.0,
       floating: false,
       pinned: true,
       backgroundColor: Colors.transparent, // Transparent to show gradient
       elevation: 0,
+      leading: Builder(
+        builder: (context) => IconButton(
+          icon: Icon(Icons.sort, color: textColor, size: 28),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            isDark ? Iconsax.sun_1 : Iconsax.moon,
+            color: textColor,
+            size: 24,
+          ),
+          onPressed: onToggleTheme,
+          tooltip: 'Toggle Theme',
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
         title: Column(
@@ -345,7 +366,7 @@ class _HomePageState extends State<HomePage> {
               "እንኳን ደህና መጡ፣",
               style: GoogleFonts.notoSansEthiopic(
                 fontSize: 12,
-                color: Colors.white70,
+                color: subtleText,
                 fontWeight: FontWeight.normal,
               ),
             ),
@@ -353,7 +374,7 @@ class _HomePageState extends State<HomePage> {
               userName,
               style: GoogleFonts.notoSansEthiopic(
                 fontSize: 16, // Smaller font for collapsed state ideally
-                color: Colors.white,
+                color: textColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -365,7 +386,7 @@ class _HomePageState extends State<HomePage> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                premiumGold.withOpacity(0.1),
+                primaryColor.withOpacity(0.1),
                 Colors.transparent,
               ],
             ),
@@ -376,8 +397,8 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.only(top: 50, right: 16),
               child: CircleAvatar(
                 radius: 24,
-                backgroundColor: Colors.white10,
-                child: Icon(Iconsax.notification, color: premiumGold),
+                backgroundColor: surfaceColor,
+                child: Icon(Iconsax.notification, color: primaryColor),
               ),
             ),
           ),
@@ -407,37 +428,35 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(
+      String title, IconData icon, Color primaryColor, Color textColor) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
       child: Row(
         children: [
-          Icon(icon, color: premiumGold, size: 20),
+          Icon(icon, color: primaryColor, size: 20),
           const SizedBox(width: 8),
           Text(title,
               style: GoogleFonts.notoSansEthiopic(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)),
+                  fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
         ],
       ),
     );
   }
 
-  Widget _buildErrorWidget() {
+  Widget _buildErrorWidget(Color primaryColor, Color subtleText) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Iconsax.warning_2, color: Colors.white54, size: 50),
+          Icon(Iconsax.warning_2, color: subtleText, size: 50),
           const SizedBox(height: 16),
-          Text(_error ?? "Unknown Error",
-              style: TextStyle(color: Colors.white70)),
+          Text(_error ?? "Unknown Error", style: TextStyle(color: subtleText)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadData,
             style: ElevatedButton.styleFrom(
-                backgroundColor: premiumGold, foregroundColor: premiumDark),
+                backgroundColor: primaryColor, foregroundColor: Colors.white),
             child: const Text("እንደገና ሞክር"),
           )
         ],
@@ -535,13 +554,28 @@ class PostCard extends StatelessWidget {
       required this.onComment});
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode(context);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+    final textColor = themeProvider.getOnSurfaceColor(context);
+    final subtleText = isDark ? Colors.white54 : const Color(0xFF64748B);
+    final dividerColor = isDark ? Colors.white10 : Colors.black12;
+    final primaryColor = themeProvider.getPrimaryColor(context);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: dividerColor),
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5))
+                ]),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -553,12 +587,12 @@ class PostCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: Colors.white10,
+                  backgroundColor: dividerColor,
                   backgroundImage: post.authorAvatar != null
                       ? CachedNetworkImageProvider(post.authorAvatar!)
                       : null,
                   child: post.authorAvatar == null
-                      ? Icon(Iconsax.user, color: Colors.white70)
+                      ? Icon(Iconsax.user, color: subtleText)
                       : null,
                 ),
                 const SizedBox(width: 12),
@@ -568,16 +602,15 @@ class PostCard extends StatelessWidget {
                     children: [
                       Text(post.author,
                           style: GoogleFonts.notoSansEthiopic(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                              color: textColor, fontWeight: FontWeight.bold)),
                       Text(DateFormat.yMMMd().format(post.date),
                           style: GoogleFonts.poppins(
-                              color: Colors.white54, fontSize: 12)),
+                              color: subtleText, fontSize: 12)),
                     ],
                   ),
                 ),
                 if (post.isImportant)
-                  Icon(Iconsax.verify, color: premiumGold, size: 20),
+                  Icon(Iconsax.verify, color: primaryColor, size: 20),
               ],
             ),
           ),
@@ -593,18 +626,18 @@ class PostCard extends StatelessWidget {
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+                        color: textColor)),
                 const SizedBox(height: 8),
                 Text(post.description,
                     style: GoogleFonts.notoSansEthiopic(
-                        color: Colors.white70, height: 1.5),
+                        color: subtleText, height: 1.5),
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
           // Interactions
-          Divider(color: Colors.white10),
+          Divider(color: dividerColor),
           PostFooter(
               post: post, onInteraction: onInteraction, onComment: onComment),
         ],
@@ -690,6 +723,10 @@ class _PostFooterState extends State<PostFooter> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode(context);
+    final subtleText = isDark ? Colors.white70 : Colors.black54;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
@@ -700,14 +737,13 @@ class _PostFooterState extends State<PostFooter> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(children: [
               Icon(widget.post.isLiked ? Iconsax.heart5 : Iconsax.heart,
-                  color:
-                      widget.post.isLiked ? Colors.redAccent : Colors.white60,
+                  color: widget.post.isLiked ? Colors.redAccent : subtleText,
                   size: 22),
               if (widget.post.likes > 0) ...[
                 const SizedBox(width: 6),
                 Text(widget.post.likes.toString(),
                     style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600, color: Colors.white60)),
+                        fontWeight: FontWeight.w600, color: subtleText)),
               ]
             ]),
           ),
@@ -718,18 +754,18 @@ class _PostFooterState extends State<PostFooter> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(children: [
-              Icon(Iconsax.message_text_1, color: Colors.white60, size: 22),
+              Icon(Iconsax.message_text_1, color: subtleText, size: 22),
               if (widget.post.commentCount > 0) ...[
                 const SizedBox(width: 6),
                 Text(widget.post.commentCount.toString(),
                     style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600, color: Colors.white60)),
+                        fontWeight: FontWeight.w600, color: subtleText)),
               ]
             ]),
           ),
         ),
         IconButton(
-            icon: const Icon(Iconsax.share, color: Colors.white60, size: 22),
+            icon: Icon(Iconsax.share, color: subtleText, size: 22),
             onPressed: () {}),
       ]),
     );

@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- Amharic Localization Strings for Development Screen ---
 abstract class AmharicStringsDevelopment {
@@ -114,6 +116,18 @@ class _AdminMemberDevelopmentScreenState
   bool _isLoading = true;
   List<DevelopmentItem> _items = [];
 
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get cardColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+
   // Map English category name to Amharic for UI display
   final Map<String, String> _categoryTranslations = {
     'All': AmharicStringsDevelopment.all,
@@ -208,9 +222,9 @@ class _AdminMemberDevelopmentScreenState
           SliverToBoxAdapter(child: _buildSummaryMetrics()),
           SliverToBoxAdapter(child: _buildFilterChips()),
           if (_isLoading)
-            const SliverFillRemaining(
+            SliverFillRemaining(
                 child: Center(
-                    child: CircularProgressIndicator(color: kAdminPrimary)))
+                    child: CircularProgressIndicator(color: accentColor)))
           else
             _buildDevelopmentList(filteredItems),
         ],
@@ -222,12 +236,12 @@ class _AdminMemberDevelopmentScreenState
             'member-dev-fab-${widget.user['id']}', // Use user ID for uniqueness
 
         onPressed: () => _showAddOrEditItemModal(),
-        backgroundColor: kAdminAccent,
-        icon: const Icon(Iconsax.add, color: kAdminPrimary),
+        backgroundColor: accentColor,
+        icon: Icon(Iconsax.add, color: Colors.white),
         label: Text(
           AmharicStringsDevelopment.addNote, // Translated
           style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.bold, color: kAdminPrimary),
+              fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
     );
@@ -238,7 +252,7 @@ class _AdminMemberDevelopmentScreenState
     return SliverAppBar(
       expandedHeight: 220.0,
       pinned: true,
-      backgroundColor: kAdminPrimary,
+      backgroundColor: primaryColor,
       elevation: 2,
       // Responsive: FlexibleSpaceBar is inherently responsive
       flexibleSpace: FlexibleSpaceBar(
@@ -246,8 +260,7 @@ class _AdminMemberDevelopmentScreenState
         titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         // Title on the app bar collapses nicely
         title: Text(
-          widget.user['full_name'] ??
-              AmharicStringsDevelopment.memberProfile,
+          widget.user['full_name'] ?? AmharicStringsDevelopment.memberProfile,
           style: GoogleFonts.notoSansEthiopic(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -255,9 +268,9 @@ class _AdminMemberDevelopmentScreenState
           ),
         ),
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [kAdminPrimary, Color.fromARGB(255, 2, 57, 153)],
+              colors: [primaryColor, primaryColor.withOpacity(0.8)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -268,7 +281,7 @@ class _AdminMemberDevelopmentScreenState
                 bottom: -50,
                 right: -50,
                 child: Icon(Iconsax.user_octagon,
-                    size: 200, color: kAdminAccent.withOpacity(0.1)),
+                    size: 200, color: accentColor.withOpacity(0.1)),
               ),
               Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -279,7 +292,7 @@ class _AdminMemberDevelopmentScreenState
                     Text(
                       AmharicStringsDevelopment
                           .developmentPlanFor, // Translated
-                      style: GoogleFonts.notoSansEthiopic(color: kAdminAccent),
+                      style: GoogleFonts.notoSansEthiopic(color: accentColor),
                     ),
                     Hero(
                       tag: 'user_name_${widget.user['id']}',
@@ -357,10 +370,8 @@ class _AdminMemberDevelopmentScreenState
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: kAdminOnSurface),
+          style: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.bold, color: onSurfaceColor),
         ),
         Text(
           label, // Translated label
@@ -391,15 +402,15 @@ class _AdminMemberDevelopmentScreenState
                 onSelected: (selected) {
                   if (selected) setState(() => _selectedFilter = filter);
                 },
-                backgroundColor: kAdminCard,
-                selectedColor: kAdminPrimary,
+                backgroundColor: surfaceColor,
+                selectedColor: accentColor,
                 labelStyle: GoogleFonts.notoSansEthiopic(
-                    color: isSelected ? Colors.white : kAdminOnSurface,
+                    color: isSelected ? Colors.white : onSurfaceColor,
                     fontWeight: FontWeight.bold),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                   side: BorderSide(
-                      color: isSelected ? kAdminPrimary : Colors.grey.shade300),
+                      color: isSelected ? accentColor : Colors.grey.shade300),
                 ),
               ),
             );
@@ -514,12 +525,10 @@ class _AdminMemberDevelopmentScreenState
               children: [
                 TextButton.icon(
                   onPressed: () => _showAddOrEditItemModal(item: item),
-                  icon:
-                      const Icon(Iconsax.edit, size: 16, color: kAdminPrimary),
+                  icon: Icon(Iconsax.edit, size: 16, color: accentColor),
                   label: Text(
                       '${AmharicStringsDevelopment.edit} / ${AmharicStringsDevelopment.edit}', // Translated
-                      style:
-                          GoogleFonts.notoSansEthiopic(color: kAdminPrimary)),
+                      style: GoogleFonts.notoSansEthiopic(color: accentColor)),
                 ),
                 GestureDetector(
                   onTap: () => _toggleStatus(item),
@@ -591,7 +600,7 @@ class _AdminMemberDevelopmentScreenState
               Text(
                 content,
                 style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 14, color: kAdminOnSurface, height: 1.5),
+                    fontSize: 14, color: onSurfaceColor, height: 1.5),
               ),
             ],
           ),
@@ -706,8 +715,8 @@ class _AdminMemberDevelopmentScreenState
             child: Container(
               padding: const EdgeInsets.only(
                   top: 12, left: 24, right: 24, bottom: 24),
-              decoration: const BoxDecoration(
-                color: kAdminCard,
+              decoration: BoxDecoration(
+                color: surfaceColor,
                 borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24)),
@@ -736,7 +745,7 @@ class _AdminMemberDevelopmentScreenState
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: kAdminOnSurface),
+                            color: onSurfaceColor),
                       ),
                       const SizedBox(height: 24),
                       DropdownButtonFormField<String>(
@@ -745,12 +754,7 @@ class _AdminMemberDevelopmentScreenState
                             AmharicStringsDevelopment
                                 .selectCategory, // Translated
                             style: GoogleFonts.notoSansEthiopic()),
-                        items: [
-                          'Discipline',
-                          'Skills',
-                          'Background',
-                          'Habits'
-                        ]
+                        items: ['Discipline', 'Skills', 'Background', 'Habits']
                             .map((cat) => DropdownMenuItem(
                                 value: cat,
                                 child: Text(
@@ -766,18 +770,22 @@ class _AdminMemberDevelopmentScreenState
                             : null,
                         decoration: InputDecoration(
                             border: const OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(12))),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(12))),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: kAdminPrimary, width: 2),
+                              borderSide:
+                                  BorderSide(color: accentColor, width: 2),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.shade300, width: 1),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
-                        style: GoogleFonts.notoSansEthiopic(
-                            color: kAdminOnSurface),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12)),
+                        style:
+                            GoogleFonts.notoSansEthiopic(color: onSurfaceColor),
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -787,61 +795,73 @@ class _AdminMemberDevelopmentScreenState
                                 '${AmharicStringsDevelopment.issue} / ${AmharicStringsDevelopment.issue}', // Translated label
                             labelStyle: GoogleFonts.notoSansEthiopic(),
                             border: const OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(12))),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(12))),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: kAdminPrimary, width: 2),
+                              borderSide:
+                                  BorderSide(color: accentColor, width: 2),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.shade300, width: 1),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
-                            maxLines: 3,
-                            validator: (value) => (value?.isEmpty ?? true)
-                                ? AmharicStringsDevelopment
-                                    .pleaseDescribeIssue // Translated validation
-                                : null,
-                            style: GoogleFonts.notoSansEthiopic(
-                                color: kAdminOnSurface),
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: planController,
-                            decoration: InputDecoration(
-                                labelText:
-                                    '${AmharicStringsDevelopment.plan} / ${AmharicStringsDevelopment.plan}', // Translated label
-                                labelStyle: GoogleFonts.notoSansEthiopic(),
-                                border: const OutlineInputBorder(
-                                    borderRadius: BorderRadius.all(Radius.circular(12))),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: kAdminPrimary, width: 2),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
-                            maxLines: 3,
-                            validator: (value) => (value?.isEmpty ?? true)
-                                ? AmharicStringsDevelopment
-                                    .pleaseDescribePlan // Translated validation
-                                : null,
-                            style: GoogleFonts.notoSansEthiopic(
-                                color: kAdminOnSurface),
-                          ),
-                          const SizedBox(height: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12)),
+                        maxLines: 3,
+                        validator: (value) => (value?.isEmpty ?? true)
+                            ? AmharicStringsDevelopment
+                                .pleaseDescribeIssue // Translated validation
+                            : null,
+                        style: GoogleFonts.notoSansEthiopic(
+                            color: kAdminOnSurface),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: planController,
+                        decoration: InputDecoration(
+                            labelText:
+                                '${AmharicStringsDevelopment.plan} / ${AmharicStringsDevelopment.plan}', // Translated label
+                            labelStyle: GoogleFonts.notoSansEthiopic(),
+                            border: const OutlineInputBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(12))),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: kAdminPrimary, width: 2),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.shade300, width: 1),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12)),
+                        maxLines: 3,
+                        validator: (value) => (value?.isEmpty ?? true)
+                            ? AmharicStringsDevelopment
+                                .pleaseDescribePlan // Translated validation
+                            : null,
+                        style: GoogleFonts.notoSansEthiopic(
+                            color: kAdminOnSurface),
+                      ),
+                      const SizedBox(height: 16),
                       // Ethiopian Date Picker Integration (Translated)
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         title: Text(
                             '${AmharicStringsDevelopment.date}: ${EthiopianDate.fromGregorian(selectedDate)}', // Translated
-                            style: GoogleFonts.notoSansEthiopic(color: kAdminOnSurface)),
-                        trailing: const Icon(Iconsax.calendar, color: kAdminPrimary),
+                            style: GoogleFonts.notoSansEthiopic(
+                                color: kAdminOnSurface)),
+                        trailing:
+                            const Icon(Iconsax.calendar, color: kAdminPrimary),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: Colors.grey.shade300, width: 1),
+                          side:
+                              BorderSide(color: Colors.grey.shade300, width: 1),
                         ),
                         onTap: () async {
                           final pickedDate = await showDialog<EthiopianDate>(
@@ -888,7 +908,8 @@ class _AdminMemberDevelopmentScreenState
                                   borderRadius: BorderRadius.circular(12)),
                               minimumSize:
                                   const Size(150, 48), // Responsive size
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
                             ),
                           ),
                         ],

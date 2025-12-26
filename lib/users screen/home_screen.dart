@@ -260,16 +260,29 @@ class AppBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode(context);
+    final bgColor = isDark ? const Color(0xFF0F0F1E) : Colors.white;
+    final borderColor = isDark
+        ? const Color(0xFFFFD700).withOpacity(0.2)
+        : const Color(0xFF1E3A8A).withOpacity(0.1);
+    final selectedBg =
+        isDark ? const Color(0xFFFFD700) : const Color(0xFF1E3A8A);
+    final selectedText = isDark ? const Color(0xFF0F0F1E) : Colors.white;
+    final unselectedIcon = isDark ? Colors.white54 : const Color(0xFF64748B);
+
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: premiumDark.withOpacity(0.95),
+        color: bgColor.withOpacity(0.95),
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: premiumGold.withOpacity(0.2), width: 1),
+        border: Border.all(color: borderColor, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: isDark
+                ? Colors.black.withOpacity(0.5)
+                : Colors.black.withOpacity(0.1),
             blurRadius: 25,
             spreadRadius: 2,
             offset: const Offset(0, 10),
@@ -285,6 +298,9 @@ class AppBottomNavBar extends StatelessWidget {
             label: l10n.homePageTitle,
             isSelected: selectedIndex == 0,
             onTap: () => onItemTapped(0),
+            selectedBg: selectedBg,
+            selectedText: selectedText,
+            unselectedIcon: unselectedIcon,
           ),
           _NavBarItem(
             icon: Iconsax
@@ -293,6 +309,9 @@ class AppBottomNavBar extends StatelessWidget {
             label: "ማህበረሰብ", // Updated label for "Community/Private"
             isSelected: selectedIndex == 1,
             onTap: () => onItemTapped(1),
+            selectedBg: selectedBg,
+            selectedText: selectedText,
+            unselectedIcon: unselectedIcon,
           ),
           _NavBarItem(
             icon: Iconsax.teacher,
@@ -300,6 +319,9 @@ class AppBottomNavBar extends StatelessWidget {
             label: l10n.learningPageTitle,
             isSelected: selectedIndex == 2,
             onTap: () => onItemTapped(2),
+            selectedBg: selectedBg,
+            selectedText: selectedText,
+            unselectedIcon: unselectedIcon,
           ),
           _NavBarItem(
             icon: Iconsax.user,
@@ -307,6 +329,9 @@ class AppBottomNavBar extends StatelessWidget {
             label: l10n.profilePageTitle,
             isSelected: selectedIndex == 3,
             onTap: () => onItemTapped(3),
+            selectedBg: selectedBg,
+            selectedText: selectedText,
+            unselectedIcon: unselectedIcon,
           ),
         ],
       ),
@@ -320,6 +345,9 @@ class _NavBarItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final Color selectedBg;
+  final Color selectedText;
+  final Color unselectedIcon;
 
   const _NavBarItem({
     required this.icon,
@@ -327,6 +355,9 @@ class _NavBarItem extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.onTap,
+    required this.selectedBg,
+    required this.selectedText,
+    required this.unselectedIcon,
   });
 
   @override
@@ -340,14 +371,14 @@ class _NavBarItem extends StatelessWidget {
         padding: EdgeInsets.symmetric(
             horizontal: isSelected ? 20 : 12, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? premiumGold : Colors.transparent,
+          color: isSelected ? selectedBg : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? premiumDark : Colors.white54,
+              color: isSelected ? selectedText : unselectedIcon,
               size: 24,
             ),
             AnimatedSize(
@@ -363,12 +394,12 @@ class _NavBarItem extends StatelessWidget {
                       label,
                       style: l10n.localeName == 'am'
                           ? GoogleFonts.notoSansEthiopic(
-                              color: premiumDark,
+                              color: selectedText,
                               fontWeight: FontWeight.w800,
                               fontSize: 14,
                             )
                           : GoogleFonts.poppins(
-                              color: premiumDark,
+                              color: selectedText,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),

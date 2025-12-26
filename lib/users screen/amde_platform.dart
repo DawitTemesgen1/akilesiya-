@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- API SERVICE (This should point to your existing API service file) ---
 import 'dart:convert';
@@ -56,7 +57,7 @@ class PlatformLinksService {
 }
 
 // --- UI Theme Constants ---
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
+// Replaced by dynamic theme provider
 const Color accentColor = Color(0xFFFFD700);
 const Color subtleTextColor = Color(0xFF6C757D);
 
@@ -139,6 +140,18 @@ class _AmdePlatformState extends State<AmdePlatform> {
       _linksFuture = _fetchLinks();
     });
   }
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   void _showErrorSnackBar(String message) {
     if (mounted) {
@@ -227,7 +240,7 @@ class _AmdePlatformState extends State<AmdePlatform> {
         child: Wrap(
           children: <Widget>[
             ListTile(
-              leading: const Icon(Iconsax.edit, color: primaryColor),
+              leading: Icon(Iconsax.edit, color: primaryColor),
               title: const Text('አርትዕ'),
               onTap: () {
                 Navigator.pop(context);
@@ -256,13 +269,10 @@ class _AmdePlatformState extends State<AmdePlatform> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      backgroundColor: backgroundColor,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF4F7FC), Color(0xFFE2E8F5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+        decoration: BoxDecoration(
+          color: backgroundColor,
         ),
         child: FutureBuilder<List<PlatformLink>>(
           future: _linksFuture,
@@ -355,9 +365,9 @@ class _AmdePlatformState extends State<AmdePlatform> {
     final isTablet = screenWidth > 600;
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [primaryColor, Color(0xFF033177)],
+          colors: [primaryColor, const Color(0xFF033177)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -422,9 +432,9 @@ class _AmdePlatformState extends State<AmdePlatform> {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
+              color: surfaceColor.withOpacity(0.5),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              border: Border.all(color: onSurfaceColor.withOpacity(0.1)),
             ),
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -442,7 +452,7 @@ class _AmdePlatformState extends State<AmdePlatform> {
                   ]),
                   const Divider(height: 24),
                   if (links.isEmpty)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(vertical: 20),
                       child: Center(
                           child: Text('ምንም ሊንኮች አልተገኙም።',
@@ -479,7 +489,7 @@ class _AmdePlatformState extends State<AmdePlatform> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
+              color: surfaceColor.withOpacity(0.8),
               borderRadius: BorderRadius.circular(12)),
           child: Row(
             children: [
@@ -499,18 +509,16 @@ class _AmdePlatformState extends State<AmdePlatform> {
               Expanded(
                 child: Text(link.name,
                     style: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF343A40))),
+                        fontWeight: FontWeight.w600, color: onSurfaceColor)),
               ),
               if (isAdmin)
                 IconButton(
-                  icon: const Icon(Iconsax.more, color: subtleTextColor),
+                  icon: Icon(Iconsax.more, color: subtleTextColor),
                   onPressed: () => _showAdminActions(link),
                   tooltip: 'አማራጮች',
                 )
               else
-                const Icon(Iconsax.arrow_right_3,
-                    size: 16, color: subtleTextColor),
+                Icon(Iconsax.arrow_right_3, size: 16, color: subtleTextColor),
             ],
           ),
         ),
@@ -640,7 +648,8 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+              color:
+                  Provider.of<ThemeProvider>(context).getSurfaceColor(context),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24))),
           padding: const EdgeInsets.all(24),
@@ -664,7 +673,8 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: primaryColor),
+                        color: Provider.of<ThemeProvider>(context)
+                            .getOnSurfaceColor(context)),
                   ),
                   const SizedBox(height: 24),
                   TextFormField(
@@ -704,7 +714,12 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
                           height: 50,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isSelected ? primaryColor : Colors.grey[200],
+                            color: isSelected
+                                ? Provider.of<ThemeProvider>(context)
+                                    .getPrimaryColor(context)
+                                : Provider.of<ThemeProvider>(context)
+                                    .getSurfaceColor(context)
+                                    .withOpacity(0.5),
                             border: isSelected
                                 ? Border.all(color: accentColor, width: 2)
                                 : null,
@@ -761,7 +776,8 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
                     title: const Text('የማህበራዊ ሚዲያ ሊንክ ነው?'),
                     value: _isSocialMedia,
                     onChanged: (val) => setState(() => _isSocialMedia = val),
-                    activeColor: primaryColor,
+                    activeColor: Provider.of<ThemeProvider>(context)
+                        .getPrimaryColor(context),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(

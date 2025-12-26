@@ -31,6 +31,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- Amharic Localization Strings ---
 abstract class AmharicStrings {
@@ -82,18 +83,29 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode(context);
+    final bgColor = themeProvider.getBackgroundColor(context);
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Drawer(
-      backgroundColor: premiumDark,
+      backgroundColor: bgColor,
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF1A1A2E).withOpacity(0.95),
-              premiumDark,
-              Colors.black,
-            ],
+            colors: isDark
+                ? [
+                    const Color(0xFF1A1A2E).withOpacity(0.95),
+                    premiumDark,
+                    Colors.black,
+                  ]
+                : [
+                    primaryColor.withOpacity(0.05),
+                    bgColor,
+                    bgColor,
+                  ],
             stops: const [0.0, 0.6, 1.0],
           ),
         ),
@@ -145,17 +157,18 @@ class AppDrawer extends StatelessWidget {
                 Expanded(
                   child: Theme(
                     data: Theme.of(context).copyWith(
-                      dividerColor: Colors.white10,
-                      iconTheme: const IconThemeData(color: Colors.white70),
-                      textTheme: Theme.of(context)
-                          .textTheme
-                          .apply(bodyColor: Colors.white),
+                      dividerColor: isDark ? Colors.white10 : Colors.black12,
+                      iconTheme: IconThemeData(
+                          color: isDark ? Colors.white70 : Colors.black54),
+                      textTheme: Theme.of(context).textTheme.apply(
+                          bodyColor: isDark ? Colors.white : Colors.black87),
                     ),
                     child: ListView(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 8),
                       children: [
                         _buildSectionHeader(
+                            context,
                             AppLocalizations.of(context)?.drawerMainMenu ??
                                 AmharicStrings.mainMenu),
                         // Main Navigation
@@ -410,6 +423,7 @@ class AppDrawer extends StatelessWidget {
                           ),
 
                         _buildSectionHeader(
+                            context,
                             AppLocalizations.of(context)?.settingsUserInfo ??
                                 'User Information'),
                         // Personal Info
@@ -430,6 +444,7 @@ class AppDrawer extends StatelessWidget {
 
                         const Divider(height: 32, thickness: 0.5),
                         _buildSectionHeader(
+                            context,
                             AppLocalizations.of(context)?.drawerApplication ??
                                 AmharicStrings.app),
                         // Application
@@ -477,12 +492,13 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 24.0, 16.0, 8.0),
       child: Text(title.toUpperCase(),
           style: GoogleFonts.notoSansEthiopic(
-              color: Colors.white54,
+              color: isDark ? Colors.white54 : Colors.grey.shade600,
               fontWeight: FontWeight.bold,
               fontSize: 11,
               letterSpacing: 1.2)),
@@ -493,16 +509,21 @@ class AppDrawer extends StatelessWidget {
       {required String title,
       required IconData icon,
       required List<Widget> children}) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final primaryColor = Theme.of(context).primaryColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final iconColor = isDark ? Colors.white70 : Colors.black54;
+
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
-        leading: Icon(icon, color: premiumGold),
-        collapsedIconColor: Colors.white70,
-        iconColor: premiumGold,
+        leading: Icon(icon, color: primaryColor),
+        collapsedIconColor: iconColor,
+        iconColor: primaryColor,
         tilePadding: const EdgeInsets.symmetric(horizontal: 16),
         title: Text(title,
             style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.w600, color: Colors.white)),
+                fontWeight: FontWeight.w600, color: textColor)),
         childrenPadding: const EdgeInsets.only(left: 16),
         children: children,
       ),
@@ -513,13 +534,21 @@ class AppDrawer extends StatelessWidget {
       String schoolName, String avatarUrl, String userIdentifier) {
     final bool hasImage = avatarUrl.isNotEmpty;
     final String heroTag = 'profileAvatar-$userIdentifier';
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final primaryColor = Theme.of(context).primaryColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(top: 60, bottom: 20, left: 24, right: 24),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E3A8A).withOpacity(0.5),
-        border: const Border(bottom: BorderSide(color: Colors.white10)),
+        color: isDark
+            ? const Color(0xFF1E3A8A).withOpacity(0.5)
+            : primaryColor.withOpacity(0.1),
+        border: Border(
+            bottom: BorderSide(
+                color: isDark ? Colors.white10 : Colors.grey.withOpacity(0.2))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -532,16 +561,16 @@ class AppDrawer extends StatelessWidget {
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: premiumGold, width: 2),
+                    border: Border.all(color: primaryColor, width: 2),
                     boxShadow: [
                       BoxShadow(
-                          color: premiumGold.withOpacity(0.2), blurRadius: 10)
+                          color: primaryColor.withOpacity(0.2), blurRadius: 10)
                     ]),
                 child: Hero(
                   tag: heroTag,
                   child: CircleAvatar(
                     radius: 32,
-                    backgroundColor: premiumDark,
+                    backgroundColor: isDark ? premiumDark : Colors.white,
                     child: ClipOval(
                       child: hasImage
                           ? Image.network(
@@ -553,9 +582,9 @@ class AppDrawer extends StatelessWidget {
                                 fullName.isNotEmpty
                                     ? fullName[0].toUpperCase()
                                     : 'G',
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 32,
-                                    color: premiumGold,
+                                    color: primaryColor,
                                     fontWeight: FontWeight.bold),
                               ),
                             )
@@ -563,9 +592,9 @@ class AppDrawer extends StatelessWidget {
                               fullName.isNotEmpty
                                   ? fullName[0].toUpperCase()
                                   : 'G',
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 32,
-                                  color: premiumGold,
+                                  color: primaryColor,
                                   fontWeight: FontWeight.bold),
                             ),
                     ),
@@ -573,7 +602,7 @@ class AppDrawer extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Iconsax.refresh, color: Colors.white70),
+                icon: Icon(Iconsax.refresh, color: subTextColor),
                 tooltip:
                     AppLocalizations.of(context)?.drawerRestartApp ?? 'Restart',
                 onPressed: () => AppRestartWrapper.restartApp(context),
@@ -583,13 +612,11 @@ class AppDrawer extends StatelessWidget {
           const SizedBox(height: 16),
           Text(fullName,
               style: GoogleFonts.notoSansEthiopic(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)),
+                  fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
           const SizedBox(height: 4),
           Text(schoolName,
               style: GoogleFonts.notoSansEthiopic(
-                  fontSize: 14, color: Colors.white70)),
+                  fontSize: 14, color: subTextColor)),
         ],
       ),
     );
@@ -600,18 +627,23 @@ class AppDrawer extends StatelessWidget {
       required String title,
       VoidCallback? onTap,
       bool isSelected = false}) {
-    final Color textColor = isSelected ? premiumGold : Colors.white;
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final primaryColor = Theme.of(context).primaryColor;
+    final defaultTextColor = isDark ? Colors.white : Colors.black87;
+    final defaultIconColor = isDark ? Colors.white70 : Colors.black54;
+
+    final Color textColor = isSelected ? primaryColor : defaultTextColor;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: isSelected
           ? BoxDecoration(
-              color: premiumGold.withOpacity(0.1),
+              color: primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: premiumGold.withOpacity(0.3)))
+              border: Border.all(color: primaryColor.withOpacity(0.3)))
           : null,
       child: ListTile(
         leading: Icon(icon,
-            size: 22, color: isSelected ? premiumGold : Colors.white70),
+            size: 22, color: isSelected ? primaryColor : defaultIconColor),
         title: Text(title,
             style: GoogleFonts.notoSansEthiopic(
                 fontSize: 14,

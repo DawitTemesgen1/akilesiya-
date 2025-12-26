@@ -9,12 +9,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- UI Theme Constants ---
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
-const Color surfaceColor = Color(0xFFF4F7FC);
-const Color onSurfaceColor = Color(0xFF212529);
-const Color subtleTextColor = Color(0xFF6C757D);
+// --- UI Theme Constants (Moved to State) ---
+// const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
+// const Color surfaceColor = Color(0xFFF4F7FC);
+// const Color onSurfaceColor = Color(0xFF212529);
+// const Color subtleTextColor = Color(0xFF6C757D);
 const Color successColor = Color(0xFF198754);
 const Color warningColor = Color(0xFFFD7E14);
 const Color dangerColor = Color(0xFFDC3545);
@@ -49,6 +51,16 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
   int? _selectedDynamicOptionId;
 
   Future<Map<String, dynamic>>? _summaryFuture;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   // Translation map for presets
   final Map<String, String> _presetTranslations = {
@@ -142,10 +154,11 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
       appBar: AppBar(
         title: Text('የመገኘት ሪፖርት',
             style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold, color: primaryColor)),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+                fontWeight: FontWeight.bold, color: onSurfaceColor)),
+        backgroundColor: surfaceColor,
+        surfaceTintColor: surfaceColor,
         elevation: 1,
+        iconTheme: IconThemeData(color: primaryColor),
       ),
       body: Column(
         children: [
@@ -210,11 +223,13 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
         .toList();
 
     return ExpansionTile(
-      title: const Text('ማጣሪያዎች'),
-      leading: const Icon(Iconsax.filter),
+      title: Text('ማጣሪያዎች', style: TextStyle(color: onSurfaceColor)),
+      leading: Icon(Iconsax.filter, color: primaryColor),
       initiallyExpanded: false,
-      backgroundColor: Colors.white,
-      collapsedBackgroundColor: Colors.white,
+      backgroundColor: surfaceColor,
+      collapsedBackgroundColor: surfaceColor,
+      collapsedIconColor: onSurfaceColor,
+      iconColor: primaryColor,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -227,13 +242,22 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                   Expanded(
                       child: DropdownButtonFormField<AttendanceType?>(
                           value: _selectedAttendanceType,
-                          decoration: const InputDecoration(labelText: 'ዓይነት'),
+                          decoration: InputDecoration(
+                              labelText: 'ዓይነት',
+                              labelStyle: TextStyle(color: onSurfaceColor)),
+                          style: TextStyle(color: onSurfaceColor),
+                          dropdownColor: surfaceColor,
                           items: [
-                            const DropdownMenuItem<AttendanceType?>(
-                                value: null, child: Text('ሁሉም ዓይነቶች')),
+                            DropdownMenuItem<AttendanceType?>(
+                                value: null,
+                                child: Text('ሁሉም ዓይነቶች',
+                                    style: TextStyle(color: onSurfaceColor))),
                             ...AttendanceType.values.map((type) =>
                                 DropdownMenuItem(
-                                    value: type, child: Text(type.name)))
+                                    value: type,
+                                    child: Text(type.name,
+                                        style:
+                                            TextStyle(color: onSurfaceColor))))
                           ],
                           onChanged: (val) =>
                               setState(() => _selectedAttendanceType = val))),
@@ -241,13 +265,20 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                   Expanded(
                       child: DropdownButtonFormField<Session?>(
                           value: _selectedSession,
-                          decoration:
-                              const InputDecoration(labelText: 'ክፍለ ጊዜ'),
+                          decoration: InputDecoration(
+                              labelText: 'ክፍለ ጊዜ',
+                              labelStyle: TextStyle(color: onSurfaceColor)),
+                          style: TextStyle(color: onSurfaceColor),
+                          dropdownColor: surfaceColor,
                           items: [
-                            const DropdownMenuItem<Session?>(
-                                value: null, child: Text('ሁሉም ክፍለ ጊዜያት')),
+                            DropdownMenuItem<Session?>(
+                                value: null,
+                                child: Text('ሁሉም ክፍለ ጊዜያት',
+                                    style: TextStyle(color: onSurfaceColor))),
                             ...Session.values.map((session) => DropdownMenuItem(
-                                value: session, child: Text(session.name)))
+                                value: session,
+                                child: Text(session.name,
+                                    style: TextStyle(color: onSurfaceColor))))
                           ],
                           onChanged: (val) =>
                               setState(() => _selectedSession = val))),
@@ -261,15 +292,24 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                     Expanded(
                         child: DropdownButtonFormField<dynamic>(
                             value: _dynamicFilterField,
-                            hint: const Text("በ... ማጣራት"),
-                            decoration:
-                                const InputDecoration(labelText: 'በ... ማጣራት'),
+                            hint: Text("በ... ማጣራት",
+                                style: TextStyle(color: subtleTextColor)),
+                            decoration: InputDecoration(
+                                labelText: 'በ... ማጣራት',
+                                labelStyle: TextStyle(color: onSurfaceColor)),
+                            style: TextStyle(color: onSurfaceColor),
+                            dropdownColor: surfaceColor,
                             items: [
-                              const DropdownMenuItem<dynamic>(
-                                  value: null, child: Text("ምንም")),
+                              DropdownMenuItem<dynamic>(
+                                  value: null,
+                                  child: Text("ምንም",
+                                      style: TextStyle(color: onSurfaceColor))),
                               ...filterableFields.map((field) =>
                                   DropdownMenuItem<dynamic>(
-                                      value: field, child: Text(field['name'])))
+                                      value: field,
+                                      child: Text(field['name'],
+                                          style: TextStyle(
+                                              color: onSurfaceColor))))
                             ],
                             onChanged: (val) => setState(() {
                                   _dynamicFilterField = val;
@@ -281,21 +321,29 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                           child: DropdownButtonFormField<int?>(
                               value: _selectedDynamicOptionId,
                               hint: Text(
-                                  'ሁሉም ${_dynamicFilterField?['name'] ?? 'ምርጫዎች'}'),
+                                  'ሁሉም ${_dynamicFilterField?['name'] ?? 'ምርጫዎች'}',
+                                  style: TextStyle(color: subtleTextColor)),
                               decoration: InputDecoration(
                                   labelText:
-                                      _dynamicFilterField?['name'] ?? 'ምርጫ'),
+                                      _dynamicFilterField?['name'] ?? 'ምርጫ',
+                                  labelStyle: TextStyle(color: onSurfaceColor)),
+                              style: TextStyle(color: onSurfaceColor),
+                              dropdownColor: surfaceColor,
                               items: [
                                 DropdownMenuItem<int?>(
                                     value: null,
                                     child: Text(
-                                        'ሁሉም ${_dynamicFilterField?['name'] ?? 'ምርጫዎች'}')),
+                                        'ሁሉም ${_dynamicFilterField?['name'] ?? 'ምርጫዎች'}',
+                                        style:
+                                            TextStyle(color: onSurfaceColor))),
                                 ...(_dynamicFilterField?['options']
                                             as List<dynamic>? ??
                                         [])
                                     .map((opt) => DropdownMenuItem(
                                         value: opt['id'] as int,
-                                        child: Text(opt['option_value'])))
+                                        child: Text(opt['option_value'],
+                                            style: TextStyle(
+                                                color: onSurfaceColor))))
                               ],
                               onChanged: (val) => setState(
                                   () => _selectedDynamicOptionId = val)))
@@ -311,7 +359,9 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                       icon: const Icon(Iconsax.search_normal),
                       label: const Text("ማጣሪያዎችን ተግብር"),
                       style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16)))),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white))),
             ],
           ),
         ),
@@ -374,7 +424,7 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                 'የመገኘት መጠን',
                 '${overallPercentage.toStringAsFixed(1)}%',
                 Iconsax.chart_2,
-                primaryColor),
+                Colors.blue),
             _buildStatCard('ጠቅላላ የቀሩ', (stats['total_absent'] ?? 0).toString(),
                 Iconsax.close_circle, dangerColor),
             _buildStatCard(
@@ -442,7 +492,7 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
         scrollDirection: Axis.horizontal,
         child: DataTable(
           headingRowColor:
-              MaterialStateProperty.all(primaryColor.withOpacity(0.05)),
+              MaterialStateProperty.all(primaryColor.withOpacity(0.1)),
           showCheckboxColumn: false,
           // =========== THE FIX IS HERE ===========
           // The 'const' keyword has been removed from this list.
@@ -501,19 +551,24 @@ class _AttendanceSummaryScreenState extends State<AttendanceSummaryScreen> {
                 }
               },
               cells: [
-                DataCell(Text((index + 1).toString())),
+                DataCell(Text((index + 1).toString(),
+                    style: TextStyle(color: onSurfaceColor))),
                 DataCell(
                   Hero(
                     tag: uniqueHeroTag,
                     child: Material(
                       color: Colors.transparent,
-                      child: Text(student['full_name'] ?? 'N/A'),
+                      child: Text(student['full_name'] ?? 'N/A',
+                          style: TextStyle(color: onSurfaceColor)),
                     ),
                   ),
                 ),
-                DataCell(Text((student['present_count'] ?? 0).toString())),
-                DataCell(Text((student['absent_count'] ?? 0).toString())),
-                DataCell(Text((student['late_count'] ?? 0).toString())),
+                DataCell(Text((student['present_count'] ?? 0).toString(),
+                    style: TextStyle(color: onSurfaceColor))),
+                DataCell(Text((student['absent_count'] ?? 0).toString(),
+                    style: TextStyle(color: onSurfaceColor))),
+                DataCell(Text((student['late_count'] ?? 0).toString(),
+                    style: TextStyle(color: onSurfaceColor))),
                 DataCell(
                   Text(percentage.toStringAsFixed(1),
                       style: TextStyle(

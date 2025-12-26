@@ -7,10 +7,13 @@ import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 
 // --- UI Theme Constants ---
-const Color kPrimaryColor = Color(0xFF1E3A8A);
-const Color kBackgroundColor = Color(0xFFF8FAFC);
-const Color kCardColor = Colors.white;
-const Color kTextColor = Color(0xFF1E293B);
+// Replaced by ThemeProvider
+// const Color kPrimaryColor = Color(0xFF1E3A8A);
+// const Color kBackgroundColor = Color(0xFFF8FAFC);
+// const Color kCardColor = Colors.white;
+// const Color kTextColor = Color(0xFF1E293B);
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 const Color successColor = Color(0xFF10B981); // Green
 const Color warningColor = Color(0xFFF59E0B); // Amber
@@ -41,26 +44,38 @@ class _UserAttendanceHistoryScreenState
     });
   }
 
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text(
           'የመገኘት ታሪክ', // Attendance History
           style: GoogleFonts.notoSansEthiopic(
             fontWeight: FontWeight.bold,
-            color: kTextColor,
+            color: onSurfaceColor,
           ),
         ),
         centerTitle: true,
-        backgroundColor: kBackgroundColor,
+        backgroundColor: surfaceColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: kTextColor),
+        iconTheme: IconThemeData(color: onSurfaceColor),
       ),
       body: RefreshIndicator(
         onRefresh: () async => _loadHistory(),
-        color: kPrimaryColor,
+        color: primaryColor,
         child: FutureBuilder<List<dynamic>>(
           future: _historyFuture,
           builder: (context, snapshot) {
@@ -93,8 +108,8 @@ class _UserAttendanceHistoryScreenState
                     padding: const EdgeInsets.all(16.0),
                     child: FadeInDown(
                       duration: const Duration(milliseconds: 500),
-                      child: _buildSummaryCards(
-                          present, absent, permission, lateCount),
+                      child: _buildSummaryCards(present, absent, permission,
+                          lateCount, surfaceColor, onSurfaceColor),
                     ),
                   ),
                 ),
@@ -107,7 +122,11 @@ class _UserAttendanceHistoryScreenState
                         return FadeInUp(
                           duration: Duration(
                               milliseconds: 300 + (index * 50).clamp(0, 500)),
-                          child: _AttendanceTimelineItem(record: record),
+                          child: _AttendanceTimelineItem(
+                              record: record,
+                              surfaceColor: surfaceColor,
+                              onSurfaceColor: onSurfaceColor,
+                              backgroundColor: backgroundColor),
                         );
                       },
                       childCount: history.length,
@@ -123,8 +142,8 @@ class _UserAttendanceHistoryScreenState
     );
   }
 
-  Widget _buildSummaryCards(
-      int present, int absent, int permission, int lateCount) {
+  Widget _buildSummaryCards(int present, int absent, int permission,
+      int lateCount, Color surfaceColor, Color onSurfaceColor) {
     return Row(
       children: [
         Expanded(
@@ -133,6 +152,8 @@ class _UserAttendanceHistoryScreenState
             count: present,
             color: successColor,
             icon: Iconsax.tick_circle,
+            surfaceColor: surfaceColor,
+            onSurfaceColor: onSurfaceColor,
           ),
         ),
         const SizedBox(width: 8),
@@ -142,6 +163,8 @@ class _UserAttendanceHistoryScreenState
             count: absent,
             color: dangerColor,
             icon: Iconsax.close_circle,
+            surfaceColor: surfaceColor,
+            onSurfaceColor: onSurfaceColor,
           ),
         ),
         const SizedBox(width: 8),
@@ -151,6 +174,8 @@ class _UserAttendanceHistoryScreenState
             count: permission,
             color: infoColor,
             icon: Iconsax.document_text,
+            surfaceColor: surfaceColor,
+            onSurfaceColor: onSurfaceColor,
           ),
         ),
         const SizedBox(width: 8),
@@ -160,6 +185,8 @@ class _UserAttendanceHistoryScreenState
             count: lateCount,
             color: warningColor,
             icon: Iconsax.timer_1,
+            surfaceColor: surfaceColor,
+            onSurfaceColor: onSurfaceColor,
           ),
         ),
       ],
@@ -172,12 +199,16 @@ class _SummaryCard extends StatelessWidget {
   final int count;
   final Color color;
   final IconData icon;
+  final Color surfaceColor;
+  final Color onSurfaceColor;
 
   const _SummaryCard({
     required this.label,
     required this.count,
     required this.color,
     required this.icon,
+    required this.surfaceColor,
+    required this.onSurfaceColor,
   });
 
   @override
@@ -185,7 +216,7 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: kCardColor,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -202,7 +233,9 @@ class _SummaryCard extends StatelessWidget {
           Text(
             count.toString(),
             style: GoogleFonts.poppins(
-                fontSize: 20, fontWeight: FontWeight.bold, color: kTextColor),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: onSurfaceColor),
           ),
           Text(
             label,
@@ -220,7 +253,15 @@ class _SummaryCard extends StatelessWidget {
 
 class _AttendanceTimelineItem extends StatelessWidget {
   final dynamic record;
-  const _AttendanceTimelineItem({required this.record});
+  final Color surfaceColor;
+  final Color onSurfaceColor;
+  final Color backgroundColor;
+
+  const _AttendanceTimelineItem(
+      {required this.record,
+      required this.surfaceColor,
+      required this.onSurfaceColor,
+      required this.backgroundColor});
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +283,7 @@ class _AttendanceTimelineItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: kBackgroundColor,
+                  color: backgroundColor,
                   borderRadius: BorderRadius.circular(50),
                   border: Border.all(color: _getStatusColor(status), width: 2),
                 ),
@@ -267,7 +308,7 @@ class _AttendanceTimelineItem extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: kCardColor,
+                color: surfaceColor,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: const [
                   BoxShadow(
@@ -286,7 +327,7 @@ class _AttendanceTimelineItem extends StatelessWidget {
                         DateFormat.yMMMMEEEEd('am_ET').format(recordDate),
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.bold,
-                            color: kTextColor,
+                            color: onSurfaceColor,
                             fontSize: 14),
                       ),
                       Container(

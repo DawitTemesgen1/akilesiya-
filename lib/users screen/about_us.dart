@@ -2,6 +2,8 @@ import 'package:amde_haymanot_abalat_guday/users%20screen/social_media_url.dart'
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
@@ -21,7 +23,8 @@ class _AboutUsMobile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F2D),
+      backgroundColor:
+          Provider.of<ThemeProvider>(context).getBackgroundColor(context),
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(context, 300),
@@ -38,7 +41,8 @@ class _AboutUsTablet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F2D),
+      backgroundColor:
+          Provider.of<ThemeProvider>(context).getBackgroundColor(context),
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(context, 400),
@@ -72,10 +76,11 @@ class _Responsive extends StatelessWidget {
   }
 }
 
-TextStyle _amharicTextStyle({
+TextStyle _amharicTextStyle(
+  BuildContext context, {
   double fontSize = 16,
   FontWeight fontWeight = FontWeight.normal,
-  Color color = Colors.white70,
+  Color? color,
   double height = 1.8,
   double? letterSpacing,
   FontStyle? fontStyle,
@@ -83,7 +88,8 @@ TextStyle _amharicTextStyle({
   return GoogleFonts.notoSansEthiopic(
     fontSize: fontSize,
     fontWeight: fontWeight,
-    color: color,
+    color:
+        color ?? Provider.of<ThemeProvider>(context).getOnSurfaceColor(context),
     height: height,
     letterSpacing: letterSpacing,
     fontStyle: fontStyle,
@@ -152,6 +158,7 @@ SliverAppBar _buildSliverAppBar(BuildContext context, double expandedHeight) {
                   Text(
                     'ዓምደ ሃይማኖት',
                     style: _amharicTextStyle(
+                      context,
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -162,6 +169,7 @@ SliverAppBar _buildSliverAppBar(BuildContext context, double expandedHeight) {
                   Text(
                     'የሰንበት ትምህርት ቤት',
                     style: _amharicTextStyle(
+                      context,
                       fontSize: 18,
                       color: Colors.white.withOpacity(0.9),
                       letterSpacing: 1.2,
@@ -184,25 +192,21 @@ SliverToBoxAdapter _buildSliverBody(
 ) {
   return SliverToBoxAdapter(
     child: Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF0A0F2D), Color(0xFF1A1F3D)],
-        ),
+      decoration: BoxDecoration(
+        color: Provider.of<ThemeProvider>(context).getBackgroundColor(context),
       ),
       child: Column(
         children: [
           const SizedBox(height: 40),
-          _buildVisionSection(),
+          _buildVisionSection(context),
           const SizedBox(height: 60),
-          _buildStorySection(),
+          _buildStorySection(context),
           const SizedBox(height: 60),
-          _buildValuesSection(crossAxisCount),
+          _buildValuesSection(context, crossAxisCount),
           const SizedBox(height: 60),
-          _buildDeveloperSection(),
+          _buildDeveloperSection(context),
           const SizedBox(height: 60),
-          _buildConnectSection(),
+          _buildConnectSection(context),
           const SizedBox(height: 40),
         ],
       ),
@@ -210,7 +214,7 @@ SliverToBoxAdapter _buildSliverBody(
   );
 }
 
-Widget _buildVisionSection() {
+Widget _buildVisionSection(BuildContext context) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 24),
     child: Column(
@@ -224,6 +228,7 @@ Widget _buildVisionSection() {
           child: Text(
             'ራዕያችን',
             style: _amharicTextStyle(
+              context,
               color: Colors.white,
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -236,9 +241,11 @@ Widget _buildVisionSection() {
           'በሃይማኖትና በምግባር የታነጸ ጥበበኛ ትውልድን መፍጠር',
           textAlign: TextAlign.center,
           style: _amharicTextStyle(
+            context,
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color:
+                Provider.of<ThemeProvider>(context).getOnSurfaceColor(context),
             height: 1.4,
           ),
         ),
@@ -247,8 +254,11 @@ Widget _buildVisionSection() {
           'ቅዱሳን አባቶች ያስረከቡንን የቤተ ክርስቲያን ዶግማ፣ ቀኖናና ትውፊት በማክበርና በማስከበር፣ ለመንግስተ ሰማያት የሚያበቃ የጸና ሃይማኖትና ምግባር ያለው ትውልድ ተፈጥሮ ማየት።',
           textAlign: TextAlign.center,
           style: _amharicTextStyle(
+            context,
             fontSize: 16,
             height: 1.7,
+            color:
+                Provider.of<ThemeProvider>(context).getSubtleTextColor(context),
           ),
         ),
       ],
@@ -256,20 +266,18 @@ Widget _buildVisionSection() {
   );
 }
 
-Widget _buildStorySection() {
+Widget _buildStorySection(BuildContext context) {
   return Container(
     margin: const EdgeInsets.symmetric(horizontal: 24),
     padding: const EdgeInsets.all(32),
     decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [Color(0xFF1E293B), Color(0xFF334155)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
+      color: Provider.of<ThemeProvider>(context).getSurfaceColor(context),
       borderRadius: BorderRadius.circular(24),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.3),
+          color: Provider.of<ThemeProvider>(context)
+              .getPrimaryColor(context)
+              .withOpacity(0.1),
           blurRadius: 20,
           offset: const Offset(0, 10),
         ),
@@ -285,9 +293,11 @@ Widget _buildStorySection() {
             Text(
               'ታሪካችን',
               style: _amharicTextStyle(
+                context,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Provider.of<ThemeProvider>(context)
+                    .getOnSurfaceColor(context),
               ),
             ),
           ],
@@ -296,20 +306,20 @@ Widget _buildStorySection() {
         Text(
           'የጅማ ደብረ ኤፍራታ ቅድስት ድንግል ማርያም ቤተ ክርስቲያን ዓምደ ሃይማኖት ሰንበት ትምህርት ቤት በ፲፱፻፷፬ ዓ.ም ተመሠረተ። ላለፉት በርካታ ዓመታትም ጥቂት የማይባሉ የቤተ ክርስቲያን ልጆችን በመንፈሳዊ አገልግሎት እያፈራ ይገኛል።',
           textAlign: TextAlign.justify,
-          style: _amharicTextStyle(fontSize: 16),
+          style: _amharicTextStyle(context, fontSize: 16),
         ),
         const SizedBox(height: 16),
         Text(
           'ይህ ዲጂታል መድረክ ጥንታዊውን የቤተክርስቲያናችንን ትውፊት ከዘመናዊ ቴክኖሎጂ ጋር በማጣመር፣ በመንፈሳዊ ጉዟቸው ላይ ያሉትን የማኅበረሰባችን አባላት ለመደገፍና ተደራሽ የሆኑ መንፈሳዊ ሀብቶችን ለማቅረብ የተዘጋጀ ነው።',
           textAlign: TextAlign.justify,
-          style: _amharicTextStyle(fontSize: 16),
+          style: _amharicTextStyle(context, fontSize: 16),
         ),
       ],
     ),
   );
 }
 
-Widget _buildValuesSection(int crossAxisCount) {
+Widget _buildValuesSection(BuildContext context, int crossAxisCount) {
   final values = [
     {
       'icon': Iconsax.heart,
@@ -342,15 +352,17 @@ Widget _buildValuesSection(int crossAxisCount) {
       Text(
         'መሠረታዊ እሴቶቻችን',
         style: _amharicTextStyle(
+          context,
           fontSize: 32,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: Provider.of<ThemeProvider>(context).getOnSurfaceColor(context),
         ),
       ),
       const SizedBox(height: 8),
       Text(
         'ተልዕኳችንን የሚመሩ ምሰሶዎች',
         style: _amharicTextStyle(
+          context,
           fontSize: 16,
         ),
       ),
@@ -373,11 +385,14 @@ Widget _buildValuesSection(int crossAxisCount) {
               tag: 'value-$index', // Unique tag for each item
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: Provider.of<ThemeProvider>(context)
+                      .getSurfaceColor(context),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Provider.of<ThemeProvider>(context)
+                          .getPrimaryColor(context)
+                          .withOpacity(0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -404,9 +419,11 @@ Widget _buildValuesSection(int crossAxisCount) {
                       Text(
                         value['title'] as String,
                         style: _amharicTextStyle(
+                          context,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Provider.of<ThemeProvider>(context)
+                              .getOnSurfaceColor(context),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -414,6 +431,7 @@ Widget _buildValuesSection(int crossAxisCount) {
                         value['description'] as String,
                         textAlign: TextAlign.center,
                         style: _amharicTextStyle(
+                          context,
                           fontSize: 12,
                           height: 1.4,
                         ),
@@ -430,7 +448,7 @@ Widget _buildValuesSection(int crossAxisCount) {
   );
 }
 
-Widget _buildDeveloperSection() {
+Widget _buildDeveloperSection(BuildContext context) {
   return Container(
     margin: const EdgeInsets.symmetric(horizontal: 24),
     padding: const EdgeInsets.all(32),
@@ -456,6 +474,7 @@ Widget _buildDeveloperSection() {
         Text(
           'በእምነት እና በቴክኖሎጂ የተገነባ',
           style: _amharicTextStyle(
+            context,
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -466,6 +485,7 @@ Widget _buildDeveloperSection() {
           'ይህ ዲጂታል መድረክ የተዘጋጀው በዓምደ ሃይማኖት ሰንበት ትምህርት ቤት መሪነት ሲሆን፣ መንፈሳዊ ጥበብን ከቴክኒካዊ ብቃት ጋር አጣምሮ ይዟል።',
           textAlign: TextAlign.center,
           style: _amharicTextStyle(
+            context,
             fontSize: 16,
             color: Colors.white.withOpacity(0.9),
           ),
@@ -498,6 +518,7 @@ Widget _buildDeveloperSection() {
                     Text(
                       'ዓምደ ሃይማኖት ሰንበት ትምህር ቤት',
                       style: _amharicTextStyle(
+                        context,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -514,21 +535,23 @@ Widget _buildDeveloperSection() {
   );
 }
 
-Widget _buildConnectSection() {
+Widget _buildConnectSection(BuildContext context) {
   return Column(
     children: [
       Text(
         'የዲጂታል ማኅበረሰባችንን ይቀላቀሉ',
         style: _amharicTextStyle(
+          context,
           fontSize: 32,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: Provider.of<ThemeProvider>(context).getOnSurfaceColor(context),
         ),
       ),
       const SizedBox(height: 8),
       Text(
         'ከእያደገ ካለው ቤተሰባችን ጋር እንደተገናኙ ይቆዩ',
         style: _amharicTextStyle(
+          context,
           fontSize: 16,
         ),
       ),
@@ -537,16 +560,19 @@ Widget _buildConnectSection() {
         margin: const EdgeInsets.symmetric(horizontal: 24),
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: Provider.of<ThemeProvider>(context).getSurfaceColor(context),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(
+              color: Provider.of<ThemeProvider>(context)
+                  .getPrimaryColor(context)
+                  .withOpacity(0.1)),
         ),
         child: Column(
           children: [
             Text(
               'ዕለታዊ መንፈሳዊ መልዕክቶችን፣ የክስተት ማስታወቂያዎችን እና መንፈሳዊ መመሪያዎችን ለማግኘት በማኅበራዊ ትስስር ገጾቻችን ይከታተሉን። በጋራ፣ ለዘመናዊው ትውልድ የሚሆን የእምነት ማኅበረሰብ እየገነባን ነው።',
               textAlign: TextAlign.center,
-              style: _amharicTextStyle(fontSize: 16),
+              style: _amharicTextStyle(context, fontSize: 16),
             ),
             const SizedBox(height: 32),
             const SocialMediaUrl(),
@@ -555,8 +581,10 @@ Widget _buildConnectSection() {
               'ዓምደ ሃይማኖት ሰንበት ትምህርት ቤት፣ ጅማ ኢትዮጵያ',
               textAlign: TextAlign.center,
               style: _amharicTextStyle(
+                context,
                 fontSize: 14,
-                color: Colors.white54,
+                color: Provider.of<ThemeProvider>(context)
+                    .getSubtleTextColor(context),
                 fontStyle: FontStyle.italic,
               ),
             ),

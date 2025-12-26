@@ -1,15 +1,15 @@
-import 'dart:developer' as developer;
-
-import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart'
+    hide primaryColor;
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 
 // እነዚህ ፋይሎች በፕሮጀክትዎ መዋቅር ውስጥ እንዳሉ በማሰብ
-import 'package:amde_haymanot_abalat_guday/models/ethiopian_date_picker.dart';
+
 import 'package:amde_haymanot_abalat_guday/providers/sync_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/batch_service.dart';
@@ -19,11 +19,11 @@ import 'package:amde_haymanot_abalat_guday/services/user_admin_service.dart';
 import 'package:amde_haymanot_abalat_guday/widgets/sync_status_indicator.dart';
 
 // --- የዩአይ ገጽታ ቋሚዎች ---
-const Color primaryColor = Color(0xFF1E3A8A);
-const Color accentColor = Color(0xFFFFD700);
-const Color surfaceColor = Color(0xFFF8FAFC);
-const Color onSurfaceColor = Color(0xFF1E293B);
-const Color subtleTextColor = Color(0xFF64748B);
+const Color kDefaultPrimaryColor = Color(0xFF050511); // Dark Background
+const Color kDefaultAccentColor = Color(0xFFFFC107); // Gold
+const Color kDefaultSurfaceColor = Color(0xFF151522); // Card Background
+const Color kDefaultOnSurfaceColor = Colors.white;
+const Color kDefaultSubtleTextColor = Colors.white54;
 const Color successColor = Color(0xFF10B981);
 const Color dangerColor = Color(0xFFEF4444);
 
@@ -57,6 +57,19 @@ class _GradeManagementScreenState extends State<GradeManagementScreen>
   late TabController _tabController;
   final _gradeEntryViewStateKey = GlobalKey<_GradeEntryViewState>();
 
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   @override
   void initState() {
     super.initState();
@@ -81,13 +94,16 @@ class _GradeManagementScreenState extends State<GradeManagementScreen>
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
+
     final bool isSuperiorAdmin = userProvider.roles.contains('superior_admin');
     final bool isGradeAdmin = userProvider.roles.contains('grade_admin');
+    // Removed local theme variable definitions as per instruction.
+    // The theme variables are now accessed directly from the theme provider or defined as getters in the respective views.
 
     if (!isSuperiorAdmin && !isGradeAdmin) {
       return Scaffold(
         appBar: AppBar(title: const Text('የትምህርት ውጤት አስተዳደር')),
-        body: const Center(
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -131,30 +147,30 @@ class _GradeManagementScreenState extends State<GradeManagementScreen>
     }
 
     return Scaffold(
-      backgroundColor: surfaceColor,
+      backgroundColor: primaryColor,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
               title: Text('የትምህርት ውጤት አስተዳደር',
                   style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.bold, color: primaryColor)),
+                      fontWeight: FontWeight.bold, color: onSurfaceColor)),
               actions: [
                 Padding(
                   padding: const EdgeInsets.only(right: 16),
                   child: Center(child: SyncStatusIndicator(compact: true)),
                 ),
               ],
-              backgroundColor: surfaceColor,
-              foregroundColor: primaryColor,
+              backgroundColor: primaryColor,
+              foregroundColor: onSurfaceColor,
               pinned: true,
               floating: true,
               forceElevated: innerBoxIsScrolled,
               bottom: TabBar(
                   controller: _tabController,
-                  labelColor: primaryColor,
+                  labelColor: accentColor,
                   unselectedLabelColor: subtleTextColor,
-                  indicatorColor: primaryColor,
+                  indicatorColor: accentColor,
                   isScrollable: true,
                   tabs: tabs),
             ),
@@ -172,8 +188,8 @@ class _GradeManagementScreenState extends State<GradeManagementScreen>
                       ?.showCourseManagementDialog(),
                   icon: const Icon(Iconsax.book_1),
                   label: const Text("ትምህርቶችን ያቀናብሩ"),
-                  backgroundColor: primaryColor,
-                  foregroundColor: accentColor,
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.black,
                 )
               : const SizedBox.shrink();
         },
@@ -193,6 +209,20 @@ class GradeEntryView extends StatefulWidget {
 }
 
 class _GradeEntryViewState extends State<GradeEntryView> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   bool _isLoading = false;
   String? _selectedSpiritualClass;
   int? _selectedYear;
@@ -319,8 +349,7 @@ class _GradeEntryViewState extends State<GradeEntryView> {
       _buildFilterCard(),
       Expanded(
           child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: primaryColor))
+              ? Center(child: CircularProgressIndicator(color: primaryColor))
               : _students.isEmpty
                   ? _buildEmptyState()
                   : _buildResultsTable())
@@ -334,59 +363,76 @@ class _GradeEntryViewState extends State<GradeEntryView> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-                color: Colors.white,
+                color: surfaceColor,
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white10),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.05), blurRadius: 10)
+                      color: Colors.black.withOpacity(0.2), blurRadius: 10)
                 ]),
             child: Column(children: [
               Row(children: [
                 Expanded(
                     child: DropdownButtonFormField<String>(
                         value: _selectedSpiritualClass,
+                        dropdownColor: surfaceColor,
+                        style:
+                            GoogleFonts.notoSansEthiopic(color: onSurfaceColor),
                         hint: Text("ክፍል ይምረጡ",
-                            style: GoogleFonts.notoSansEthiopic()),
+                            style: GoogleFonts.notoSansEthiopic(
+                                color: subtleTextColor)),
                         items: spiritualClassOptions
                             .map((String value) => DropdownMenuItem<String>(
                                 value: value,
                                 child: Text(value,
-                                    style: GoogleFonts.notoSansEthiopic())))
+                                    style: GoogleFonts.notoSansEthiopic(
+                                        color: onSurfaceColor))))
                             .toList(),
                         onChanged: (newValue) =>
                             setState(() => _selectedSpiritualClass = newValue),
                         decoration: InputDecoration(
                             filled: true,
-                            fillColor: surfaceColor,
-                            prefixIcon: const Icon(Iconsax.teacher,
-                                color: primaryColor),
+                            fillColor: primaryColor,
+                            prefixIcon:
+                                Icon(Iconsax.teacher, color: accentColor),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none),
+                                borderSide: BorderSide(color: Colors.white10)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.white10)),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 16)))),
                 const SizedBox(width: 16),
                 Expanded(
                     child: DropdownButtonFormField<int>(
                         value: _selectedYear,
+                        dropdownColor: surfaceColor,
+                        style:
+                            GoogleFonts.notoSansEthiopic(color: onSurfaceColor),
                         hint: Text("ዓመት ይምረጡ",
-                            style: GoogleFonts.notoSansEthiopic()),
+                            style: GoogleFonts.notoSansEthiopic(
+                                color: subtleTextColor)),
                         items: _yearOptions
                             .map((int value) => DropdownMenuItem<int>(
                                 value: value,
                                 child: Text("$value ዓ.ም.",
-                                    style: GoogleFonts.notoSansEthiopic())))
+                                    style: GoogleFonts.notoSansEthiopic(
+                                        color: onSurfaceColor))))
                             .toList(),
                         onChanged: (newValue) =>
                             setState(() => _selectedYear = newValue),
                         decoration: InputDecoration(
                             filled: true,
-                            fillColor: surfaceColor,
-                            prefixIcon: const Icon(Iconsax.calendar,
-                                color: primaryColor),
+                            fillColor: primaryColor,
+                            prefixIcon:
+                                Icon(Iconsax.calendar, color: accentColor),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none),
+                                borderSide: BorderSide(color: Colors.white10)),
+                            enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.white10)),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 16))))
               ]),
@@ -398,17 +444,27 @@ class _GradeEntryViewState extends State<GradeEntryView> {
                       icon: const Icon(Iconsax.search_normal),
                       label: const Text("የተማሪዎችን ውጤት ይጫኑ"),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: accentColor,
+                          backgroundColor: accentColor,
+                          foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 16)))),
               if (_students.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 TextField(
                     controller: _searchController,
-                    decoration: const InputDecoration(
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                        filled: true,
+                        fillColor: primaryColor,
                         hintText: "በተማሪ ስም ይፈልጉ...",
-                        prefixIcon: Icon(Iconsax.user_search),
-                        border: OutlineInputBorder(),
+                        hintStyle: TextStyle(color: subtleTextColor),
+                        prefixIcon:
+                            Icon(Iconsax.user_search, color: accentColor),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white10)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white10)),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10)))
               ]
             ])));
@@ -418,7 +474,7 @@ class _GradeEntryViewState extends State<GradeEntryView> {
       child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 48.0),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Iconsax.folder_open, size: 64, color: subtleTextColor),
+            Icon(Iconsax.folder_open, size: 64, color: subtleTextColor),
             const SizedBox(height: 16),
             Text(
                 _selectedSpiritualClass == null
@@ -432,11 +488,12 @@ class _GradeEntryViewState extends State<GradeEntryView> {
   Widget _buildResultsTable() => Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Card(
+          color: surfaceColor,
           elevation: 0,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey.shade200)),
+              side: BorderSide(color: Colors.white10)),
           child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
@@ -533,6 +590,20 @@ class BatchManagementView extends StatefulWidget {
 class _BatchManagementViewState extends State<BatchManagementView>
     with TickerProviderStateMixin {
   late TabController _tabController;
+
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   @override
   void initState() {
     super.initState();
@@ -586,6 +657,20 @@ class AdminManagementView extends StatefulWidget {
 }
 
 class _AdminManagementViewState extends State<AdminManagementView> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   Future<List<dynamic>>? _usersFuture;
   String _searchTerm = '';
   @override
@@ -608,7 +693,7 @@ class _AdminManagementViewState extends State<AdminManagementView> {
         role: 'grade_admin',
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('ሚናዎች በተሳካ ሁኔታ ተዘምነዋል።'),
             backgroundColor: successColor));
         _loadUsers();
@@ -705,6 +790,20 @@ class _CourseManagementDialog extends StatefulWidget {
 }
 
 class _CourseManagementDialogState extends State<_CourseManagementDialog> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   late List<Map<String, dynamic>> _courses;
   final _courseController = TextEditingController();
   bool _isAdding = false;
@@ -714,6 +813,90 @@ class _CourseManagementDialogState extends State<_CourseManagementDialog> {
     super.initState();
     _courses =
         widget.initialCourses.map((c) => Map<String, dynamic>.from(c)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: surfaceColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text("ትምህርቶችን ያቀናብሩ - ${widget.spiritualClass}",
+          style: GoogleFonts.notoSansEthiopic(
+              color: primaryColor, fontWeight: FontWeight.bold)),
+      content: SizedBox(
+          width: 500,
+          height: 400,
+          child: Column(children: [
+            Expanded(
+                child: _courses.isEmpty
+                    ? Center(
+                        child: Text("ምንም ትምህርት የለም። ከታች ያክሉ።",
+                            style: GoogleFonts.poppins(color: onSurfaceColor)))
+                    : ListView.builder(
+                        itemCount: _courses.length,
+                        itemBuilder: (context, index) {
+                          final course = _courses[index];
+                          return Card(
+                              color: surfaceColor,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: Colors.white10)),
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                  leading:
+                                      Icon(Iconsax.book_1, color: primaryColor),
+                                  title: Text(
+                                      course['course_name'] ?? 'ስም የሌለው',
+                                      style: GoogleFonts.notoSansEthiopic(
+                                          color: onSurfaceColor)),
+                                  trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                            icon: Icon(Iconsax.edit,
+                                                color: subtleTextColor),
+                                            tooltip: 'ለዚህ ትምህርት ምዘናዎችን ያቀናብሩ',
+                                            onPressed: () =>
+                                                _manageAssessments(course)),
+                                        IconButton(
+                                            icon: Icon(Iconsax.trash,
+                                                color: dangerColor),
+                                            tooltip: 'ትምህርቱን ያጥፉ',
+                                            onPressed: () => _deleteCourse(
+                                                course['id'], index))
+                                      ])));
+                        })),
+            const Divider(color: Colors.white10),
+            Row(children: [
+              Expanded(
+                  child: TextField(
+                controller: _courseController,
+                style: TextStyle(color: onSurfaceColor),
+                decoration: InputDecoration(
+                    labelText: "የአዲስ ትምህርት ስም",
+                    labelStyle: TextStyle(color: subtleTextColor),
+                    fillColor: Colors.black12,
+                    filled: true,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white10))),
+              )),
+              const SizedBox(width: 8),
+              _isAdding
+                  ? const CircularProgressIndicator()
+                  : IconButton(
+                      icon:
+                          Icon(Icons.add_circle, color: successColor, size: 36),
+                      onPressed: _addCourse)
+            ])
+          ])),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.of(context).pop(_hasChanges),
+            child: const Text("ዝጋ"))
+      ],
+    );
   }
 
   Future<void> _addCourse() async {
@@ -783,85 +966,6 @@ class _CourseManagementDialogState extends State<_CourseManagementDialog> {
         builder: (context) => _AssessmentManagementDialog(course: course));
     setState(() => _hasChanges = true);
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: surfaceColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text("ለ${widget.spiritualClass} ትምህርቶችን ያቀናብሩ",
-          style: GoogleFonts.notoSansEthiopic(
-              color: primaryColor, fontWeight: FontWeight.bold)),
-      content: SizedBox(
-          width: 500,
-          height: 400,
-          child: Column(children: [
-            Expanded(
-                child: _courses.isEmpty
-                    ? const Center(
-                        child: Text("ምንም ትምህርቶች አልተገለጹም። ከታች አንዱን ያክሉ።"))
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _courses.length,
-                        itemBuilder: (context, index) {
-                          final course = _courses[index];
-                          return Card(
-                              elevation: 1,
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                  leading: const Icon(Iconsax.book_1,
-                                      color: primaryColor),
-                                  title: Text(course['course_name'] ?? 'ስህተት',
-                                      style: GoogleFonts.notoSansEthiopic(
-                                          color: onSurfaceColor)),
-                                  trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                            icon: const Icon(Iconsax.edit,
-                                                color: subtleTextColor),
-                                            tooltip: 'ለዚህ ትምህርት ምዘናዎችን ያቀናብሩ',
-                                            onPressed: () =>
-                                                _manageAssessments(course)),
-                                        IconButton(
-                                            icon: const Icon(Iconsax.trash,
-                                                color: dangerColor),
-                                            tooltip: 'ትምህርቱን ያጥፉ',
-                                            onPressed: () => _deleteCourse(
-                                                course['id'], index))
-                                      ])));
-                        })),
-            const Divider(height: 24),
-            Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Row(children: [
-                  Expanded(
-                      child: TextField(
-                          controller: _courseController,
-                          style: const TextStyle(color: onSurfaceColor),
-                          decoration: const InputDecoration(
-                              labelText: "የአዲስ ትምህርት ስም",
-                              border: OutlineInputBorder()))),
-                  const SizedBox(width: 8),
-                  _isAdding
-                      ? const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: CircularProgressIndicator())
-                      : IconButton(
-                          icon: const Icon(Icons.add_circle,
-                              color: successColor, size: 36),
-                          onPressed: _addCourse)
-                ]))
-          ])),
-      actions: [
-        TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(_hasChanges);
-            },
-            child: const Text("ዝጋ"))
-      ],
-    );
-  }
 }
 
 class _AssessmentManagementDialog extends StatefulWidget {
@@ -874,13 +978,28 @@ class _AssessmentManagementDialog extends StatefulWidget {
 
 class _AssessmentManagementDialogState
     extends State<_AssessmentManagementDialog> {
-  List<Map<String, dynamic>> _assessments = [];
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
+  late List<Map<String, dynamic>> _assessments;
   bool _isLoading = true;
   bool _isSaving = false;
   final _formKey = GlobalKey<FormState>();
   @override
   void initState() {
     super.initState();
+    _assessments = []; // Initialize here
     _fetchAssessments();
   }
 
@@ -960,61 +1079,64 @@ class _AssessmentManagementDialogState
                                               Expanded(
                                                   flex: 3,
                                                   child: TextFormField(
-                                                      initialValue: _assessments[
-                                                              index]
+                                                      initialValue: _assessments[index]
                                                           ['assessment_name'],
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                           color:
                                                               onSurfaceColor),
-                                                      decoration:
-                                                          const InputDecoration(
-                                                              labelText: 'ስም',
-                                                              border:
-                                                                  OutlineInputBorder()),
-                                                      validator: (v) =>
-                                                          (v == null ||
-                                                                  v.isEmpty)
-                                                              ? 'ያስፈልጋል'
-                                                              : null,
-                                                      onSaved: (v) => _assessments[
-                                                                  index][
-                                                              'assessment_name'] =
-                                                          v)),
+                                                      decoration: InputDecoration(
+                                                          labelText: 'ስም',
+                                                          labelStyle: TextStyle(
+                                                              color:
+                                                                  subtleTextColor),
+                                                          enabledBorder: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12),
+                                                              borderSide: BorderSide(
+                                                                  color: Colors
+                                                                      .white10)),
+                                                          focusedBorder: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(12),
+                                                              borderSide: BorderSide(color: primaryColor)),
+                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white10))),
+                                                      validator: (v) => (v == null || v.isEmpty) ? 'ያስፈልጋል' : null,
+                                                      onSaved: (v) => _assessments[index]['assessment_name'] = v)),
                                               const SizedBox(width: 8),
                                               Expanded(
                                                   flex: 2,
                                                   child: TextFormField(
-                                                      initialValue:
-                                                          _assessments[index]
-                                                                  ['max_score']
-                                                              .toString(),
-                                                      style: const TextStyle(
+                                                      initialValue: _assessments[index]
+                                                              ['max_score']
+                                                          .toString(),
+                                                      style: TextStyle(
                                                           color:
                                                               onSurfaceColor),
-                                                      decoration: const InputDecoration(
+                                                      decoration: InputDecoration(
                                                           labelText: 'ከፍተኛ ውጤት',
-                                                          border:
-                                                              OutlineInputBorder()),
-                                                      keyboardType:
-                                                          TextInputType.number,
-                                                      inputFormatters: [
-                                                        FilteringTextInputFormatter
-                                                            .digitsOnly
-                                                      ],
-                                                      validator: (v) => (v ==
-                                                                  null ||
-                                                              v.isEmpty ||
-                                                              int.tryParse(v) ==
-                                                                  null)
-                                                          ? 'ያስ.'
-                                                          : null,
-                                                      onSaved: (v) =>
-                                                          _assessments[index]
-                                                                  ['max_score'] =
-                                                              int.tryParse(v!))),
+                                                          labelStyle: TextStyle(
+                                                              color:
+                                                                  subtleTextColor),
+                                                          enabledBorder: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(
+                                                                      12),
+                                                              borderSide: BorderSide(
+                                                                  color: Colors
+                                                                      .white10)),
+                                                          focusedBorder: OutlineInputBorder(
+                                                              borderRadius:
+                                                                  BorderRadius.circular(12),
+                                                              borderSide: BorderSide(color: primaryColor)),
+                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white10))),
+                                                      keyboardType: TextInputType.number,
+                                                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                                      validator: (v) => (v == null || v.isEmpty || int.tryParse(v) == null) ? 'ያስ.' : null,
+                                                      onSaved: (v) => _assessments[index]['max_score'] = int.tryParse(v!))),
                                               IconButton(
-                                                  icon: const Icon(
-                                                      Iconsax.trash,
+                                                  icon: Icon(Iconsax.trash,
                                                       color: dangerColor),
                                                   onPressed: () =>
                                                       _removeAssessment(index))
@@ -1025,8 +1147,9 @@ class _AssessmentManagementDialogState
                           alignment: Alignment.centerLeft,
                           child: TextButton.icon(
                               onPressed: _addNewAssessment,
-                              icon: const Icon(Icons.add),
-                              label: const Text("አዲስ ምዘና ያክሉ")))
+                              icon: Icon(Icons.add_circle, color: successColor),
+                              label: Text("አዲስ ምዘና ያክሉ",
+                                  style: TextStyle(color: successColor))))
                     ]))),
       actions: [
         TextButton(
@@ -1056,6 +1179,20 @@ class _EditGradesDialog extends StatefulWidget {
 }
 
 class _EditGradesDialogState extends State<_EditGradesDialog> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   Map<int, Map<int, TextEditingController>> _controllers = {};
   Map<int, List<Map<String, dynamic>>> _assessmentsForCourses = {};
   bool _isLoading = true;
@@ -1231,7 +1368,7 @@ class _EditGradesDialogState extends State<_EditGradesDialog> {
                                                           fontSize: 16)),
                                               const Divider(height: 20),
                                               if (assessments.isEmpty)
-                                                const Center(
+                                                Center(
                                                     child: Padding(
                                                         padding:
                                                             EdgeInsets.all(8.0),
@@ -1293,16 +1430,23 @@ class _EditGradesDialogState extends State<_EditGradesDialog> {
         controller: controller,
         readOnly: widget.isReadOnly,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style:
-            const TextStyle(color: onSurfaceColor, fontWeight: FontWeight.bold),
+        style: TextStyle(color: onSurfaceColor, fontWeight: FontWeight.bold),
         decoration: InputDecoration(
             labelText: label,
             labelStyle: GoogleFonts.poppins(color: subtleTextColor),
             suffixText: "/ $maxScore",
-            suffixStyle: const TextStyle(color: subtleTextColor),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            suffixStyle: TextStyle(color: subtleTextColor),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.white10)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.white10)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primaryColor)),
             filled: true,
-            fillColor: Colors.grey.shade100),
+            fillColor: Colors.black12),
         validator: (value) {
           if (widget.isReadOnly || value == null || value.isEmpty) return null;
           final score = double.tryParse(value);
@@ -1330,6 +1474,20 @@ class _NewStudentRegistrationTab extends StatefulWidget {
 
 class _NewStudentRegistrationTabState
     extends State<_NewStudentRegistrationTab> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   bool _isLoading = false;
   static final int currentEthiopianYear = EthiopianDate.now().year;
   final List<int> _yearOptions =
@@ -1463,44 +1621,78 @@ class _NewStudentRegistrationTabState
               Expanded(
                   child: DropdownButtonFormField<String>(
                       value: _newStudentClass,
+                      dropdownColor: surfaceColor,
                       hint: Text('ክፍል ይምረጡ',
-                          style: GoogleFonts.notoSansEthiopic()),
+                          style: GoogleFonts.notoSansEthiopic(
+                              color: subtleTextColor)),
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: onSurfaceColor),
                       items: spiritualClassOptions
                           .map((c) => DropdownMenuItem(
                               value: c,
                               child: Text(c,
-                                  style: GoogleFonts.notoSansEthiopic())))
+                                  style: GoogleFonts.notoSansEthiopic(
+                                      color: onSurfaceColor))))
                           .toList(),
                       onChanged: widget.isReadOnly
                           ? null
                           : (val) => setState(() => _newStudentClass = val),
-                      decoration:
-                          const InputDecoration(border: OutlineInputBorder()))),
+                      decoration: InputDecoration(
+                          labelText: 'ክፍል',
+                          labelStyle: TextStyle(color: subtleTextColor),
+                          enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white10)),
+                          focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: primaryColor)),
+                          border: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white10))))),
               const SizedBox(width: 16),
               Expanded(
                   child: DropdownButtonFormField<int>(
                       value: _newStudentYear,
+                      dropdownColor: surfaceColor,
                       hint: Text('ዓመት ይምረጡ',
-                          style: GoogleFonts.notoSansEthiopic()),
+                          style: GoogleFonts.notoSansEthiopic(
+                              color: subtleTextColor)),
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: onSurfaceColor),
                       items: _yearOptions
                           .map((y) => DropdownMenuItem(
-                              value: y, child: Text('$y ዓ.ም.')))
+                              value: y,
+                              child: Text('$y ዓ.ም.',
+                                  style: TextStyle(color: onSurfaceColor))))
                           .toList(),
                       onChanged: widget.isReadOnly
                           ? null
                           : (val) => setState(() => _newStudentYear = val),
-                      decoration:
-                          const InputDecoration(border: OutlineInputBorder())))
+                      decoration: InputDecoration(
+                          labelText: 'ዓመት',
+                          labelStyle: TextStyle(color: subtleTextColor),
+                          enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white10)),
+                          focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: primaryColor)),
+                          border: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.white10))))),
             ])),
         const Divider(height: 1),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: TextField(
-            decoration: const InputDecoration(
+            style: TextStyle(color: onSurfaceColor),
+            decoration: InputDecoration(
                 labelText: "ተማሪ ይፈልጉ (Search User)",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 10)),
+                labelStyle: TextStyle(color: subtleTextColor),
+                prefixIcon: Icon(Icons.search, color: subtleTextColor),
+                filled: true,
+                fillColor: surfaceColor,
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white10)),
+                focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: primaryColor)),
+                border: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10)),
             onChanged: (val) => setState(() => _searchQuery = val),
           ),
         ),
@@ -1519,30 +1711,41 @@ class _NewStudentRegistrationTabState
                 : filteredUsers.isEmpty
                     ? Center(
                         child: Text("ምንም ተጠቃሚዎች አልተገኙም።",
-                            style: GoogleFonts.poppins(color: onSurfaceColor)))
+                            style: GoogleFonts.poppins(color: subtleTextColor)))
                     : ListView.builder(
                         itemCount: filteredUsers.length,
                         itemBuilder: (context, index) {
                           final user = filteredUsers[index];
                           final userId = user['id'];
-                          return CheckboxListTile(
-                              title: Text(user['full_name'] ?? 'ስም የለም',
-                                  style: GoogleFonts.poppins(
-                                      color: onSurfaceColor)),
-                              subtitle: Text(user['email'] ?? 'ኢሜይል የለም',
-                                  style: GoogleFonts.poppins(
-                                      color: onSurfaceColor)),
-                              value: _selectedStudentIds.contains(userId),
-                              onChanged: widget.isReadOnly
-                                  ? null
-                                  : (bool? value) => setState(() {
-                                        if (value == true) {
-                                          _selectedStudentIds.add(userId);
-                                        } else {
-                                          _selectedStudentIds.remove(userId);
-                                        }
-                                      }),
-                              activeColor: primaryColor);
+                          return Container(
+                              decoration: BoxDecoration(
+                                  border: Border(
+                                      bottom:
+                                          BorderSide(color: Colors.white10))),
+                              child: CheckboxListTile(
+                                title: Text(user['full_name'] ?? 'ስም የለም',
+                                    style: GoogleFonts.poppins(
+                                        color: onSurfaceColor)),
+                                subtitle: Text(user['email'] ?? 'ኢሜይል የለም',
+                                    style: GoogleFonts.poppins(
+                                        color: subtleTextColor)),
+                                value: _selectedStudentIds.contains(userId),
+                                checkColor: Colors.black, // Check mark color
+                                activeColor:
+                                    accentColor, // Checkbox background when checked
+                                side: BorderSide(
+                                    color:
+                                        subtleTextColor), // Unchecked border color
+                                onChanged: widget.isReadOnly
+                                    ? null
+                                    : (bool? value) => setState(() {
+                                          if (value == true) {
+                                            _selectedStudentIds.add(userId);
+                                          } else {
+                                            _selectedStudentIds.remove(userId);
+                                          }
+                                        }),
+                              ));
                         })),
         Padding(
             padding: const EdgeInsets.all(16.0),
@@ -1576,6 +1779,20 @@ class _ManageBatchesTab extends StatefulWidget {
 }
 
 class _ManageBatchesTabState extends State<_ManageBatchesTab> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   Future<List<dynamic>>? _batchesFuture;
   @override
   void initState() {
@@ -1639,8 +1856,8 @@ class _ManageBatchesTabState extends State<_ManageBatchesTab> {
                                   color: primaryColor.withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Iconsax.folder,
-                                    color: primaryColor)),
+                                child:
+                                    Icon(Iconsax.folder, color: primaryColor)),
                             title: Text(
                                 "${batch['spiritual_class']} - ${batch['academic_year']} ዓ.ም.",
                                 style: GoogleFonts.notoSansEthiopic(
@@ -1652,7 +1869,7 @@ class _ManageBatchesTabState extends State<_ManageBatchesTab> {
                                   style: GoogleFonts.notoSansEthiopic(
                                       color: subtleTextColor)),
                             ),
-                            trailing: const Icon(Iconsax.arrow_right_3,
+                            trailing: Icon(Iconsax.arrow_right_3,
                                 color: subtleTextColor),
                             onTap: () => _showStudentsInBatchDialog(batch)));
                   });
@@ -1669,6 +1886,20 @@ class _PromotionTab extends StatefulWidget {
 }
 
 class _PromotionTabState extends State<_PromotionTab> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   bool _isLoading = false;
   static final int currentEthiopianYear = EthiopianDate.now().year;
   final List<int> _yearOptions =
@@ -1844,7 +2075,7 @@ class _PromotionTabState extends State<_PromotionTab> {
                         onPressed: widget.isReadOnly || _isLoading
                             ? null
                             : _promoteStudents,
-                        icon: const Icon(Iconsax.scroll),
+                        icon: Icon(Iconsax.scroll),
                         label:
                             Text('ተማሪዎችን ያሳድጉ', style: GoogleFonts.poppins()),
                         style: ElevatedButton.styleFrom(
@@ -1857,8 +2088,7 @@ class _PromotionTabState extends State<_PromotionTab> {
         if (_isLoading)
           Container(
             color: Colors.black.withOpacity(0.5),
-            child: const Center(
-                child: CircularProgressIndicator(color: accentColor)),
+            child: Center(child: CircularProgressIndicator(color: accentColor)),
           ),
       ],
     );
@@ -1874,6 +2104,20 @@ class _StudentsInBatchDialog extends StatefulWidget {
 }
 
 class _StudentsInBatchDialogState extends State<_StudentsInBatchDialog> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   Future<List<dynamic>>? _studentsFuture;
   final Set<String> _selectedStudentIds = {};
   bool _isLoading = false;

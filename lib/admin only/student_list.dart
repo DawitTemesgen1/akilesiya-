@@ -11,14 +11,15 @@ import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/profile_config_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- UI Constants ---
-// Using a cleaner, more modern palette
-const Color kPrimaryColor = Color(0xFF1E3A8A); // Deep Blue
-const Color kSecondaryColor = Color(0xFF3B82F6); // Lighter Blue
-const Color kBackgroundColor = Color(0xFFF8FAFC); // Very light grey blue
-const Color kCardColor = Colors.white;
-const Color kTextColor = Color(0xFF1E293B);
+// Replaced by ThemeProvider
+// const Color kPrimaryColor = Color(0xFF1E3A8A); // Deep Blue
+// const Color kSecondaryColor = Color(0xFF3B82F6); // Lighter Blue
+// const Color kBackgroundColor = Color(0xFFF8FAFC); // Very light grey blue
+// const Color kCardColor = Colors.white;
+// const Color kTextColor = Color(0xFF1E293B);
 
 // --- Filter Options ---
 const List<String> spiritualClassOptions = [
@@ -54,15 +55,22 @@ class UserManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final backgroundColor = themeProvider.getBackgroundColor(context);
+    final onSurfaceColor = themeProvider.getOnSurfaceColor(context);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text('የአባላት አስተዳደር', // "Members Management"
             style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.bold, color: kTextColor, fontSize: 20)),
-        backgroundColor: kBackgroundColor,
+                fontWeight: FontWeight.bold,
+                color: onSurfaceColor,
+                fontSize: 20)),
+        backgroundColor: surfaceColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: kTextColor),
+        iconTheme: IconThemeData(color: themeProvider.getPrimaryColor(context)),
         centerTitle: true,
       ),
       body: const _ManagementTab(),
@@ -84,6 +92,18 @@ class _ManagementTabState extends State<_ManagementTab> {
   String? _selectedRole;
   String? _selectedClass;
   bool _isGeneratingPdf = false;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   @override
   void initState() {
@@ -178,7 +198,7 @@ class _ManagementTabState extends State<_ManagementTab> {
       children: [
         RefreshIndicator(
           onRefresh: () async => _loadData(),
-          color: kPrimaryColor,
+          color: primaryColor,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: CustomScrollView(
@@ -199,7 +219,7 @@ class _ManagementTabState extends State<_ManagementTab> {
                         style: GoogleFonts.notoSansEthiopic(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: kTextColor,
+                          color: onSurfaceColor,
                         ),
                       ),
                       TextButton.icon(
@@ -208,8 +228,8 @@ class _ManagementTabState extends State<_ManagementTab> {
                         },
                         icon: const Icon(Iconsax.export, size: 18),
                         label: const Text("Export"),
-                        style: TextButton.styleFrom(
-                            foregroundColor: kPrimaryColor),
+                        style:
+                            TextButton.styleFrom(foregroundColor: primaryColor),
                       )
                     ],
                   ),
@@ -288,11 +308,11 @@ class _ManagementTabState extends State<_ManagementTab> {
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
-        color: kCardColor,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: onSurfaceColor.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4))
         ],
@@ -370,10 +390,10 @@ class _ManagementTabState extends State<_ManagementTab> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? kPrimaryColor : kCardColor,
+          color: isSelected ? primaryColor : surfaceColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? kPrimaryColor : Colors.grey.shade300,
+            color: isSelected ? primaryColor : subtleTextColor.withOpacity(0.3),
           ),
           boxShadow: [
             if (!isSelected)
@@ -389,7 +409,7 @@ class _ManagementTabState extends State<_ManagementTab> {
             Text(
               label,
               style: GoogleFonts.notoSansEthiopic(
-                color: isSelected ? Colors.white : kTextColor,
+                color: isSelected ? Colors.white : onSurfaceColor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
             ),
@@ -515,6 +535,12 @@ class _UserListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final primaryColor = themeProvider.getPrimaryColor(context);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+    final onSurfaceColor = themeProvider.getOnSurfaceColor(context);
+    final subtleTextColor = themeProvider.getSubtleTextColor(context);
+
     final imageUrl = user['profile_image_url'];
     final name = user['full_name'] ?? 'No Name';
     final email = user['email'] ?? 'No Email';
@@ -523,11 +549,11 @@ class _UserListCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: kCardColor,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: onSurfaceColor.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4))
         ],
@@ -536,28 +562,27 @@ class _UserListCard extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           radius: 25,
-          backgroundColor: kPrimaryColor.withOpacity(0.1),
+          backgroundColor: primaryColor.withOpacity(0.1),
           backgroundImage: imageUrl != null && imageUrl.isNotEmpty
               ? NetworkImage(
                   '${ApiService.baseUrl.replaceAll('/api', '')}/$imageUrl')
               : null,
           child: imageUrl == null || imageUrl.isEmpty
               ? Text(name.isNotEmpty ? name[0] : 'U',
-                  style: const TextStyle(
-                      color: kPrimaryColor, fontWeight: FontWeight.bold))
+                  style: TextStyle(
+                      color: primaryColor, fontWeight: FontWeight.bold))
               : null,
         ),
         title: Text(
           name,
           style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.bold, fontSize: 16, color: kTextColor),
+              fontWeight: FontWeight.bold, fontSize: 16, color: onSurfaceColor),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(email,
-                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(email, style: TextStyle(fontSize: 12, color: subtleTextColor)),
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -576,7 +601,7 @@ class _UserListCard extends StatelessWidget {
           ],
         ),
         trailing: IconButton(
-          icon: const Icon(Iconsax.printer, color: kPrimaryColor),
+          icon: Icon(Iconsax.printer, color: primaryColor),
           tooltip: 'Print Profile',
           onPressed: onPrint,
         ),
@@ -761,7 +786,7 @@ class _PdfFieldSelectorDialogState extends State<_PdfFieldSelectorDialog> {
           Padding(
             padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 16),
             child: Text(section.key,
-                style: const TextStyle(
+                style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: kPrimaryColor)),
@@ -803,8 +828,8 @@ class _PdfFieldSelectorDialogState extends State<_PdfFieldSelectorDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 16.0, bottom: 8.0, left: 16),
+        Padding(
+          padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 16),
           child: Text('ተጨማሪ መረጃ',
               style: TextStyle(
                   fontWeight: FontWeight.bold,

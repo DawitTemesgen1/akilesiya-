@@ -3,6 +3,8 @@
 import 'package:amde_haymanot_abalat_guday/services/user_admin_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 class UserChangeDetailScreen extends StatefulWidget {
   final String userId;
@@ -16,6 +18,18 @@ class UserChangeDetailScreen extends StatefulWidget {
 
 class _UserChangeDetailScreenState extends State<UserChangeDetailScreen> {
   late Future<List<dynamic>> _logsFuture;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   @override
   void initState() {
@@ -38,7 +52,13 @@ class _UserChangeDetailScreenState extends State<UserChangeDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('የ${widget.userName} የለውጥ ታሪክ')), // ተተርጉሟል
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: Text('የ${widget.userName} የለውጥ ታሪክ',
+            style: TextStyle(color: onSurfaceColor)),
+        backgroundColor: surfaceColor,
+        iconTheme: IconThemeData(color: primaryColor),
+      ),
       body: FutureBuilder<List<dynamic>>(
         future: _logsFuture,
         builder: (context, snapshot) {
@@ -46,18 +66,22 @@ class _UserChangeDetailScreenState extends State<UserChangeDetailScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text("ስህተት፦ ${snapshot.error}")); // ተተርጉሟል
+            return Center(
+                child: Text("ስህተትፍ ${snapshot.error}",
+                    style: TextStyle(color: subtleTextColor))); // ተተርጉሟል
           }
           final logs = snapshot.data ?? [];
           if (logs.isEmpty) {
-            return const Center(
-                child: Text("ለዚህ ተጠቃሚ ምንም የለውጥ ታሪክ አልተገኘም።")); // ተተርጉሟል
+            return Center(
+                child: Text("ለዚህ ተጠቃሚ ምንም የልውጥ ታሪክ አልተገኘም።",
+                    style: TextStyle(color: subtleTextColor))); // ተተርጉሟል
           }
           return ListView.builder(
             itemCount: logs.length,
             itemBuilder: (context, index) {
               final log = logs[index];
               return Card(
+                color: surfaceColor,
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -66,8 +90,10 @@ class _UserChangeDetailScreenState extends State<UserChangeDetailScreen> {
                     children: [
                       Text(
                         log['field_name'].replaceAll('_', ' ').toUpperCase(),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: onSurfaceColor),
                       ),
                       const Divider(),
                       _buildChangeRow('ከዚህ በፊት:', log['old_value']), // ተተርጉሟል
@@ -79,7 +105,7 @@ class _UserChangeDetailScreenState extends State<UserChangeDetailScreen> {
                           DateFormat.yMMMd().add_jm().format(
                               DateTime.parse(log['created_at']).toLocal()),
                           style:
-                              const TextStyle(fontSize: 12, color: Colors.grey),
+                              TextStyle(fontSize: 12, color: subtleTextColor),
                         ),
                       ),
                     ],
@@ -97,11 +123,11 @@ class _UserChangeDetailScreenState extends State<UserChangeDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey)),
+        Text(label, style: TextStyle(color: subtleTextColor)),
         const SizedBox(width: 8),
         Expanded(
-            child: Text(
-                value != null && value.isNotEmpty ? value : '(ባዶ)')), // ተተርጉሟል
+            child: Text(value != null && value.isNotEmpty ? value : '(ባዶ)',
+                style: TextStyle(color: onSurfaceColor))), // ተተርጉሟል
       ],
     );
   }

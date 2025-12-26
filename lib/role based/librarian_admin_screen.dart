@@ -2,6 +2,8 @@ import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import '../services/librarian_admin_service.dart';
 
 // --- ሞዴሎች ---
@@ -42,6 +44,18 @@ class LibrarianAdminScreen extends StatefulWidget {
 class _LibrarianAdminScreenState extends State<LibrarianAdminScreen> {
   late Future<List<LibraryRoleUser>> _usersFuture;
   final Map<String, bool> _loadingStates = {}; // ለእያንዳንዱ ተጠቃሚ የመጫኛ ሁኔታን ለመከታተል
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
 
   @override
   void initState() {
@@ -88,13 +102,16 @@ class _LibrarianAdminScreenState extends State<LibrarianAdminScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: primaryColor,
       appBar: AppBar(
         title: Text(
           'የቤተ-መጽሐፍት አስተዳዳሪዎችን ያቀናብሩ', // ተተርጉሟል
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold, color: onSurfaceColor),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: primaryColor,
         elevation: 1,
+        iconTheme: IconThemeData(color: accentColor),
       ),
       body: FutureBuilder<List<LibraryRoleUser>>(
         future: _usersFuture,
@@ -134,8 +151,10 @@ class _LibrarianAdminScreenState extends State<LibrarianAdminScreen> {
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   elevation: 2,
                   shadowColor: Colors.black12,
+                  color: surfaceColor,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.white10)),
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Column(
@@ -154,8 +173,9 @@ class _LibrarianAdminScreenState extends State<LibrarianAdminScreen> {
                                       user.fullName.isNotEmpty
                                           ? user.fullName[0]
                                           : '?',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: onSurfaceColor),
                                     )
                                   : null,
                             ),
@@ -164,7 +184,9 @@ class _LibrarianAdminScreenState extends State<LibrarianAdminScreen> {
                               child: Text(
                                 user.fullName,
                                 style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600, fontSize: 16),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    color: onSurfaceColor),
                               ),
                             ),
                             if (isLoading)
@@ -178,11 +200,14 @@ class _LibrarianAdminScreenState extends State<LibrarianAdminScreen> {
                         ),
                         const Divider(height: 20),
                         SwitchListTile(
-                          title: const Text('የቤተ-መጽሐፍት ባለሙያ'), // ተተርጉሟል
-                          subtitle: const Text(
-                              'የንባብ ታሪክ እና ስታቲስቲክስ ማየት ይችላል።'), // ተተርጉሟል
-                          secondary: const Icon(Iconsax.book),
+                          title: Text('የቤተ-መጽሐፍት ባለሙያ', // ተተርጉሟል
+                              style: TextStyle(color: onSurfaceColor)),
+                          subtitle:
+                              Text('የንባብ ታሪክ እና ስታቲስቲክስ ማየት ይችላል።', // ተተርጉሟል
+                                  style: TextStyle(color: subtleTextColor)),
+                          secondary: Icon(Iconsax.book, color: accentColor),
                           value: user.isLibrarian,
+                          activeColor: accentColor,
                           onChanged: isLoading
                               ? null
                               : (newValue) {
@@ -191,11 +216,13 @@ class _LibrarianAdminScreenState extends State<LibrarianAdminScreen> {
                                 },
                         ),
                         SwitchListTile(
-                          title: const Text('የቤተ-መጽሐፍት አስተዳዳሪ'), // ተተርጉሟል
-                          subtitle:
-                              const Text('ለአንባቢዎች መጽሐፍትን መመደብ ይችላል።'), // ተተርጉሟል
-                          secondary: const Icon(Iconsax.user_add),
+                          title: Text('የቤተ-መጽሐፍት አስተዳዳሪ', // ተተርጉሟል
+                              style: TextStyle(color: onSurfaceColor)),
+                          subtitle: Text('ለአንባቢዎች መጽሐፍትን መመደብ ይችላል።', // ተተርጉሟል
+                              style: TextStyle(color: subtleTextColor)),
+                          secondary: Icon(Iconsax.user_add, color: accentColor),
                           value: user.isLibraryAdmin,
+                          activeColor: accentColor,
                           onChanged: isLoading
                               ? null
                               : (newValue) {

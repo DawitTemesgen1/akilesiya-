@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'package:animate_do/animate_do.dart';
@@ -174,33 +175,38 @@ class _LearningScreenState extends State<LearningScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final userProvider = context.watch<UserProvider>();
-    final bool canManageContent =
-        userProvider.roles.contains('superior_admin') ||
-            userProvider.roles.contains('learning_admin');
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context);
+    final canManageContent = userProvider.roles.contains('superior_admin') ||
+        userProvider.roles.contains('learning_admin');
+    final isDark = themeProvider.isDarkMode(context);
+    final bgColor = themeProvider.getBackgroundColor(context);
+    final textColor = isDark ? Colors.white : Colors.black87;
 
     return Scaffold(
-      backgroundColor: premiumDark,
+      backgroundColor: bgColor,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Theme.of(context).primaryColor.withOpacity(0.8),
-                premiumDark,
-                Colors.black,
-              ],
-              stops: const [
-                0.0,
-                0.4,
-                1.0
-              ]),
+              colors: isDark
+                  ? [
+                      Theme.of(context).primaryColor.withOpacity(0.8),
+                      premiumDark,
+                      Colors.black,
+                    ]
+                  : [
+                      Theme.of(context).primaryColor.withOpacity(0.1),
+                      bgColor,
+                      bgColor,
+                    ],
+              stops: const [0.0, 0.4, 1.0]),
         ),
         child: RefreshIndicator(
           onRefresh: _fetchLearningContent,
           color: premiumGold,
-          backgroundColor: premiumDark,
+          backgroundColor: isDark ? premiumDark : Colors.white,
           child: CustomScrollView(
             controller: _scrollController,
             physics: const BouncingScrollPhysics(),
@@ -211,7 +217,7 @@ class _LearningScreenState extends State<LearningScreen> {
                 backgroundColor: Colors.transparent,
                 expandedHeight: 120,
                 leading: IconButton(
-                  icon: const Icon(Iconsax.menu_1, color: Colors.white),
+                  icon: Icon(Icons.sort, color: textColor),
                   onPressed: () {
                     Scaffold.of(context).openDrawer();
                   },
@@ -221,42 +227,53 @@ class _LearningScreenState extends State<LearningScreen> {
                   title: Text(l10n.learningCenter,
                       style: GoogleFonts.notoSansEthiopic(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: textColor,
                           fontSize: 18)),
                   background: Container(
                     decoration: BoxDecoration(
                         gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [
-                          Colors.black.withOpacity(0.6),
-                          Colors.transparent
-                        ])),
+                            colors: isDark
+                                ? [
+                                    Colors.black.withOpacity(0.6),
+                                    Colors.transparent
+                                  ]
+                                : [
+                                    Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(0.2),
+                                    Colors.transparent
+                                  ])),
                   ),
                 ),
                 actions: [
                   if (canManageContent)
                     IconButton(
-                      icon: const Icon(Iconsax.edit, color: Colors.white),
-                      tooltip: l10n.learningManageContent,
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LearningAdminHubScreen(
-                            onDataChanged: _onAdminAction,
-                          ),
-                        ),
-                      ),
-                    ),
+                        icon: Icon(Iconsax.edit, color: textColor),
+                        tooltip: l10n.learningManageContent,
+                        onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LearningAdminHubScreen(
+                                  onDataChanged: _onAdminAction,
+                                ),
+                              ),
+                            )),
                   IconButton(
                       onPressed: () {},
-                      icon: const Icon(Iconsax.search_normal,
-                          color: Colors.white),
+                      icon: Icon(Iconsax.search_normal, color: textColor),
                       tooltip: l10n.learningSearch),
                   IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Iconsax.filter, color: Colors.white),
-                      tooltip: l10n.learningFilter),
+                    onPressed: () =>
+                        Provider.of<ThemeProvider>(context, listen: false)
+                            .toggleTheme(),
+                    icon: Icon(
+                      isDark ? Iconsax.sun_1 : Iconsax.moon,
+                      color: textColor,
+                    ),
+                    tooltip: 'Toggle Theme',
+                  ),
                 ],
               ),
               _buildBody(),
@@ -289,7 +306,11 @@ class _LearningScreenState extends State<LearningScreen> {
                 _error!,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.notoSansEthiopic(
-                    color: Colors.white, fontSize: 16),
+                    color:
+                        Provider.of<ThemeProvider>(context).isDarkMode(context)
+                            ? Colors.white
+                            : Colors.black87,
+                    fontSize: 16),
               ),
             ],
           ),
@@ -307,7 +328,11 @@ class _LearningScreenState extends State<LearningScreen> {
               Text(
                 l10n.learningNoContent,
                 style: GoogleFonts.notoSansEthiopic(
-                    color: Colors.white60, fontSize: 16),
+                    color:
+                        Provider.of<ThemeProvider>(context).isDarkMode(context)
+                            ? Colors.white60
+                            : Colors.black54,
+                    fontSize: 16),
               ),
             ],
           ),
@@ -456,17 +481,24 @@ class _LearningContentCardState extends State<_LearningContentCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
+    final borderColor =
+        isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.2);
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.2) : Colors.grey.withOpacity(0.1);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: cardColor,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 5))
+                color: shadowColor, blurRadius: 10, offset: const Offset(0, 5))
           ]),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -528,6 +560,7 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Text(
                     widget.content.title.isEmpty
                         ? AppLocalizations.of(context)!.learningNoTitle
@@ -535,13 +568,13 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                     style: GoogleFonts.notoSansEthiopic(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                     )),
                 const SizedBox(height: 8),
                 Text(widget.content.description,
                     style: GoogleFonts.notoSansEthiopic(
                       fontSize: 14,
-                      color: Colors.white70,
+                      color: subTextColor,
                       height: 1.5,
                     ),
                     maxLines: 2,
@@ -557,6 +590,10 @@ class _LearningContentCardState extends State<_LearningContentCard> {
   }
 
   Widget _buildActionBar() {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -570,14 +607,13 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                   Icon(widget.content.isLiked ? Iconsax.heart5 : Iconsax.heart,
                       color: widget.content.isLiked
                           ? Colors.redAccent
-                          : Colors.white60,
+                          : subTextColor,
                       size: 22),
                   if (widget.content.likes > 0) ...[
                     const SizedBox(width: 8),
                     Text(widget.content.likes.toString(),
                         style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white60)),
+                            fontWeight: FontWeight.w600, color: subTextColor)),
                   ]
                 ],
               ),
@@ -587,13 +623,12 @@ class _LearningContentCardState extends State<_LearningContentCard> {
               onTap: _showComments,
               child: Row(
                 children: [
-                  Icon(Iconsax.message, color: Colors.white60, size: 22),
+                  Icon(Iconsax.message, color: subTextColor, size: 22),
                   if (widget.content.commentCount > 0) ...[
                     const SizedBox(width: 8),
                     Text(widget.content.commentCount.toString(),
                         style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white60)),
+                            fontWeight: FontWeight.w600, color: subTextColor)),
                   ]
                 ],
               ),
@@ -606,7 +641,7 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                     ? Iconsax.bookmark5
                     : Iconsax.bookmark,
                 color:
-                    widget.content.isBookmarked ? premiumGold : Colors.white60,
+                    widget.content.isBookmarked ? primaryColor : subTextColor,
                 size: 22),
           ),
         ],
@@ -617,16 +652,25 @@ class _LearningContentCardState extends State<_LearningContentCard> {
   Widget _buildAuthorInfoBar() {
     final ethiopianDate =
         EthiopianDate.fromGregorian(widget.content.publishDate);
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
+    final primaryColor = Theme.of(context).primaryColor;
+    final cardColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
+    final borderColor = primaryColor.withOpacity(0.3);
+    final shadowColor =
+        isDark ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.2);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white54 : Colors.black54;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E), // Darker card background
+        color: cardColor, // Darker card background
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: premiumGold.withOpacity(0.3)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: shadowColor,
             blurRadius: 8,
             offset: const Offset(0, 4),
           )
@@ -638,11 +682,11 @@ class _LearningContentCardState extends State<_LearningContentCard> {
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: premiumGold, width: 1.5),
+              border: Border.all(color: primaryColor, width: 1.5),
             ),
             child: CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.grey[800],
+              backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
               backgroundImage: widget.content.authorAvatar != null &&
                       widget.content.authorAvatar!.isNotEmpty
                   ? CachedNetworkImageProvider(widget.content.authorAvatar!)
@@ -653,8 +697,8 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                       widget.content.author.isNotEmpty
                           ? widget.content.author[0]
                           : '?',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: textColor),
                     )
                   : null,
             ),
@@ -670,15 +714,14 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                       : widget.content.author,
                   style: GoogleFonts.poppins(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: textColor,
                       fontSize: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   ethiopianDate.toString(),
-                  style:
-                      GoogleFonts.poppins(color: Colors.white54, fontSize: 11),
+                  style: GoogleFonts.poppins(color: subTextColor, fontSize: 11),
                 ),
               ],
             ),

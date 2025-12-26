@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amde_haymanot_abalat_guday/services/system_admin_service.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 class AuditLogsScreen extends StatefulWidget {
   const AuditLogsScreen({Key? key}) : super(key: key);
@@ -15,6 +17,18 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
   int _currentPage = 1;
   final int _itemsPerPage = 50;
   String _actionFilter = '';
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   @override
   void initState() {
@@ -100,10 +114,12 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: const Text('System Audit Logs'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Theme.of(context).colorScheme.secondary,
+        backgroundColor: surfaceColor,
+        foregroundColor: onSurfaceColor,
+        iconTheme: IconThemeData(color: primaryColor),
       ),
       body: Column(
         children: [
@@ -112,7 +128,7 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                const Text('Filter by action:'),
+                const Text('Filter by action:', style: TextStyle()),
                 const SizedBox(width: 12),
                 DropdownButton<String>(
                   value: _actionFilter.isEmpty ? null : _actionFilter,
@@ -148,10 +164,11 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
             child: _isLoading && _logs.isEmpty
                 ? const Center(child: CircularProgressIndicator())
                 : _logs.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
                           'No audit logs found',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                          style:
+                              TextStyle(fontSize: 18, color: subtleTextColor),
                         ),
                       )
                     : NotificationListener<ScrollNotification>(
@@ -175,6 +192,7 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
 
                             final log = _logs[index];
                             return Card(
+                              color: surfaceColor,
                               margin: const EdgeInsets.symmetric(
                                   vertical: 4, horizontal: 16),
                               child: ListTile(
@@ -189,18 +207,27 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
                                 ),
                                 title: Text(
                                   log['action_description'] ?? 'Unknown Action',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: onSurfaceColor),
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Action: ${log['action_type']}'),
+                                    Text('Action: ${log['action_type']}',
+                                        style:
+                                            TextStyle(color: subtleTextColor)),
                                     if (log['school_name'] != null)
-                                      Text('School: ${log['school_name']}'),
-                                    Text('Admin: ${log['admin_email']}'),
+                                      Text('School: ${log['school_name']}',
+                                          style: TextStyle(
+                                              color: subtleTextColor)),
+                                    Text('Admin: ${log['admin_email']}',
+                                        style:
+                                            TextStyle(color: subtleTextColor)),
                                     Text(
-                                        'Time: ${_formatDateTime(log['timestamp'])}'),
+                                        'Time: ${_formatDateTime(log['timestamp'])}',
+                                        style:
+                                            TextStyle(color: subtleTextColor)),
                                   ],
                                 ),
                                 trailing: IconButton(
@@ -231,7 +258,12 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Audit Log Details'),
+        backgroundColor:
+            Provider.of<ThemeProvider>(context).getSurfaceColor(context),
+        title: Text('Audit Log Details',
+            style: TextStyle(
+                color: Provider.of<ThemeProvider>(context)
+                    .getOnSurfaceColor(context))),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -272,10 +304,17 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
             width: 100,
             child: Text(
               '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Provider.of<ThemeProvider>(context)
+                      .getOnSurfaceColor(context)),
             ),
           ),
-          Expanded(child: Text(value)),
+          Expanded(
+              child: Text(value,
+                  style: TextStyle(
+                      color: Provider.of<ThemeProvider>(context)
+                          .getOnSurfaceColor(context)))),
         ],
       ),
     );

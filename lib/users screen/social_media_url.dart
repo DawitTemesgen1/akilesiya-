@@ -1,6 +1,8 @@
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 class SocialMediaUrl extends StatelessWidget {
   const SocialMediaUrl({super.key});
@@ -47,7 +49,9 @@ class SocialMediaUrl extends StatelessWidget {
         IconButton(
           iconSize: customIconSize,
           onPressed: () => _launchURL('https://tiktok.com/@your-profile'),
-          icon: const FaIcon(FontAwesomeIcons.tiktok, color: Colors.black),
+          icon: FaIcon(FontAwesomeIcons.tiktok,
+              color: Provider.of<ThemeProvider>(context)
+                  .getOnSurfaceColor(context)),
         ),
       ],
     );

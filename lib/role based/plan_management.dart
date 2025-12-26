@@ -12,6 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- DATA MODELS ---
 class DepartmentMember {
@@ -144,11 +145,18 @@ class _PlanControlScreenState extends State<PlanControlScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
+
   final _formKey = GlobalKey<FormState>();
 
-  static const Color primaryColor = Color(0xFF0F172A);
-  static const Color accentColor = Color(0xFFFACC15);
-  static const Color cardColor = Color(0xFF1E293B);
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get cardColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
 
   List<User> _allUsers = [];
   List<Department> _allowedDepartments = [];
@@ -423,7 +431,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
       backgroundColor: primaryColor,
       appBar: _buildAppBar(isSuperiorAdmin),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: accentColor))
+          ? Center(child: CircularProgressIndicator(color: accentColor))
           : TabBarView(
               controller: _tabController,
               children: [
@@ -444,10 +452,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
       elevation: 0,
       title: Text('እቅድ ቁጥጥር',
           style: GoogleFonts.notoSansEthiopic(
-              fontWeight: FontWeight.w600, color: Colors.white)),
+              fontWeight: FontWeight.w600, color: onSurfaceColor)),
       leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.go('/home')),
+          icon: Icon(Icons.arrow_back, color: onSurfaceColor),
+          onPressed: () => context.pop()),
       actions: [
         if (isSuperiorAdmin)
           PopupMenuButton<String>(
@@ -458,7 +466,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
               PopupMenuItem(
                 value: 'rollover',
                 child: Text("Perform Annual Rollover",
-                    style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
+                    style: GoogleFonts.notoSansEthiopic(color: onSurfaceColor)),
               ),
               PopupMenuItem(
                 value: 'undo',
@@ -481,7 +489,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         indicatorWeight: 3,
         labelColor: accentColor,
         labelStyle: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w600),
-        unselectedLabelColor: Colors.white.withOpacity(0.7),
+        unselectedLabelColor: onSurfaceColor.withOpacity(0.7),
         tabs: [
           const Tab(icon: Icon(Icons.dashboard_rounded), text: "ክፍላት"),
           const Tab(icon: Icon(Icons.list_alt_rounded), text: "ሁሉም እቅዶች"),
@@ -930,7 +938,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                               horizontal: 8, vertical: 4)),
                     if (plan.planDate != null)
                       Chip(
-                          avatar: const Icon(Icons.calendar_today_outlined,
+                          avatar: Icon(Icons.calendar_today_outlined,
                               size: 16, color: accentColor),
                           label: Text(
                               EthiopianDate.fromGregorian(plan.planDate!)
@@ -1104,7 +1112,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
               minChildSize: 0.5,
               maxChildSize: 0.9,
               builder: (_, controller) => Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                     color: cardColor,
                     borderRadius:
                         BorderRadius.vertical(top: Radius.circular(20))),
@@ -1832,7 +1840,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
       enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.white.withOpacity(0.5))),
       focusedBorder:
-          const OutlineInputBorder(borderSide: BorderSide(color: accentColor)),
+          OutlineInputBorder(borderSide: BorderSide(color: accentColor)),
       errorStyle: GoogleFonts.notoSansEthiopic(),
     );
   }

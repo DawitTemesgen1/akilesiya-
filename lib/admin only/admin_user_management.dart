@@ -6,6 +6,8 @@ import 'package:amde_haymanot_abalat_guday/services/user_admin_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- Amharic Localization Strings for Admin User Management ---
 abstract class AmharicStringsUserAdmin {
@@ -25,8 +27,9 @@ abstract class AmharicStringsUserAdmin {
 }
 
 // --- Colors and constants ---
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
-const Color accentColor = Color(0xFFFFD700);
+// Replaced by ThemeProvider
+// const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
+// const Color accentColor = Color(0xFFFFD700);
 const Color successColor = Color(0xFF198754);
 const Color dangerColor = Color(0xFFDC3545);
 
@@ -46,6 +49,18 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen>
   final GlobalKey<UserListViewState> _pendingListKey =
       GlobalKey<UserListViewState>();
 
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+
   @override
   void initState() {
     super.initState();
@@ -60,16 +75,19 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text(AmharicStringsUserAdmin.screenTitle,
             style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.bold)), // Translated
-        backgroundColor: primaryColor,
+                fontWeight: FontWeight.bold,
+                color: onSurfaceColor)), // Translated
+        backgroundColor: surfaceColor,
+        iconTheme: IconThemeData(color: primaryColor),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: accentColor,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: accentColor,
+          labelColor: primaryColor,
+          unselectedLabelColor: subtleTextColor,
+          indicatorColor: primaryColor,
           tabs: [
             Tab(
                 text: AmharicStringsUserAdmin.tabVerified,
@@ -120,6 +138,18 @@ class UserListView extends StatefulWidget {
 
 class UserListViewState extends State<UserListView> {
   late Future<List<dynamic>> _usersFuture;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
   @override
   void initState() {
     super.initState();
@@ -174,7 +204,7 @@ class UserListViewState extends State<UserListView> {
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                const CircularProgressIndicator(color: primaryColor),
+                CircularProgressIndicator(color: primaryColor),
                 const SizedBox(height: 10),
                 Text(AmharicStringsUserAdmin.loading,
                     style: GoogleFonts.notoSansEthiopic(color: primaryColor))
@@ -182,7 +212,8 @@ class UserListViewState extends State<UserListView> {
         if (snapshot.hasError)
           return Center(
               child: Text("${AmharicStringsUserAdmin.error} ${snapshot.error}",
-                  style: GoogleFonts.notoSansEthiopic())); // Translated
+                  style: GoogleFonts.notoSansEthiopic(
+                      color: subtleTextColor))); // Translated
         final users = snapshot.data ?? [];
         if (users.isEmpty)
           return Center(
@@ -190,7 +221,7 @@ class UserListViewState extends State<UserListView> {
                   widget.isVerified
                       ? AmharicStringsUserAdmin.noVerifiedUsers // Translated
                       : AmharicStringsUserAdmin.noPendingUsers, // Translated
-                  style: GoogleFonts.notoSansEthiopic(color: Colors.grey)));
+                  style: GoogleFonts.notoSansEthiopic(color: subtleTextColor)));
 
         return RefreshIndicator(
           onRefresh: () async => loadUsers(),
@@ -199,33 +230,46 @@ class UserListViewState extends State<UserListView> {
             itemBuilder: (context, index) {
               final user = users[index];
               return Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                      child: Text(user['full_name']?[0] ?? '?',
-                          style: GoogleFonts.notoSansEthiopic())),
-                  title: Text(
-                      user['full_name'] ?? AmharicStringsUserAdmin.noName,
-                      style: GoogleFonts.notoSansEthiopic()), // Translated
-                  subtitle: Text(
-                      user['email'] ?? AmharicStringsUserAdmin.noEmail,
-                      style: GoogleFonts.notoSansEthiopic()), // Translated
-                  trailing: widget.isVerified
-                      ? Icon(
-                          user['is_active'] == 1
-                              ? Iconsax.unlock
-                              : Iconsax.lock,
-                          color: user['is_active'] == 1
-                              ? successColor
-                              : dangerColor)
-                      : ElevatedButton(
-                          onPressed: () => _verifyUser(user['id']),
-                          child: Text(AmharicStringsUserAdmin.verifyButton,
-                              style: GoogleFonts
-                                  .notoSansEthiopic())), // Translated
-                  onTap: () => widget.isVerified
-                      ? _navigateToEditScreen(
-                          context, user['id'], user['full_name'])
-                      : null,
+                elevation: 2,
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Material(
+                  color: surfaceColor,
+                  borderRadius: BorderRadius.circular(12),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                        backgroundColor: primaryColor,
+                        child: Text(user['full_name']?[0] ?? '?',
+                            style: GoogleFonts.notoSansEthiopic(
+                                color: Colors.white))),
+                    title: Text(
+                        user['full_name'] ?? AmharicStringsUserAdmin.noName,
+                        style: GoogleFonts.notoSansEthiopic(
+                            color: onSurfaceColor)), // Translated
+                    subtitle: Text(
+                        user['email'] ?? AmharicStringsUserAdmin.noEmail,
+                        style: GoogleFonts.notoSansEthiopic(
+                            color: subtleTextColor)), // Translated
+                    trailing: widget.isVerified
+                        ? Icon(
+                            user['is_active'] == 1
+                                ? Iconsax.unlock
+                                : Iconsax.lock,
+                            color: user['is_active'] == 1
+                                ? successColor
+                                : dangerColor)
+                        : ElevatedButton(
+                            onPressed: () => _verifyUser(user['id']),
+                            child: Text(AmharicStringsUserAdmin.verifyButton,
+                                style: GoogleFonts
+                                    .notoSansEthiopic())), // Translated
+                    onTap: () => widget.isVerified
+                        ? _navigateToEditScreen(
+                            context, user['id'], user['full_name'])
+                        : null,
+                  ),
                 ),
               );
             },

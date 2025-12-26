@@ -11,12 +11,11 @@ import 'package:iconsax/iconsax.dart';
 
 // Import the detail screen to navigate to it
 
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
+
 // --- UI Theme Constants ---
-const Color kBackgroundColor = Color(0xFFF4F7FC);
-const Color kCardColor = Colors.white;
-const Color kPrimaryColor = Color.fromARGB(255, 1, 37, 100);
-const Color kAccentColor = Color(0xFFFFD700);
-const Color kSubtleTextColor = Color(0xFF6C757D);
+// Replaced by ThemeProvider
 const Color successColor = Color(0xFF198754);
 const Color warningColor = Color(0xFFFD7E14);
 const Color dangerColor = Color(0xFFDC3545);
@@ -97,24 +96,38 @@ class _FamilyViewScreenState extends State<FamilyViewScreen> {
   void initState() {
     super.initState();
     _linkedStudentsFuture = _fetchLinkedStudents();
+    super.initState();
+    _linkedStudentsFuture = _fetchLinkedStudents();
   }
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBackgroundColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text("የቤተሰብ ክትትል",
             style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.bold, color: kPrimaryColor)),
+                fontWeight: FontWeight.bold, color: onSurfaceColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
       ),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
-        backgroundColor: kCardColor,
-        color: kPrimaryColor,
+        backgroundColor: surfaceColor,
+        color: primaryColor,
         child: FutureBuilder<List<LinkedStudent>>(
           future: _linkedStudentsFuture,
           builder: (context, snapshot) {
@@ -173,7 +186,10 @@ class _StudentDashboardCard extends StatelessWidget {
       },
       child: Card(
         elevation: 4,
-        shadowColor: kPrimaryColor.withOpacity(0.1),
+        color: Provider.of<ThemeProvider>(context).getSurfaceColor(context),
+        shadowColor: Provider.of<ThemeProvider>(context)
+            .getPrimaryColor(context)
+            .withOpacity(0.1),
         margin: const EdgeInsets.only(bottom: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
@@ -184,7 +200,8 @@ class _StudentDashboardCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 32,
-                    backgroundColor: kAccentColor,
+                    backgroundColor: Provider.of<ThemeProvider>(context)
+                        .getPrimaryColor(context),
                     child: CircleAvatar(
                       radius: 29,
                       backgroundImage: student.profileImageUrl != null
@@ -197,7 +214,7 @@ class _StudentDashboardCard extends StatelessWidget {
                                   : '?',
                               style: const TextStyle(
                                   fontSize: 28,
-                                  color: kPrimaryColor,
+                                  color: Colors.white,
                                   fontWeight: FontWeight.bold))
                           : null,
                     ),
@@ -211,16 +228,18 @@ class _StudentDashboardCard extends StatelessWidget {
                             style: GoogleFonts.notoSansEthiopic(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: kPrimaryColor)),
+                                color: Provider.of<ThemeProvider>(context)
+                                    .getOnSurfaceColor(context))),
                         const SizedBox(height: 4),
                         Text('መንፈሳዊ ክፍል: ${student.spiritualClass ?? "N/A"}',
                             style: GoogleFonts.notoSansEthiopic(
-                                color: kSubtleTextColor, fontSize: 14)),
+                                color: Provider.of<ThemeProvider>(context)
+                                    .getSubtleTextColor(context),
+                                fontSize: 14)),
                       ],
                     ),
                   ),
-                  const Icon(Icons.arrow_forward_ios_rounded,
-                      color: kSubtleTextColor, size: 18),
+                  const Icon(Icons.arrow_forward_ios_rounded, size: 18),
                 ],
               ),
               const Divider(height: 24, thickness: 1),
@@ -228,13 +247,15 @@ class _StudentDashboardCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Column(
                   children: [
-                    _buildGradeIndicator(student.overallGrade),
+                    _buildGradeIndicator(student.overallGrade, context),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildAttendanceIndicator(student.attendancePercentage),
-                        _buildServiceStatus(student.isSelectedForService),
+                        _buildAttendanceIndicator(
+                            student.attendancePercentage, context),
+                        _buildServiceStatus(
+                            student.isSelectedForService, context),
                       ],
                     ),
                   ],
@@ -247,12 +268,14 @@ class _StudentDashboardCard extends StatelessWidget {
     );
   }
 
-  Widget _buildGradeIndicator(double grade) {
+  Widget _buildGradeIndicator(double grade, BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text('Overall Grade',
             style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600, color: kPrimaryColor)),
+                fontWeight: FontWeight.w600,
+                color: Provider.of<ThemeProvider>(context)
+                    .getOnSurfaceColor(context))),
         Text('${grade.toStringAsFixed(1)}%',
             style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
@@ -270,7 +293,7 @@ class _StudentDashboardCard extends StatelessWidget {
     ]);
   }
 
-  Widget _buildAttendanceIndicator(double percentage) {
+  Widget _buildAttendanceIndicator(double percentage, BuildContext context) {
     return Column(children: [
       CircularPercentIndicator(
           radius: 35.0,
@@ -278,17 +301,25 @@ class _StudentDashboardCard extends StatelessWidget {
           percent: percentage / 100,
           center: Text('${percentage.toStringAsFixed(0)}%',
               style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold, color: kPrimaryColor)),
-          progressColor: kPrimaryColor,
-          backgroundColor: kPrimaryColor.withOpacity(0.1),
+                  fontWeight: FontWeight.bold,
+                  color: Provider.of<ThemeProvider>(context)
+                      .getOnSurfaceColor(context))),
+          progressColor:
+              Provider.of<ThemeProvider>(context).getPrimaryColor(context),
+          backgroundColor: Provider.of<ThemeProvider>(context)
+              .getPrimaryColor(context)
+              .withOpacity(0.1),
           circularStrokeCap: CircularStrokeCap.round,
           animation: true),
       const SizedBox(height: 8),
-      Text('Attendance', style: GoogleFonts.poppins(color: kSubtleTextColor)),
+      Text('Attendance',
+          style: GoogleFonts.poppins(
+              color: Provider.of<ThemeProvider>(context)
+                  .getSubtleTextColor(context))),
     ]);
   }
 
-  Widget _buildServiceStatus(bool isSelected) {
+  Widget _buildServiceStatus(bool isSelected, BuildContext context) {
     return Column(children: [
       Container(
           width: 70,
@@ -303,7 +334,9 @@ class _StudentDashboardCard extends StatelessWidget {
               size: 35)),
       const SizedBox(height: 8),
       Text(isSelected ? 'On Service' : 'Not on Duty',
-          style: GoogleFonts.poppins(color: kSubtleTextColor)),
+          style: GoogleFonts.poppins(
+              color: Provider.of<ThemeProvider>(context)
+                  .getSubtleTextColor(context))),
     ]);
   }
 }
@@ -324,7 +357,8 @@ class _LoadingShimmer extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 20),
                   height: 230,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Provider.of<ThemeProvider>(context)
+                        .getSurfaceColor(context),
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
@@ -352,19 +386,23 @@ class _ErrorDisplay extends StatelessWidget {
                 style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: kPrimaryColor)),
+                    color: Provider.of<ThemeProvider>(context)
+                        .getOnSurfaceColor(context))),
             const SizedBox(height: 8),
             Text(error.replaceAll("Exception: ", ""),
                 textAlign: TextAlign.center,
-                style:
-                    GoogleFonts.poppins(color: kSubtleTextColor, fontSize: 14)),
+                style: GoogleFonts.poppins(
+                    color: Provider.of<ThemeProvider>(context)
+                        .getSubtleTextColor(context),
+                    fontSize: 14)),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Iconsax.refresh),
               label: const Text("Try Again"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
+                backgroundColor: Provider.of<ThemeProvider>(context)
+                    .getPrimaryColor(context),
                 foregroundColor: Colors.white,
               ),
             )
@@ -399,13 +437,16 @@ class _EmptyState extends StatelessWidget {
                       style: GoogleFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: kPrimaryColor)),
+                          color: Provider.of<ThemeProvider>(context)
+                              .getOnSurfaceColor(context))),
                   const SizedBox(height: 8),
                   Text(
                     "You don't have any students linked to your account yet. Please contact a school administrator to get set up.",
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                        color: kSubtleTextColor, fontSize: 14),
+                        color: Provider.of<ThemeProvider>(context)
+                            .getSubtleTextColor(context),
+                        fontSize: 14),
                   ),
                   const SizedBox(height: 24),
                   TextButton(

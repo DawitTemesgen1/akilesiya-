@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- UI Theme Constants ---
-const Color kAdminPrimary = Color.fromARGB(255, 1, 37, 100);
-const Color kAdminAccent = Color(0xFFFFD700);
+// Replaced by ThemeProvider
+// const Color kAdminPrimary = Color.fromARGB(255, 1, 37, 100);
+// const Color kAdminAccent = Color(0xFFFFD700);
 
 class AllMembersScreen extends StatefulWidget {
   const AllMembersScreen({super.key});
@@ -22,6 +25,18 @@ class _AllMembersScreenState extends State<AllMembersScreen> {
   List<Map<String, dynamic>> _allUsers = [];
   List<Map<String, dynamic>> _filteredUsers = [];
   final _searchController = TextEditingController();
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   @override
   void initState() {
@@ -70,11 +85,12 @@ class _AllMembersScreenState extends State<AllMembersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kAdminPrimary,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Select a Member'),
-        backgroundColor: kAdminPrimary,
+        title: Text('Select a Member', style: TextStyle(color: onSurfaceColor)),
+        backgroundColor: surfaceColor,
         elevation: 0,
+        iconTheme: IconThemeData(color: primaryColor),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60.0),
           child: Padding(
@@ -83,11 +99,11 @@ class _AllMembersScreenState extends State<AllMembersScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search by name...',
-                prefixIcon:
-                    const Icon(Iconsax.search_normal_1, color: Colors.white70),
+                hintStyle: TextStyle(color: onSurfaceColor.withOpacity(0.7)),
+                prefixIcon: Icon(Iconsax.search_normal_1,
+                    color: onSurfaceColor.withOpacity(0.7)),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.1),
+                fillColor: surfaceColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -98,33 +114,37 @@ class _AllMembersScreenState extends State<AllMembersScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: kAdminAccent))
+          ? Center(child: CircularProgressIndicator(color: primaryColor))
           : RefreshIndicator(
               onRefresh: _fetchUsers,
-              color: kAdminAccent,
-              backgroundColor: kAdminPrimary,
+              color: primaryColor,
+              backgroundColor: surfaceColor,
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: _filteredUsers.length,
                 itemBuilder: (context, index) {
                   final user = _filteredUsers[index];
                   return Card(
-                    color: Colors.white.withOpacity(0.1),
+                    color: surfaceColor,
                     margin: const EdgeInsets.only(bottom: 12),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.white10)),
                     child: ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: kAdminAccent,
-                        child: Icon(Iconsax.user, color: kAdminPrimary),
+                      leading: CircleAvatar(
+                        backgroundColor: primaryColor,
+                        child: Icon(Iconsax.user, color: Colors.white),
                       ),
                       title: Text(
                         user['full_name'] ?? 'No Name',
                         style: GoogleFonts.notoSansEthiopic(
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.bold, color: onSurfaceColor),
                       ),
-                      subtitle: Text(user['email'] ?? 'No Email'),
-                      trailing: const Icon(Iconsax.arrow_right_3),
+                      subtitle: Text(user['email'] ?? 'No Email',
+                          style: TextStyle(
+                              color: onSurfaceColor.withOpacity(0.7))),
+                      trailing:
+                          Icon(Iconsax.arrow_right_3, color: onSurfaceColor),
                       onTap: () {
                         // Navigate to the development screen, passing the user data
                         context.push('/admin/member-development', extra: user);

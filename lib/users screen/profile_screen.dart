@@ -1,10 +1,13 @@
 import 'dart:ui';
+import 'package:amde_haymanot_abalat_guday/users%20screen/appdrawer.dart';
 import 'package:amde_haymanot_abalat_guday/providers/profile_config_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/profile_service.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/edit_profile_sheet.dart';
 import 'package:amde_haymanot_abalat_guday/services/grade_service.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/uploadpp.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/user_attendance_history.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -82,12 +85,21 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final profileConfig = context.watch<ProfileConfigProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
     final profile = userProvider.userProfile;
 
+    // Theme colors
+    final bgColor = themeProvider.getBackgroundColor(context);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+    final primaryColor = themeProvider.getPrimaryColor(context);
+    final textColor = themeProvider.getOnSurfaceColor(context);
+    final subtleText = themeProvider.getSubtleTextColor(context);
+    final isDark = themeProvider.isDarkMode(context);
+
     if (userProvider.isLoading || profile == null) {
-      return const Scaffold(
-          backgroundColor: kPrimaryColor,
-          body: Center(child: CircularProgressIndicator(color: kGoldColor)));
+      return Scaffold(
+          backgroundColor: bgColor,
+          body: Center(child: CircularProgressIndicator(color: primaryColor)));
     }
 
     print("DEBUG ProfileScreen: Profile Keys: ${profile.keys.toList()}");
@@ -101,33 +113,39 @@ class _ProfileScreenState extends State<ProfileScreen>
     });
 
     return Scaffold(
-      backgroundColor: kPrimaryColor,
+      backgroundColor: bgColor,
+      drawer: AppDrawer(
+        selectedIndex: 3, // Profile is index 3
+        onItemTapped: (index) {
+          // Navigation handled by AppDrawer
+        },
+      ),
       appBar: AppBar(
         title: const Text(""), // Empty title
-        backgroundColor: kPrimaryColor,
+        backgroundColor: bgColor,
         elevation: 0,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.sort,
-                color: kGoldColor, size: 28), // Hamburger style
+            icon: Icon(Icons.sort,
+                color: primaryColor, size: 28), // Hamburger style
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.transparent, // Or transparent
-              child: const Icon(Iconsax.notification,
-                  color: Colors.white, size: 24),
+          IconButton(
+            icon: Icon(
+              isDark ? Iconsax.sun_1 : Iconsax.moon,
+              color: primaryColor,
+              size: 24,
             ),
-          )
+            tooltip: 'Toggle Theme',
+            onPressed: () => themeProvider.toggleTheme(),
+          ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _refreshAllData,
-        color: kGoldColor,
+        color: primaryColor,
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
@@ -135,12 +153,13 @@ class _ProfileScreenState extends State<ProfileScreen>
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _buildHeader(profile, userProvider.avatarUrl),
+                  child: _buildHeader(profile, userProvider.avatarUrl,
+                      primaryColor, surfaceColor, textColor, subtleText),
                 ),
               ),
               // 2. The Pins (TabBar) - Correctly Pinned
               SliverAppBar(
-                backgroundColor: kPrimaryColor,
+                backgroundColor: bgColor,
                 automaticallyImplyLeading: false,
                 pinned: true,
                 primary: false,
@@ -148,16 +167,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(75),
                   child: Container(
-                    color: kPrimaryColor,
+                    color: bgColor,
                     width: double.infinity,
                     alignment: Alignment
                         .centerLeft, // Align tabs to left like screenshot? Or center? Screenshot shows centered.
                     child: TabBar(
                       controller: _tabController,
                       isScrollable: true,
-                      labelColor: kGoldColor,
-                      unselectedLabelColor: Colors.grey,
-                      indicatorColor: kGoldColor,
+                      labelColor: primaryColor,
+                      unselectedLabelColor: subtleText,
+                      indicatorColor: primaryColor,
                       indicatorWeight: 3,
                       indicatorSize: TabBarIndicatorSize
                           .label, // Matches screenshot small underline
@@ -185,10 +204,14 @@ class _ProfileScreenState extends State<ProfileScreen>
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildStatusTab(profile),
-              _buildPersonalTab(profile, profileConfig),
-              _buildSpiritualTab(profile, profileConfig),
-              _buildEducationTab(profile, profileConfig),
+              _buildStatusTab(profile, primaryColor, surfaceColor, textColor,
+                  subtleText, isDark),
+              _buildPersonalTab(profile, profileConfig, primaryColor,
+                  surfaceColor, textColor, subtleText, isDark),
+              _buildSpiritualTab(profile, profileConfig, primaryColor,
+                  surfaceColor, textColor, subtleText, isDark),
+              _buildEducationTab(profile, profileConfig, primaryColor,
+                  surfaceColor, textColor, subtleText, isDark),
             ],
           ),
         ),
@@ -201,13 +224,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                 backgroundColor: Colors.transparent,
                 builder: (c) => const UserEditProfileScreen())
             .then((_) => _refreshAllData()),
-        backgroundColor: kGoldColor,
-        child: const Icon(Icons.edit, color: Colors.black),
+        backgroundColor: primaryColor,
+        child: Icon(Icons.edit, color: isDark ? Colors.black : Colors.white),
       ),
     );
   }
 
-  Widget _buildHeader(Map<String, dynamic> profile, String? avatarUrl) {
+  Widget _buildHeader(
+      Map<String, dynamic> profile,
+      String? avatarUrl,
+      Color primaryColor,
+      Color surfaceColor,
+      Color textColor,
+      Color subtleText) {
     return Column(
       children: [
         Stack(
@@ -220,23 +249,24 @@ class _ProfileScreenState extends State<ProfileScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border:
-                    Border.all(color: kGoldColor.withOpacity(0.3), width: 1),
+                    Border.all(color: primaryColor.withOpacity(0.3), width: 1),
                 boxShadow: [
-                  BoxShadow(color: kGoldColor.withOpacity(0.1), blurRadius: 20)
+                  BoxShadow(
+                      color: primaryColor.withOpacity(0.1), blurRadius: 20)
                 ],
               ),
             ),
             // Avatar
             CircleAvatar(
               radius: 48,
-              backgroundColor: kCardColor,
+              backgroundColor: surfaceColor,
               backgroundImage: (avatarUrl != null)
                   ? CachedNetworkImageProvider(avatarUrl)
                   : null,
               child: (avatarUrl == null)
                   ? Text((profile['full_name'] ?? 'U')[0].toUpperCase(),
-                      style:
-                          GoogleFonts.poppins(fontSize: 36, color: kGoldColor))
+                      style: GoogleFonts.poppins(
+                          fontSize: 36, color: primaryColor))
                   : null,
             ),
             // Camera
@@ -247,8 +277,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                 onTap: _pickAndUploadImage,
                 child: Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                      color: kGoldColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                      color: primaryColor, shape: BoxShape.circle),
                   child: const Icon(Icons.camera_alt,
                       color: Colors.black, size: 16),
                 ),
@@ -259,19 +289,18 @@ class _ProfileScreenState extends State<ProfileScreen>
         const SizedBox(height: 16),
         Text(profile['full_name'] ?? 'ስም የለም',
             style: GoogleFonts.notoSansEthiopic(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold)),
+                color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Text(profile['email'] ?? '',
-            style: GoogleFonts.poppins(color: kTextGrey, fontSize: 13)),
+            style: GoogleFonts.poppins(color: subtleText, fontSize: 13)),
       ],
     );
   }
 
   // --- TAB CONTENT ---
 
-  Widget _buildStatusTab(Map<String, dynamic> profile) {
+  Widget _buildStatusTab(Map<String, dynamic> profile, Color primaryColor,
+      Color surfaceColor, Color textColor, Color subtleText, bool isDark) {
     bool inService = profile['service_sector'] != null;
     return ListView(
       primary: false, // Fix ScrollController conflict
@@ -282,14 +311,15 @@ class _ProfileScreenState extends State<ProfileScreen>
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-              color: kCardColor,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10)),
+              border:
+                  Border.all(color: isDark ? Colors.white10 : Colors.black12)),
           child: Column(
             children: [
               Text("የአገልግሎት ሁኔታ",
                   style: GoogleFonts.notoSansEthiopic(
-                      color: Colors.white,
+                      color: textColor,
                       fontSize: 16,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
@@ -316,7 +346,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               const SizedBox(height: 8),
               Text("ይህ ሁኔታ የሚተዳደረው በስተዳደር ነው::",
                   style: GoogleFonts.notoSansEthiopic(
-                      color: kTextGrey, fontSize: 12)),
+                      color: subtleText, fontSize: 12)),
             ],
           ),
         ),
@@ -346,88 +376,106 @@ class _ProfileScreenState extends State<ProfileScreen>
               }
             }
 
-            return Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                  color: kCardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white10)),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("የመገኘት ማጠቃለያ",
-                          style: GoogleFonts.notoSansEthiopic(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16)),
-                      const Icon(Icons.arrow_forward_ios,
-                          color: Colors.white54, size: 14)
-                    ],
+            return GestureDetector(
+              onTap: () {
+                // Navigate to user attendance history screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const UserAttendanceHistoryScreen(),
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularPercentIndicator(
-                        radius: 45,
-                        lineWidth: 8,
-                        percent: percent.clamp(0.0, 1.0),
-                        center: Text("${(percent * 100).toInt()}%",
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold)),
-                        progressColor: kGoldColor,
-                        backgroundColor: const Color(0xFF252535),
-                        circularStrokeCap: CircularStrokeCap.round,
-                      ),
-                      const SizedBox(width: 30),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _legendRow(
-                              Icons.person, "ተገኝቷል: $present", Colors.green),
-                          const SizedBox(height: 10),
-                          _legendRow(
-                              Icons.person_off, "ቀርቷል: $absent", kRedError),
-                          const SizedBox(height: 10),
-                          _legendRow(
-                              Icons.calendar_today, "አስፈቅዷል: 0", kGoldColor),
-                        ],
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text("ዝርዝር ታሪክን ለማየት ይጫኑ",
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kGoldColor, fontSize: 12)),
-                ],
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                    color: surfaceColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.black12)),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text("የመገኘት ማጠቃለያ",
+                            style: GoogleFonts.notoSansEthiopic(
+                                color: textColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16)),
+                        Icon(Icons.arrow_forward_ios,
+                            color: subtleText, size: 14)
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularPercentIndicator(
+                          radius: 45,
+                          lineWidth: 8,
+                          percent: percent.clamp(0.0, 1.0),
+                          center: Text("${(percent * 100).toInt()}%",
+                              style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold)),
+                          progressColor: primaryColor,
+                          backgroundColor: const Color(0xFF252535),
+                          circularStrokeCap: CircularStrokeCap.round,
+                        ),
+                        const SizedBox(width: 30),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _legendRow(Icons.person, "ተገኝቷል: $present",
+                                Colors.green, subtleText),
+                            const SizedBox(height: 10),
+                            _legendRow(Icons.person_off, "ቀርቷል: $absent",
+                                kRedError, subtleText),
+                            const SizedBox(height: 10),
+                            _legendRow(Icons.calendar_today, "አስፈቅዷል: 0",
+                                kGoldColor, subtleText),
+                          ],
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Text("ዝርዝር ታሪክን ለማየት ይጫኑ",
+                        style: GoogleFonts.notoSansEthiopic(
+                            color: primaryColor, fontSize: 12)),
+                  ],
+                ),
               ),
             );
           },
         ),
         const SizedBox(height: 16),
-        _buildReadingHistoryCard(),
+        _buildReadingHistoryCard(
+            primaryColor, surfaceColor, textColor, subtleText),
         const SizedBox(height: 80),
       ],
     );
   }
 
-  Widget _legendRow(IconData icon, String text, Color color) {
+  Widget _legendRow(IconData icon, String text, Color color, Color textColor) {
     return Row(children: [
       Icon(icon, color: color, size: 16),
       const SizedBox(width: 8),
       Text(text,
-          style:
-              GoogleFonts.notoSansEthiopic(color: Colors.white70, fontSize: 13))
+          style: GoogleFonts.notoSansEthiopic(color: textColor, fontSize: 13))
     ]);
   }
 
   // --- LIST TABS ---
 
   Widget _buildPersonalTab(
-      Map<String, dynamic> profile, ProfileConfigProvider profileConfig) {
+      Map<String, dynamic> profile,
+      ProfileConfigProvider profileConfig,
+      Color primaryColor,
+      Color surfaceColor,
+      Color textColor,
+      Color subtleText,
+      bool isDark) {
     // Build list of rows dynamically
     final List<Widget> rows = [];
 
@@ -443,8 +491,13 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     for (var field in standardFields) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
-      rows.add(_buildDetailRow(field['icon'] as IconData,
-          field['label'] as String, profile[field['key']]));
+      rows.add(_buildDetailRow(
+          field['icon'] as IconData,
+          field['label'] as String,
+          profile[field['key']],
+          primaryColor,
+          subtleText,
+          textColor));
     }
 
     // Add custom fields from config
@@ -458,8 +511,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (rows.isNotEmpty) rows.add(_buildDivider());
       final fieldMap = field as Map<String, dynamic>;
       final val = _getCustomFieldValue(profile, fieldMap);
-      rows.add(_buildDetailRow(Icons.info_outline,
-          fieldMap['name']?.toString() ?? 'Custom Field', val));
+      rows.add(_buildDetailRow(
+          Icons.info_outline,
+          fieldMap['name']?.toString() ?? 'Custom Field',
+          val,
+          primaryColor,
+          subtleText,
+          textColor));
     }
 
     return ListView(
@@ -469,9 +527,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       children: [
         Container(
           decoration: BoxDecoration(
-              color: kCardColor,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10)),
+              border:
+                  Border.all(color: isDark ? Colors.white10 : Colors.black12)),
           child: Column(children: rows),
         ),
         const SizedBox(height: 80),
@@ -480,23 +539,35 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildSpiritualTab(
-      Map<String, dynamic> profile, ProfileConfigProvider profileConfig) {
+      Map<String, dynamic> profile,
+      ProfileConfigProvider profileConfig,
+      Color primaryColor,
+      Color surfaceColor,
+      Color textColor,
+      Color subtleText,
+      bool isDark) {
     List<Widget> rows = [];
 
     if (profileConfig.isWidgetVisible('confession_father_name')) {
-      rows.add(_buildDetailRow(Iconsax.user_square, "የንስሃ አባት ስም",
-          profile['confession_father_name']));
+      rows.add(_buildDetailRow(
+          Iconsax.user_square,
+          "የንስሃ አባት ስም",
+          profile['confession_father_name'],
+          primaryColor,
+          subtleText,
+          textColor));
       rows.add(_buildDivider());
     }
 
     if (profileConfig.isWidgetVisible('spiritual_class')) {
-      rows.add(_buildDetailRow(
-          Iconsax.teacher, "የመንፈሳዊ ትምህርት ክፍል", profile['spiritual_class']));
+      rows.add(_buildDetailRow(Iconsax.teacher, "የመንፈሳዊ ትምህርት ክፍል",
+          profile['spiritual_class'], primaryColor, subtleText, textColor));
     }
 
     if (profileConfig.isWidgetVisible('kifil')) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
-      rows.add(_buildDetailRow(Iconsax.people, "ክፍል", profile['kifil']));
+      rows.add(_buildDetailRow(Iconsax.people, "ክፍል", profile['kifil'],
+          primaryColor, subtleText, textColor));
     }
 
     // Add custom fields from config
@@ -509,8 +580,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (rows.isNotEmpty) rows.add(_buildDivider());
       final fieldMap = field as Map<String, dynamic>;
       final val = _getCustomFieldValue(profile, fieldMap);
-      rows.add(_buildDetailRow(Icons.info_outline,
-          fieldMap['name']?.toString() ?? 'Custom Field', val));
+      rows.add(_buildDetailRow(
+          Icons.info_outline,
+          fieldMap['name']?.toString() ?? 'Custom Field',
+          val,
+          primaryColor,
+          subtleText,
+          textColor));
     }
 
     return ListView(
@@ -520,9 +596,10 @@ class _ProfileScreenState extends State<ProfileScreen>
       children: [
         Container(
           decoration: BoxDecoration(
-              color: kCardColor,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white10)),
+              border:
+                  Border.all(color: isDark ? Colors.white10 : Colors.black12)),
           child: Column(children: rows),
         ),
         const SizedBox(height: 80),
@@ -589,7 +666,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildEducationTab(
-      Map<String, dynamic> profile, ProfileConfigProvider config) {
+      Map<String, dynamic> profile,
+      ProfileConfigProvider config,
+      Color primaryColor,
+      Color surfaceColor,
+      Color textColor,
+      Color subtleText,
+      bool isDark) {
     // Initialize filters once from profile data
     if (!_initialFilterSet) {
       if (profile['spiritual_class'] != null) {
@@ -609,15 +692,16 @@ class _ProfileScreenState extends State<ProfileScreen>
           margin: const EdgeInsets.only(bottom: 16),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-              color: kCardColor,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white10)),
+              border:
+                  Border.all(color: isDark ? Colors.white10 : Colors.black12)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text("ማጣሪያ (Filter)",
                   style: GoogleFonts.notoSansEthiopic(
-                      color: kGoldColor,
+                      color: primaryColor,
                       fontSize: 12,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -629,19 +713,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                       value: _spiritualClasses.contains(_selectedSpiritualClass)
                           ? _selectedSpiritualClass
                           : null,
-                      dropdownColor: kCardColor,
+                      dropdownColor: surfaceColor,
                       style: GoogleFonts.notoSansEthiopic(
-                          color: Colors.white, fontSize: 13),
+                          color: textColor, fontSize: 13),
                       decoration: InputDecoration(
                         labelText: "ክፍል",
-                        labelStyle:
-                            TextStyle(color: Colors.white54, fontSize: 12),
+                        labelStyle: TextStyle(color: subtleText, fontSize: 12),
                         contentPadding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white24),
+                            borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white24 : Colors.black12),
                             borderRadius: BorderRadius.circular(8)),
                       ),
                       items: _spiritualClasses
@@ -659,19 +744,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                     flex: 2,
                     child: DropdownButtonFormField<int>(
                       value: _selectedYear,
-                      dropdownColor: kCardColor,
+                      dropdownColor: surfaceColor,
                       style: GoogleFonts.notoSansEthiopic(
-                          color: Colors.white, fontSize: 13),
+                          color: textColor, fontSize: 13),
                       decoration: InputDecoration(
                         labelText: "ዓመት",
-                        labelStyle:
-                            TextStyle(color: Colors.white54, fontSize: 12),
+                        labelStyle: TextStyle(color: subtleText, fontSize: 12),
                         contentPadding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white24),
+                            borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white24 : Colors.black12),
                             borderRadius: BorderRadius.circular(8)),
                       ),
                       items: _getYearOptions()
@@ -695,8 +781,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           builder: (context, snapshot) {
             // Handle Loading
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                  child: CircularProgressIndicator(color: kGoldColor));
+              return Center(
+                  child: CircularProgressIndicator(color: primaryColor));
             }
 
             List<Map<String, dynamic>> courses = [];
@@ -733,19 +819,18 @@ class _ProfileScreenState extends State<ProfileScreen>
               return Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                    color: kCardColor,
+                    color: surfaceColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white10)),
                 child: Column(
                   children: [
-                    Icon(Iconsax.book, size: 40, color: Colors.white38),
+                    Icon(Iconsax.book, size: 40, color: subtleText),
                     const SizedBox(height: 10),
                     Text(
                       hasError
                           ? "ውጤት አልተገኘም ወይም ይህ ተጠቃሚ ተማሪ አይደለም"
                           : "ምንም ውጤት የለም",
-                      style:
-                          GoogleFonts.notoSansEthiopic(color: Colors.white60),
+                      style: GoogleFonts.notoSansEthiopic(color: subtleText),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -755,7 +840,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
             return Container(
               decoration: BoxDecoration(
-                  color: kCardColor,
+                  color: surfaceColor,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.white10)),
               child: Column(
@@ -766,10 +851,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                           alignment: Alignment.centerLeft,
                           child: Text("የውጤት ዝርዝር",
                               style: GoogleFonts.notoSansEthiopic(
-                                  color: kGoldColor,
+                                  color: primaryColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16)))),
-                  ...courses.map((c) => _buildCourseItem(c)).toList()
+                  ...courses
+                      .map((c) => _buildCourseItem(
+                          c, primaryColor, textColor, subtleText, isDark))
+                      .toList()
                 ],
               ),
             );
@@ -778,19 +866,29 @@ class _ProfileScreenState extends State<ProfileScreen>
         const SizedBox(height: 20),
         Container(
           decoration: BoxDecoration(
-              color: kCardColor,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white10)),
           child: Column(
             children: [
               _buildDetailRow(
-                  Iconsax.ruler, "የትምህርት ደረጃ", profile['academic_level']),
+                  Iconsax.ruler,
+                  "የትምህርት ደረጃ",
+                  profile['academic_level'],
+                  primaryColor,
+                  subtleText,
+                  textColor),
+              _buildDivider(),
+              _buildDetailRow(Iconsax.user_tick, "የወላጅ ስም",
+                  profile['parent_name'], primaryColor, subtleText, textColor),
               _buildDivider(),
               _buildDetailRow(
-                  Iconsax.user_tick, "የወላጅ ስም", profile['parent_name']),
-              _buildDivider(),
-              _buildDetailRow(
-                  Iconsax.call, "የወላጅ ስልክ", profile['parent_phone_number']),
+                  Iconsax.call,
+                  "የወላጅ ስልክ",
+                  profile['parent_phone_number'],
+                  primaryColor,
+                  subtleText,
+                  textColor),
             ],
           ),
         ),
@@ -799,7 +897,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildCourseItem(Map<String, dynamic> c) {
+  Widget _buildCourseItem(Map<String, dynamic> c, Color primaryColor,
+      Color textColor, Color subtleText, bool isDark) {
     double score = 0;
     try {
       if (c['total'] != null) {
@@ -817,41 +916,43 @@ class _ProfileScreenState extends State<ProfileScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.03),
+          color: isDark
+              ? Colors.white.withOpacity(0.03)
+              : Colors.black.withOpacity(0.03),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white10)),
+          border: Border.all(color: isDark ? Colors.white10 : Colors.black12)),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           key: PageStorageKey('course_${c['course_id'] ?? c['course_name']}'),
           initiallyExpanded: false,
-          iconColor: kGoldColor,
-          collapsedIconColor: Colors.white54,
+          iconColor: primaryColor,
+          collapsedIconColor: subtleText,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-                color: kGoldColor.withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Iconsax.book_1, color: kGoldColor, size: 20),
+            child: Icon(Iconsax.book_1, color: primaryColor, size: 20),
           ),
           title: Text(
             c['course_name']?.toString() ?? '-',
             style: GoogleFonts.notoSansEthiopic(
-                color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                color: textColor, fontSize: 15, fontWeight: FontWeight.w600),
           ),
           subtitle: assessments.isEmpty
               ? Text("No grades yet",
-                  style: TextStyle(color: Colors.white38, fontSize: 11))
+                  style: TextStyle(color: subtleText, fontSize: 11))
               : Text("${assessments.length} assessments",
-                  style: TextStyle(color: Colors.white38, fontSize: 11)),
+                  style: TextStyle(color: subtleText, fontSize: 11)),
           children: [
             if (assessments.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text("ምንም የፈተና ውጤት አልገባም",
                     style: TextStyle(
-                        color: Colors.white60, fontStyle: FontStyle.italic)),
+                        color: subtleText, fontStyle: FontStyle.italic)),
               )
             else ...[
               Container(
@@ -864,17 +965,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                       children: [
                         Text("የፈተና ዓይነት (Assessment)",
                             style: TextStyle(
-                                color: Colors.white54,
+                                color: subtleText,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold)),
                         Text("ውጤት (Score)",
                             style: TextStyle(
-                                color: Colors.white54,
+                                color: subtleText,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    const Divider(color: Colors.white12, height: 20),
+                    Divider(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                        height: 20),
                     // List
                     ...assessments.map((a) {
                       final aName = a['assessment_name'] ?? a['name'] ?? '-';
@@ -895,18 +998,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                             Expanded(
                               child: Text(aName,
                                   style: GoogleFonts.notoSansEthiopic(
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: textColor.withOpacity(0.9),
                                       fontSize: 13)),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 2),
                               decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
+                                  color: isDark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.05),
                                   borderRadius: BorderRadius.circular(4)),
                               child: Text(scoreText,
                                   style: TextStyle(
-                                      color: kGoldColor,
+                                      color: primaryColor,
                                       fontSize: 13,
                                       fontFamily: 'Courier')),
                             ),
@@ -928,7 +1033,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                     color: Colors.white70, fontSize: 12)),
                             Text("Total Score",
                                 style: GoogleFonts.poppins(
-                                    color: Colors.white38, fontSize: 10)),
+                                    color: subtleText, fontSize: 10)),
                           ],
                         ),
                         Row(
@@ -938,13 +1043,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                             Text(
                               score.toStringAsFixed(1),
                               style: GoogleFonts.poppins(
-                                  color: kGoldColor,
+                                  color: primaryColor,
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold),
                             ),
                             Text("%",
                                 style: GoogleFonts.poppins(
-                                    color: kGoldColor.withOpacity(0.7),
+                                    color: primaryColor.withOpacity(0.7),
                                     fontSize: 14)),
                           ],
                         )
@@ -963,6 +1068,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   // --- HELPERS ---
 
   Widget _buildDetailRow(IconData icon, String label, dynamic value,
+      Color primaryColor, Color subtleText, Color textColor,
       {bool isGold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -972,17 +1078,17 @@ class _ProfileScreenState extends State<ProfileScreen>
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: kGoldColor.withOpacity(0.3))),
-            child: Icon(icon, color: kGoldColor, size: 18),
+                border: Border.all(color: primaryColor.withOpacity(0.3))),
+            child: Icon(icon, color: primaryColor, size: 18),
           ),
           const SizedBox(width: 16),
           Expanded(
               child: Text(label,
                   style: GoogleFonts.notoSansEthiopic(
-                      color: kTextGrey, fontSize: 13))),
+                      color: subtleText, fontSize: 13))),
           Text(value?.toString() ?? '-',
               style: GoogleFonts.notoSansEthiopic(
-                  color: isGold ? kGoldColor : Colors.white,
+                  color: isGold ? primaryColor : textColor,
                   fontWeight: FontWeight.bold,
                   fontSize: 15)),
         ],
@@ -999,7 +1105,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         endIndent: 16);
   }
 
-  Widget _buildReadingHistoryCard() {
+  Widget _buildReadingHistoryCard(Color primaryColor, Color surfaceColor,
+      Color textColor, Color subtleText) {
     return FutureBuilder<dynamic>(
       future: _booksFuture,
       builder: (context, snapshot) {
@@ -1030,7 +1137,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-              color: kCardColor,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white10)),
           child: Column(
@@ -1041,7 +1148,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 children: [
                   Text("ቤተ-መጽሐፍት",
                       style: GoogleFonts.notoSansEthiopic(
-                          color: Colors.white,
+                          color: textColor,
                           fontWeight: FontWeight.bold,
                           fontSize: 16)),
                   Container(
@@ -1050,8 +1157,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                         borderRadius: BorderRadius.circular(8)),
                     child: Row(
                       children: [
-                        _buildTabButton("የሚነበብ", 0, toRead.length),
-                        _buildTabButton("ተነብቦ ያለቀ", 1, read.length),
+                        _buildTabButton("የሚነበብ", 0, toRead.length, primaryColor,
+                            textColor, subtleText),
+                        _buildTabButton("የተነበበ", 1, read.length, primaryColor,
+                            textColor, subtleText),
                       ],
                     ),
                   )
@@ -1066,7 +1175,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     _readingTab == 0
                         ? "ምንም የሚነበብ መጽሐፍ የለም"
                         : "እስካሁን ያነበቡት መጽሐፍ የለም",
-                    style: GoogleFonts.notoSansEthiopic(color: Colors.white38),
+                    style: GoogleFonts.notoSansEthiopic(color: subtleText),
                   ),
                 )
               else
@@ -1102,7 +1211,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 value: _readingTab ==
                                     1, // Checked if in 'Read' tab
                                 activeColor: Colors.green,
-                                side: BorderSide(color: kGoldColor, width: 2),
+                                side: BorderSide(color: primaryColor, width: 2),
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4)),
                                 onChanged: (val) async {
@@ -1133,7 +1242,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 children: [
                                   Text(title,
                                       style: GoogleFonts.notoSansEthiopic(
-                                          color: Colors.white,
+                                          color: textColor,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 14)),
                                   const SizedBox(height: 4),
@@ -1141,7 +1250,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                       deadlineStr.isNotEmpty)
                                     Text("የማጠናቀቂያ ጊዜ: $deadlineStr",
                                         style: GoogleFonts.notoSansEthiopic(
-                                            color: kGoldColor, fontSize: 12)),
+                                            color: primaryColor, fontSize: 12)),
                                   if (_readingTab == 1)
                                     Text("ተነብቦ ተረጋግጧል",
                                         style: GoogleFonts.notoSansEthiopic(
@@ -1165,20 +1274,21 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildTabButton(String text, int index, int count) {
+  Widget _buildTabButton(String text, int index, int count, Color primaryColor,
+      Color textColor, Color subtleText) {
     final bool isSelected = _readingTab == index;
     return GestureDetector(
       onTap: () => setState(() => _readingTab = index),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? kGoldColor : Colors.transparent,
+          color: isSelected ? primaryColor : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           "$text ($count)",
           style: GoogleFonts.notoSansEthiopic(
-            color: isSelected ? Colors.black : Colors.white54,
+            color: isSelected ? Colors.black : subtleText,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 12,
           ),

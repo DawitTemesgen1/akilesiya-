@@ -2,7 +2,7 @@ import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/providers/profile_config_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/sync_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
-import 'package:amde_haymanot_abalat_guday/role%20based/date.dart';
+
 import 'package:amde_haymanot_abalat_guday/services/attendance_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/sync_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/user_admin_service.dart';
@@ -13,7 +13,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../models/ethiopian_date_picker.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- Amharic Localization Strings for Attendance Screen ---
 abstract class AmharicStringsAttendance {
@@ -71,13 +71,15 @@ abstract class AmharicStringsAttendance {
 }
 
 // --- (Constants are unchanged) ---
-const Color primaryColor = Color(0xFF1E3A8A);
-const Color accentColor = Color(0xFFFFD700);
-const Color surfaceColor = Color(0xFFF8FAFC);
-const Color onSurfaceColor = Color(0xFF1E293B);
-const Color subtleTextColor = Color(0xFF64748B);
+// --- (Constants are unchanged) ---
+const Color kDefaultPrimaryColor = Color(0xFFFFC107); // Gold
+const Color kDefaultAccentColor = Color(0xFFFFC107);
+const Color kDefaultSurfaceColor = Color(0xFF151522); // Card Background
+const Color kDefaultBackgroundColor = Color(0xFF050511); // Main Background
+const Color kDefaultOnSurfaceColor = Colors.white;
+const Color kDefaultSubtleTextColor = Colors.white54;
 const Color successColor = Color(0xFF10B981);
-const Color warningColor = Color(0xFFF59E0B);
+const Color warningColor = Color(0xFFFD7E14);
 const Color dangerColor = Color(0xFFEF4444);
 
 class Student {
@@ -123,6 +125,20 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
 
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+
   @override
   void initState() {
     super.initState();
@@ -157,7 +173,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
               child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                const Icon(Iconsax.lock, size: 48, color: dangerColor),
+                Icon(Iconsax.lock, size: 48, color: dangerColor),
                 const SizedBox(height: 16),
                 Text(AmharicStringsAttendance.accessDenied,
                     style: GoogleFonts.notoSansEthiopic(
@@ -189,13 +205,14 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
 
     return Scaffold(
-      backgroundColor: surfaceColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text('📊 ${AmharicStringsAttendance.screenTitle}', // Translated
             style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.bold, color: primaryColor)),
-        backgroundColor: surfaceColor,
+                fontWeight: FontWeight.bold, color: onSurfaceColor)),
+        backgroundColor: backgroundColor,
         elevation: 0,
+        iconTheme: IconThemeData(color: primaryColor),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -205,6 +222,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
         bottom: TabBar(
             controller: _tabController,
             labelColor: primaryColor,
+            unselectedLabelColor: subtleTextColor,
             indicatorColor: primaryColor,
             tabs: tabs),
       ),
@@ -227,6 +245,24 @@ class AttendanceTakerView extends StatefulWidget {
 }
 
 class _AttendanceTakerViewState extends State<AttendanceTakerView> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get warningColor => const Color(0xFFFD7E14);
+  Color get successColor => const Color(0xFF10B981);
+
+  bool _isLoading = false;
   List<Student> _allStudents = [];
   List<Student> _filteredStudents = [];
   dynamic _dynamicFilterField;
@@ -583,15 +619,10 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-              color: Colors.white,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 12,
-                    offset: const Offset(0, 4))
-              ]),
+              border: Border.all(color: Colors.white10),
+              boxShadow: []),
           child: Column(children: [
             Row(children: [
               Expanded(
@@ -600,6 +631,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                       items: AttendanceType.values,
                       label: AmharicStringsAttendance.typeLabel, // Translated
                       icon: Iconsax.calendar_edit,
+                      dropdownColor: surfaceColor,
+                      textColor: onSurfaceColor,
                       onChanged: widget.isReadOnly
                           ? null
                           : (v) => setState(() {
@@ -614,6 +647,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                       label:
                           AmharicStringsAttendance.sessionLabel, // Translated
                       icon: Iconsax.clock,
+                      dropdownColor: surfaceColor,
+                      textColor: onSurfaceColor,
                       onChanged: widget.isReadOnly
                           ? null
                           : (v) => setState(() {
@@ -631,6 +666,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                         items: filterableFields,
                         label: AmharicStringsAttendance.filterBy, // Translated
                         icon: Iconsax.filter,
+                        dropdownColor: surfaceColor,
+                        textColor: onSurfaceColor,
                         onChanged: widget.isReadOnly
                             ? null
                             : (newField) {
@@ -658,6 +695,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                             ? _dynamicFilterField['name']
                             : AmharicStringsAttendance.group, // Translated
                         icon: Iconsax.people,
+                        dropdownColor: surfaceColor,
+                        textColor: onSurfaceColor,
                         onChanged: widget.isReadOnly
                             ? null
                             : (newOptionId) {
@@ -697,7 +736,9 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          color: surfaceColor,
+          border: Border.all(color: Colors.white10),
+          borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
           Row(
@@ -723,7 +764,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                 ),
               ),
               IconButton(
-                  icon: const Icon(Iconsax.calendar_edit, color: primaryColor),
+                  icon: Icon(Iconsax.calendar_1,
+                      color: subtleTextColor, size: 18),
                   onPressed: _selectDate),
             ],
           ),
@@ -751,7 +793,9 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          color: surfaceColor,
+          border: Border.all(color: Colors.white10),
+          borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
           TextField(
@@ -759,10 +803,16 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             readOnly: widget.isReadOnly,
             decoration: InputDecoration(
               labelText: AmharicStringsAttendance.topicLabel, // Translated
-              labelStyle: GoogleFonts.notoSansEthiopic(),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: const Icon(Iconsax.note_text),
+              labelStyle: GoogleFonts.notoSansEthiopic(color: subtleTextColor),
+              filled: true,
+              fillColor: backgroundColor,
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white10)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white10)),
+              prefixIcon: Icon(Iconsax.note_text, color: subtleTextColor),
             ),
             maxLines: 2,
           ),
@@ -774,7 +824,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
-                    foregroundColor: accentColor,
+                    foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12))),
                 icon: _isSaving
@@ -807,10 +857,14 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       required List<T> items,
       required String label,
       required IconData icon,
-      required Function(T?)? onChanged}) {
+      required Function(T?)? onChanged,
+      Color? dropdownColor,
+      Color? textColor}) {
     return Container(
       decoration: BoxDecoration(
-          color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
+          color: surfaceColor,
+          border: Border.all(color: Colors.white10),
+          borderRadius: BorderRadius.circular(12)),
       child: DropdownButtonFormField<T>(
         value: value,
         items: items
@@ -818,22 +872,23 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                 value: item,
                 child: Text(_getAmharicDisplayText(item), // Use Amharic helper
                     style: GoogleFonts.notoSansEthiopic(
-                        fontSize: 14), // Use Amharic font
+                        fontSize: 14,
+                        color: textColor ??
+                            onSurfaceColor), // Use Amharic font with optional color
                     overflow: TextOverflow.ellipsis)))
             .toList(),
         onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.notoSansEthiopic(),
+          labelStyle: GoogleFonts.notoSansEthiopic(color: subtleTextColor),
           prefixIcon: Icon(icon, size: 20, color: primaryColor),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         isExpanded: true,
-        dropdownColor: Colors.white,
-        icon: const Icon(Iconsax.arrow_down_1, size: 18),
-        style: GoogleFonts.notoSansEthiopic(color: onSurfaceColor),
+        dropdownColor: dropdownColor ?? surfaceColor,
+        icon: Icon(Icons.arrow_drop_down, color: subtleTextColor),
       ),
     );
   }
@@ -869,14 +924,10 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-          color: Colors.white,
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2))
-          ]),
+          border: Border.all(color: Colors.white10),
+          boxShadow: []),
       child: Padding(
           padding: const EdgeInsets.all(16),
           child:
@@ -969,12 +1020,11 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-                color: isSelected
-                    ? activeColor.withOpacity(0.1)
-                    : Colors.grey.shade100,
+                color:
+                    isSelected ? activeColor.withOpacity(0.2) : backgroundColor,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: isSelected ? activeColor : Colors.grey.shade300,
+                    color: isSelected ? activeColor : Colors.white24,
                     width: 1.5)),
             child: IconButton(
                 icon: Icon(icon,
@@ -1004,19 +1054,19 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             style: GoogleFonts.notoSansEthiopic(
                 // Use Amharic font
                 fontSize: 11,
-                color: subtleTextColor,
+                color: onSurfaceColor,
                 fontWeight: FontWeight.w500))
       ]);
   Widget _buildLoadingState(String message) => Center(
       child: Padding(
           padding: const EdgeInsets.all(32.0),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const CircularProgressIndicator(
+            CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation(primaryColor)),
             const SizedBox(height: 16),
             Text(message,
                 style: GoogleFonts.notoSansEthiopic(
-                    color: subtleTextColor, fontSize: 14)) // Use Amharic font
+                    color: onSurfaceColor, fontSize: 14)) // Use Amharic font
           ])));
   Widget _buildEmptyState() => Center(
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -1025,12 +1075,13 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             height: 120,
             decoration: BoxDecoration(
                 color: primaryColor.withOpacity(0.05), shape: BoxShape.circle),
-            child: const Icon(Iconsax.profile_2user,
-                color: primaryColor, size: 50)),
+            child: Icon(Iconsax.profile_2user, color: primaryColor, size: 50)),
         const SizedBox(height: 20),
         Text(AmharicStringsAttendance.emptyStateTitle, // Translated
             style: GoogleFonts.notoSansEthiopic(
-                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey)),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: subtleTextColor)),
         const SizedBox(height: 8),
         Text(AmharicStringsAttendance.emptyStateSubtitle, // Translated
             textAlign: TextAlign.center,
@@ -1051,6 +1102,22 @@ class _AttendanceAdminManagementView extends StatefulWidget {
 
 class _AttendanceAdminManagementViewState
     extends State<_AttendanceAdminManagementView> {
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get dangerColor => const Color(0xFFEF4444);
+  Color get successColor => const Color(0xFF10B981);
+
   Future<List<dynamic>>? _usersFuture;
   String _searchTerm = '';
   @override
@@ -1100,9 +1167,18 @@ class _AttendanceAdminManagementViewState
                 decoration: InputDecoration(
                     hintText:
                         AmharicStringsAttendance.searchUserHint, // Translated
-                    hintStyle: GoogleFonts.notoSansEthiopic(),
-                    prefixIcon: const Icon(Iconsax.search_normal),
-                    border: const OutlineInputBorder()),
+                    hintStyle:
+                        GoogleFonts.notoSansEthiopic(color: subtleTextColor),
+                    filled: true,
+                    fillColor: surfaceColor,
+                    prefixIcon:
+                        Icon(Iconsax.search_normal, color: subtleTextColor),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white10)),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white10))),
                 onChanged: (value) =>
                     setState(() => _searchTerm = value.toLowerCase()))),
         Expanded(
@@ -1141,6 +1217,10 @@ class _AttendanceAdminManagementViewState
                     return Card(
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 4),
+                      color: surfaceColor,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: Colors.white10)),
                       child: ListTile(
                         leading: CircleAvatar(
                             child: Text(

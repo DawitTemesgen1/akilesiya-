@@ -4,20 +4,11 @@ import 'package:amde_haymanot_abalat_guday/services/library_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:intl/intl.dart';
 import 'package:iconsax/iconsax.dart';
-
-// --- UI Theme Constants ---
-const Color kLibBackgroundColor = Color(0xFFF4F7FC);
-const Color kLibCardColor = Colors.white;
-const Color kLibPrimaryColor = Color.fromARGB(255, 1, 37, 100);
-const Color kLibAccentColor = Color(0xFFFFD700);
-const Color kLibSubtleTextColor = Color(0xFF6C757D);
-const Color kLibSuccessColor = Color(0xFF198754);
-const Color kLibDangerColor = Color(0xFFDC3545);
-const Color onsurface = Color(0xFF212529);
 
 // --- Models ---
 class LibraryUser {
@@ -88,6 +79,20 @@ class LibraryManagementScreen extends StatefulWidget {
 class _LibraryManagementScreenState extends State<LibraryManagementScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get kLibDangerColor => const Color(0xFFEF4444);
+  Color get kLibSuccessColor => const Color(0xFF10B981);
 
   // --- State for Data ---
   late Future<void> _dataFuture;
@@ -277,15 +282,14 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
     }
 
     return Scaffold(
-      backgroundColor: kLibBackgroundColor,
+      backgroundColor: primaryColor,
       appBar: AppBar(
         title: Text('የቤተ-መጽሐፍት አስተዳደር',
             style: GoogleFonts.poppins(
-                color: kLibPrimaryColor, fontWeight: FontWeight.bold)),
-        backgroundColor: kLibCardColor,
-        elevation: 1,
-        shadowColor: kLibPrimaryColor.withOpacity(0.1),
-        iconTheme: const IconThemeData(color: kLibPrimaryColor),
+                color: onSurfaceColor, fontWeight: FontWeight.bold)),
+        backgroundColor: primaryColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: accentColor),
         actions: [
           if (canManageAdmins)
             IconButton(
@@ -302,9 +306,9 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: kLibPrimaryColor,
-          unselectedLabelColor: kLibSubtleTextColor,
-          indicatorColor: kLibPrimaryColor,
+          labelColor: accentColor,
+          unselectedLabelColor: subtleTextColor,
+          indicatorColor: accentColor,
           indicatorWeight: 3,
           labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           tabs: tabs,
@@ -314,8 +318,7 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
         future: _dataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-                child: CircularProgressIndicator(color: kLibPrimaryColor));
+            return Center(child: CircularProgressIndicator(color: accentColor));
           }
           if (snapshot.hasError) {
             return Center(child: Text("ስህተት: ${snapshot.error}"));
@@ -375,10 +378,12 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
     return FadeInUp(
       from: 20,
       child: Card(
-        elevation: 2,
-        shadowColor: color.withOpacity(0.1),
+        elevation: 0,
+        color: surfaceColor,
         margin: const EdgeInsets.only(bottom: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white10)),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Row(
@@ -393,12 +398,14 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
                       style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: kLibSubtleTextColor))),
+                          color:
+                              subtleTextColor))), // Replaced kLibSubtleTextColor
               Text(value,
                   style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: kLibPrimaryColor)),
+                      color:
+                          accentColor)), // Replaced kLibPrimaryColor with accentColor
             ],
           ),
         ),
@@ -415,22 +422,30 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
           child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
+                filled: true,
+                fillColor: surfaceColor,
                 hintText: 'አንባቢዎችን ይፈልጉ...',
-                prefixIcon: const Icon(Iconsax.search_normal),
+                hintStyle: TextStyle(color: subtleTextColor),
+                prefixIcon: Icon(Iconsax.search_normal, color: subtleTextColor),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12))),
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white10)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white10))),
           ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: SwitchListTile(
-            title: const Text("ያልተጠናቀቁ መጻሕፍት ያላቸውን ብቻ አሳይ"),
+            title: Text("ያልተጠናቀቁ መጻሕፍት ያላቸውን ብቻ አሳይ",
+                style: TextStyle(color: onSurfaceColor)),
             value: _showOnlyUnfinished,
             onChanged: (val) {
               setState(() => _showOnlyUnfinished = val);
               _performFilter();
             },
-            activeColor: kLibPrimaryColor,
+            activeColor: accentColor,
           ),
         ),
         Expanded(
@@ -442,11 +457,10 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Iconsax.folder_open,
-                            size: 48, color: kLibSubtleTextColor),
+                            size: 48, color: Colors.grey),
                         const SizedBox(height: 16),
                         Text("ለዚህ ማጣሪያ ምንም አንባቢዎች አልተገኙም።",
-                            style: GoogleFonts.poppins(
-                                color: kLibSubtleTextColor)),
+                            style: GoogleFonts.poppins(color: subtleTextColor)),
                       ],
                     ),
                   )
@@ -459,6 +473,10 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
                       final hasOverdue = user.overdueBooksCount > 0;
                       final heroTag = 'library-user-avatar-${user.id}';
                       return Card(
+                        color: surfaceColor,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.white10)),
                         margin: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         child: ListTile(
@@ -467,32 +485,38 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
                             tag: heroTag,
                             child: CircleAvatar(
                               child: ClipOval(
-                                child: (user.profileImageUrl != null && user.profileImageUrl!.isNotEmpty)
+                                child: (user.profileImageUrl != null &&
+                                        user.profileImageUrl!.isNotEmpty)
                                     ? Image.network(
                                         '${ApiService.baseUrl.replaceAll("/api", "")}/${user.profileImageUrl!}',
                                         width: 40,
                                         height: 40,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stack) => Text(
-                                          user.fullName.isNotEmpty ? user.fullName[0] : '?',
+                                        errorBuilder: (context, error, stack) =>
+                                            Text(
+                                          user.fullName.isNotEmpty
+                                              ? user.fullName[0]
+                                              : '?',
                                         ),
                                       )
-                                    : Text(user.fullName.isNotEmpty ? user.fullName[0] : '?'),
+                                    : Text(user.fullName.isNotEmpty
+                                        ? user.fullName[0]
+                                        : '?'),
                               ),
                             ),
                           ),
                           title: Text(user.fullName,
                               style: GoogleFonts.notoSansEthiopic(
-                                  fontWeight: FontWeight.w600)),
+                                  fontWeight: FontWeight.w600,
+                                  color: onSurfaceColor)),
                           subtitle: Text(
                             "${user.unfinishedBooksCount} መጽሐፍ(ቶች) በሂደት ላይ",
-                            style:
-                                GoogleFonts.poppins(color: kLibSubtleTextColor),
+                            style: GoogleFonts.poppins(color: subtleTextColor),
                           ),
                           trailing: hasOverdue
-                              ? const Icon(Iconsax.warning_2,
-                                  color: kLibDangerColor)
-                              : const Icon(Icons.arrow_forward_ios, size: 16),
+                              ? Icon(Iconsax.warning_2, color: kLibDangerColor)
+                              : const Icon(Icons.arrow_forward_ios,
+                                  size: 16, color: Colors.white54),
                         ),
                       );
                     },
@@ -556,8 +580,8 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
                 onPressed:
                     _isSavingAssignment || isReadOnly ? null : _assignBook,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: kLibPrimaryColor,
-                    foregroundColor: Colors.white,
+                    backgroundColor: accentColor,
+                    foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12))),
                 icon: _isSavingAssignment
@@ -585,10 +609,12 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
       required Widget content,
       required bool isCompleted}) {
     return Card(
-      elevation: 2,
-      shadowColor: kLibPrimaryColor.withOpacity(0.08),
+      elevation: 0,
+      color: surfaceColor,
       margin: const EdgeInsets.only(bottom: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: Colors.white10)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -596,8 +622,7 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
           children: [
             Row(children: [
               CircleAvatar(
-                backgroundColor:
-                    isCompleted ? kLibSuccessColor : kLibPrimaryColor,
+                backgroundColor: isCompleted ? kLibSuccessColor : accentColor,
                 child: isCompleted
                     ? const Icon(Iconsax.tick_circle, color: Colors.white)
                     : Text("$step",
@@ -609,7 +634,7 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
                   style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: kLibPrimaryColor)),
+                      color: accentColor)),
             ]),
             const Divider(height: 24),
             content,
@@ -625,14 +650,15 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
+            color: surfaceColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300)),
+            border: Border.all(color: Colors.white10)),
         child: _selectedUserForAssignment == null
             ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Iconsax.user_add, color: kLibSubtleTextColor),
+                const Icon(Iconsax.user_add, color: Colors.grey),
                 const SizedBox(width: 8),
                 Text("ተጠቃሚ ለመምረጥ ይንኩ",
-                    style: GoogleFonts.poppins(color: kLibSubtleTextColor)),
+                    style: GoogleFonts.poppins(color: subtleTextColor)),
               ])
             : Row(children: [
                 CircleAvatar(
@@ -656,7 +682,7 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
                     child: Text(_selectedUserForAssignment!.fullName,
                         style:
                             GoogleFonts.poppins(fontWeight: FontWeight.w600))),
-                const Icon(Iconsax.edit, color: kLibPrimaryColor),
+                const Icon(Iconsax.edit, color: Colors.amber),
               ]),
       ),
     );
@@ -668,9 +694,16 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
         controller: _bookTitleController,
         decoration: InputDecoration(
             labelText: "የመጽሐፍ ርዕስ",
-            prefixIcon: const Icon(Iconsax.text),
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+            labelStyle: TextStyle(color: subtleTextColor),
+            filled: true,
+            fillColor: surfaceColor,
+            prefixIcon: const Icon(Iconsax.text, color: Colors.grey),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white10)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.white10))),
         onChanged: (value) => setState(() {}),
       ),
       const SizedBox(height: 16),
@@ -679,18 +712,23 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
         child: InputDecorator(
           decoration: InputDecoration(
               labelText: "የመጨረሻ ቀን",
-              prefixIcon: const Icon(Iconsax.calendar_1),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              labelStyle: TextStyle(color: subtleTextColor),
+              filled: true,
+              fillColor: surfaceColor,
+              prefixIcon: const Icon(Iconsax.calendar_1, color: Colors.grey),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white10)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white10))),
           child: Text(
             _finishByDate == null
                 ? "ቀን ይምረጡ"
                 : DateFormat.yMMMd().format(_finishByDate!),
             style: GoogleFonts.poppins(
                 fontSize: 16,
-                color: _finishByDate == null
-                    ? kLibSubtleTextColor
-                    : kLibPrimaryColor),
+                color: _finishByDate == null ? subtleTextColor : accentColor),
           ),
         ),
       ),
@@ -713,6 +751,18 @@ class _UserSelectionSheet extends StatefulWidget {
 class _UserSelectionSheetState extends State<_UserSelectionSheet> {
   List<LibraryUser> _filteredUsers = [];
   final _searchController = TextEditingController();
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
 
   @override
   void initState() {
@@ -741,8 +791,8 @@ class _UserSelectionSheetState extends State<_UserSelectionSheet> {
       maxChildSize: 0.9,
       expand: false,
       builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-            color: kLibBackgroundColor,
+        decoration: BoxDecoration(
+            color: primaryColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         child: Column(children: [
           Padding(
@@ -757,7 +807,7 @@ class _UserSelectionSheetState extends State<_UserSelectionSheet> {
                 const SizedBox(height: 16),
                 Text("አንባቢ ይምረጡ",
                     style: GoogleFonts.poppins(
-                        color: onsurface,
+                        color: onSurfaceColor,
                         fontSize: 20,
                         fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
@@ -765,9 +815,17 @@ class _UserSelectionSheetState extends State<_UserSelectionSheet> {
                     controller: _searchController,
                     decoration: InputDecoration(
                         hintText: "በስም ይፈልጉ...",
-                        prefixIcon: const Icon(Iconsax.search_normal),
+                        hintStyle: TextStyle(color: subtleTextColor),
+                        filled: true,
+                        fillColor: surfaceColor,
+                        prefixIcon:
+                            Icon(Iconsax.search_normal, color: subtleTextColor),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)))),
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white10)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.white10)))),
               ])),
           Expanded(
               child: ListView.builder(
@@ -789,9 +847,9 @@ class _UserSelectionSheetState extends State<_UserSelectionSheet> {
                         : null),
                 title: Text(user.fullName,
                     style: GoogleFonts.notoSansEthiopic(
-                        fontWeight: FontWeight.w600, color: onsurface)),
+                        fontWeight: FontWeight.w600, color: onSurfaceColor)),
                 subtitle: Text(user.spiritualClass ?? 'ክፍል የለውም',
-                    style: GoogleFonts.notoSansEthiopic(color: onsurface)),
+                    style: GoogleFonts.notoSansEthiopic(color: onSurfaceColor)),
                 onTap: () => Navigator.of(context).pop(user),
               );
             },
@@ -815,6 +873,20 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
     with TickerProviderStateMixin {
   late TabController _tabController;
   Future<List<ReadingHistoryItem>>? _historyFuture;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
+  Color get accentColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get kLibDangerColor => const Color(0xFFEF4444);
+  Color get kLibSuccessColor => const Color(0xFF10B981);
 
   @override
   void initState() {
@@ -847,8 +919,8 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
       maxChildSize: 0.95,
       expand: false,
       builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-            color: kLibBackgroundColor,
+        decoration: BoxDecoration(
+            color: primaryColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
         child: Column(children: [
           Padding(
@@ -892,9 +964,9 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
                 const SizedBox(height: 12),
                 TabBar(
                   controller: _tabController,
-                  labelColor: kLibPrimaryColor,
-                  unselectedLabelColor: kLibSubtleTextColor,
-                  indicatorColor: kLibPrimaryColor,
+                  labelColor: accentColor,
+                  unselectedLabelColor: subtleTextColor,
+                  indicatorColor: accentColor,
                   tabs: const [
                     Tab(text: 'በሂደት ላይ'),
                     Tab(text: 'የተጠናቀቁ'),
@@ -907,9 +979,8 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
               future: _historyFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                      child:
-                          CircularProgressIndicator(color: kLibPrimaryColor));
+                  return Center(
+                      child: CircularProgressIndicator(color: accentColor));
                 }
                 if (snapshot.hasError) {
                   return Center(child: Text("ስህተት: ${snapshot.error}"));
@@ -948,10 +1019,10 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Iconsax.book_1, size: 48, color: kLibSubtleTextColor),
+            const Icon(Iconsax.book_1, size: 48, color: Colors.grey),
             const SizedBox(height: 16),
             Text("በዚህ ምድብ ውስጥ ምንም መጽሐፍት የሉም።",
-                style: GoogleFonts.poppins(color: kLibSubtleTextColor)),
+                style: GoogleFonts.poppins(color: subtleTextColor)),
           ],
         ),
       );
@@ -967,7 +1038,7 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
         switch (item.status) {
           case 'in_progress':
             icon = Iconsax.book_1;
-            color = kLibPrimaryColor;
+            color = accentColor;
             break;
           case 'completed':
             icon = Iconsax.task_square;
@@ -979,7 +1050,7 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
             break;
           default:
             icon = Iconsax.book;
-            color = kLibSubtleTextColor;
+            color = subtleTextColor;
         }
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -992,7 +1063,7 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
                     style: TextStyle(
                         color: item.status == 'overdue'
                             ? kLibDangerColor
-                            : kLibSubtleTextColor))
+                            : subtleTextColor))
                 : null,
           ),
         );

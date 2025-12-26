@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
 // --- UI Theme Constants ---
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
-const Color surfaceColor = Color(0xFFF4F7FC);
-const Color onSurfaceColor = Color(0xFF212529);
-const Color subtleTextColor = Color(0xFF6C757D);
+// Replaced by ThemeProvider
+// const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
+// const Color surfaceColor = Color(0xFFF4F7FC);
+// const Color onSurfaceColor = Color(0xFF212529);
+// const Color subtleTextColor = Color(0xFF6C757D);
 
 class AuditTrailScreen extends StatefulWidget {
   const AuditTrailScreen({super.key});
@@ -20,6 +23,18 @@ class AuditTrailScreen extends StatefulWidget {
 class _AuditTrailScreenState extends State<AuditTrailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   @override
   void initState() {
@@ -36,14 +51,14 @@ class _AuditTrailScreenState extends State<AuditTrailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: surfaceColor,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text('የፍተሻ መዝገብ',
             style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.bold, color: primaryColor)),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+                fontWeight: FontWeight.bold, color: onSurfaceColor)),
+        backgroundColor: surfaceColor,
         elevation: 1,
+        iconTheme: IconThemeData(color: primaryColor),
         bottom: TabBar(
           controller: _tabController,
           labelColor: primaryColor,
@@ -85,6 +100,18 @@ class AuditLogListView extends StatefulWidget {
 class _AuditLogListViewState extends State<AuditLogListView>
     with AutomaticKeepAliveClientMixin {
   late Future<List<dynamic>> _auditLogsFuture;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   @override
   void initState() {
@@ -140,9 +167,10 @@ class _AuditLogListViewState extends State<AuditLogListView>
     final logTimestamp = DateTime.parse(log['timestamp']);
 
     return Card(
+      color: surfaceColor,
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: onSurfaceColor.withOpacity(0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -151,11 +179,13 @@ class _AuditLogListViewState extends State<AuditLogListView>
           children: [
             Text(log['action_description'] ?? 'ድርጊት',
                 style: GoogleFonts.notoSansEthiopic(
-                    fontWeight: FontWeight.bold, fontSize: 16)),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: onSurfaceColor)),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Iconsax.user, size: 14, color: subtleTextColor),
+                Icon(Iconsax.user, size: 14, color: subtleTextColor),
                 const SizedBox(width: 4),
                 Text('በተጠቃሚ:',
                     style: GoogleFonts.notoSansEthiopic(
@@ -165,13 +195,14 @@ class _AuditLogListViewState extends State<AuditLogListView>
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(log['user_name'] ?? 'N/A',
-                        style: GoogleFonts.notoSansEthiopic(fontSize: 12))),
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 12, color: onSurfaceColor))),
               ],
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                const Icon(Iconsax.user_edit, size: 14, color: subtleTextColor),
+                Icon(Iconsax.user_edit, size: 14, color: subtleTextColor),
                 const SizedBox(width: 4),
                 Text('በአስተዳዳሪ:',
                     style: GoogleFonts.notoSansEthiopic(
@@ -181,7 +212,8 @@ class _AuditLogListViewState extends State<AuditLogListView>
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(log['admin_name'] ?? 'N/A',
-                        style: GoogleFonts.notoSansEthiopic(fontSize: 12))),
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 12, color: onSurfaceColor))),
               ],
             ),
             const Divider(height: 20),
@@ -189,7 +221,7 @@ class _AuditLogListViewState extends State<AuditLogListView>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildChangeIndicator(log['previous_value'], "ከዚህ"),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
                   child: Icon(Iconsax.arrow_right_3, color: primaryColor),
                 ),
@@ -221,9 +253,9 @@ class _AuditLogListViewState extends State<AuditLogListView>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: backgroundColor,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300)),
+              border: Border.all(color: subtleTextColor.withOpacity(0.3))),
           child: Text(value ?? 'N/A',
               style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold, color: onSurfaceColor)),

@@ -16,7 +16,8 @@ import 'package:amde_haymanot_abalat_guday/providers/tenant_provider.dart';
 // =================================================================
 
 class AdminPostManagementScreen extends StatefulWidget {
-  const AdminPostManagementScreen({super.key});
+  final String? tenantId;
+  const AdminPostManagementScreen({super.key, this.tenantId});
 
   @override
   State<AdminPostManagementScreen> createState() =>
@@ -45,7 +46,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
       _isLoading = true;
       _error = null;
     });
-    final tenantId =
+    final tenantId = widget.tenantId ??
         Provider.of<TenantProvider>(context, listen: false).currentTenant?.id;
     if (tenantId == null) {
       if (mounted)

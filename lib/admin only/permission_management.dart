@@ -7,11 +7,14 @@ import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
+
 // --- UI Theme Constants ---
-const Color kAdminBackgroundColor = Color.fromARGB(255, 1, 37, 100);
-const Color kAdminCardColor = Color.fromARGB(255, 1, 37, 100);
-const Color kAdminPrimaryAccent = Color(0xFFFFD700);
-const Color kAdminSecondaryText = Color(0xFFFFD700);
+// Replaced by ThemeProvider
+// const Color kAdminBackgroundColor = Color.fromARGB(255, 1, 37, 100);
+// const Color kAdminCardColor = Color.fromARGB(255, 1, 37, 100);
+// const Color kAdminPrimaryAccent = Color(0xFFFFD700);
+// const Color kAdminSecondaryText = Color(0xFFFFD700);
 
 // --- View Modes ---
 const String kRolePermissionView = 'የሚና ፈቃድ';
@@ -45,6 +48,18 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
     super.initState();
     _initializeData();
   }
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   void _logError(String functionName, Object e, StackTrace s) {
     developer.log('Error in $functionName',
@@ -102,15 +117,16 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
 
     if (!isSuperiorAdmin) {
       return Scaffold(
-        backgroundColor: kAdminBackgroundColor,
+        backgroundColor: backgroundColor,
         appBar: AppBar(
-          title: Text('የአስተዳደር ማዕከል', style: GoogleFonts.notoSansEthiopic()),
-          backgroundColor: kAdminBackgroundColor,
+          title: Text('የአስተዳደር ማዕከል',
+              style: GoogleFonts.notoSansEthiopic(color: onSurfaceColor)),
+          backgroundColor: surfaceColor,
           elevation: 0,
         ),
         body: Center(
           child: Text('ይህ ገጽ ለየላቀ አስተዳዳሪ ብቻ ነው።',
-              style: GoogleFonts.notoSansEthiopic(color: kAdminPrimaryAccent)),
+              style: GoogleFonts.notoSansEthiopic(color: primaryColor)),
         ),
       );
     }
@@ -118,20 +134,22 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: kAdminBackgroundColor,
+        backgroundColor: backgroundColor,
         appBar: AppBar(
-          title: Text('የአስተዳደር ማዕከል', style: GoogleFonts.notoSansEthiopic()),
-          backgroundColor: kAdminBackgroundColor,
+          title: Text('የአስተዳደር ማዕከል',
+              style: GoogleFonts.notoSansEthiopic(color: onSurfaceColor)),
+          backgroundColor: surfaceColor,
           elevation: 0,
+          iconTheme: IconThemeData(color: primaryColor),
           actions: [
             IconButton(
                 icon: const Icon(Icons.refresh), onPressed: _initializeData)
           ],
           bottom: TabBar(
             isScrollable: true,
-            indicatorColor: kAdminPrimaryAccent,
-            labelColor: kAdminPrimaryAccent,
-            unselectedLabelColor: kAdminSecondaryText,
+            indicatorColor: primaryColor,
+            labelColor: primaryColor,
+            unselectedLabelColor: subtleTextColor,
             labelStyle:
                 GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w600),
             tabs: const [
@@ -141,8 +159,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
           ),
         ),
         body: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: kAdminPrimaryAccent))
+            ? Center(child: CircularProgressIndicator(color: primaryColor))
             : _error != null
                 ? Center(
                     child: Text(_error!,
@@ -190,6 +207,18 @@ class _RoleManagerViewState extends State<RoleManagerView> {
   List<String> _allDepartmentOptions = [];
   List<String> _allBudinOptions = [];
   List<String> _allAgelgilotKifilOptions = [];
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   @override
   void initState() {
@@ -303,9 +332,9 @@ class _RoleManagerViewState extends State<RoleManagerView> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: kAdminCardColor,
+          backgroundColor: surfaceColor,
           title: Text('${user['full_name']} - ሚና አስተካክል',
-              style: GoogleFonts.notoSansEthiopic(color: kAdminPrimaryAccent)),
+              style: GoogleFonts.notoSansEthiopic(color: primaryColor)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -314,20 +343,20 @@ class _RoleManagerViewState extends State<RoleManagerView> {
                   value: 'user',
                   groupValue: selectedRole,
                   onChanged: (v) => setDialogState(() => selectedRole = v!),
-                  activeColor: kAdminPrimaryAccent),
+                  activeColor: primaryColor),
               RadioListTile<String>(
                   title: Text('አስተዳዳሪ', style: GoogleFonts.notoSansEthiopic()),
                   value: 'admin',
                   groupValue: selectedRole,
                   onChanged: (v) => setDialogState(() => selectedRole = v!),
-                  activeColor: kAdminPrimaryAccent),
+                  activeColor: primaryColor),
               RadioListTile<String>(
                   title:
                       Text('የላቀ አስተዳዳሪ', style: GoogleFonts.notoSansEthiopic()),
                   value: 'superior_admin',
                   groupValue: selectedRole,
                   onChanged: (v) => setDialogState(() => selectedRole = v!),
-                  activeColor: kAdminPrimaryAccent),
+                  activeColor: primaryColor),
             ],
           ),
           actions: [
@@ -343,8 +372,8 @@ class _RoleManagerViewState extends State<RoleManagerView> {
             TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text('ይቅር',
-                    style: GoogleFonts.notoSansEthiopic(
-                        color: kAdminSecondaryText))),
+                    style:
+                        GoogleFonts.notoSansEthiopic(color: subtleTextColor))),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
@@ -367,8 +396,8 @@ class _RoleManagerViewState extends State<RoleManagerView> {
           child: _filteredUsers.isEmpty
               ? Center(
                   child: Text("በዚህ ማጣሪያ ምንም ተጠቃሚ አልተገኘም።",
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kAdminSecondaryText)))
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: subtleTextColor)))
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: _filteredUsers.length,
@@ -376,17 +405,17 @@ class _RoleManagerViewState extends State<RoleManagerView> {
                     final user = _filteredUsers[index];
                     final role = user['role'] ?? 'user';
                     return Card(
-                      color: kAdminCardColor,
+                      color: surfaceColor,
                       margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
                         leading: CircleAvatar(
                             child: Text(user['full_name']?[0] ?? '?')),
                         title: Text(user['full_name'] ?? 'ስም የሌለው',
                             style: GoogleFonts.notoSansEthiopic(
-                                color: Colors.white,
+                                color: onSurfaceColor,
                                 fontWeight: FontWeight.bold)),
                         subtitle: Text(user['email'] ?? 'ኢሜይል የለም',
-                            style: TextStyle(color: kAdminSecondaryText)),
+                            style: TextStyle(color: subtleTextColor)),
                         trailing: Chip(
                           label: Text(role,
                               style: const TextStyle(
@@ -468,7 +497,7 @@ class _RoleManagerViewState extends State<RoleManagerView> {
       isExpanded: true,
       hint: Text(label,
           style: GoogleFonts.notoSansEthiopic(
-              fontSize: 14, color: kAdminSecondaryText)),
+              fontSize: 14, color: subtleTextColor)),
       items: [
         DropdownMenuItem(
             value: null,
@@ -508,6 +537,18 @@ class _DepartmentManagerViewState extends State<DepartmentManagerView> {
   Set<String> _currentUserDeptPerms = {};
   bool _isDetailLoading = false;
   bool _isSaving = false;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   Future<void> _selectUser(Map<String, dynamic> user) async {
     setState(() {
@@ -566,26 +607,25 @@ class _DepartmentManagerViewState extends State<DepartmentManagerView> {
               final user = widget.users[index];
               final isSelected = _selectedUser?['id'] == user['id'];
               return Card(
-                color: isSelected
-                    ? kAdminPrimaryAccent.withOpacity(0.25)
-                    : kAdminCardColor,
+                color:
+                    isSelected ? primaryColor.withOpacity(0.25) : surfaceColor,
                 child: ListTile(
                   title: Text(user['full_name'],
-                      style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: onSurfaceColor)),
                   onTap: () => _selectUser(user),
                 ),
               );
             },
           ),
         ),
-        const VerticalDivider(width: 1, color: kAdminCardColor),
+        const VerticalDivider(width: 1, color: Colors.transparent),
         Expanded(
           flex: 3,
           child: _selectedUser == null
               ? Center(
                   child: Text("ፈቃዶችን ለማስተዳደር ተጠቃሚ ይምረጡ",
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kAdminPrimaryAccent)))
+                      style: GoogleFonts.notoSansEthiopic(color: primaryColor)))
               : _isDetailLoading
                   ? const Center(child: CircularProgressIndicator())
                   : Column(
@@ -595,7 +635,7 @@ class _DepartmentManagerViewState extends State<DepartmentManagerView> {
                           child: Text(
                               "የ'${_selectedUser!['full_name']}' የክፍል ፈቃዶች",
                               style: GoogleFonts.notoSansEthiopic(
-                                  color: kAdminPrimaryAccent,
+                                  color: primaryColor,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600)),
                         ),
@@ -607,7 +647,7 @@ class _DepartmentManagerViewState extends State<DepartmentManagerView> {
                               return CheckboxListTile(
                                 title: Text(dept['name'],
                                     style: GoogleFonts.notoSansEthiopic(
-                                        color: Colors.white)),
+                                        color: onSurfaceColor)),
                                 value:
                                     _currentUserDeptPerms.contains(dept['id']),
                                 onChanged: (isChecked) {
@@ -630,7 +670,7 @@ class _DepartmentManagerViewState extends State<DepartmentManagerView> {
                                   onPressed: _isSaving ? null : _saveDeptPerms,
                                   child: _isSaving
                                       ? const CircularProgressIndicator(
-                                          color: kAdminBackgroundColor,
+                                          color: Colors.white,
                                         )
                                       : Text("አስቀምጥ",
                                           style:
@@ -666,6 +706,18 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
   Set<int> _currentScreenPerms = {};
   bool _isDetailLoading = false;
   bool _isSaving = false;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   Future<void> _selectRole(String roleName) async {
     setState(() {
@@ -724,15 +776,23 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
                   value: _selectedRoleName,
                   decoration: InputDecoration(
                     labelText: 'ሚና ይምረጡ',
-                    labelStyle: GoogleFonts.notoSansEthiopic(),
+                    labelStyle:
+                        GoogleFonts.notoSansEthiopic(color: subtleTextColor),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: subtleTextColor.withOpacity(0.3)),
+                    ),
                   ),
+                  dropdownColor: surfaceColor,
                   items: widget.allRoles
                       .map((r) => DropdownMenuItem<String>(
                             value: r['role_name'] as String,
                             child: Text(r['display_name'] as String,
-                                style: GoogleFonts.notoSansEthiopic()),
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: onSurfaceColor)),
                           ))
                       .toList(),
                   onChanged: (value) {
@@ -742,39 +802,44 @@ class _ScreenManagerViewState extends State<ScreenManagerView> {
               ),
               const SizedBox(width: 12),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: _isSaving || _selectedRoleName == null
                     ? null
                     : _saveScreenPerms,
                 child: _isSaving
-                    ? const CircularProgressIndicator()
+                    ? const CircularProgressIndicator(color: Colors.white)
                     : Text('አስቀምጥ', style: GoogleFonts.notoSansEthiopic()),
               ),
             ],
           ),
         ),
-        const Divider(height: 1, color: kAdminCardColor),
+        Divider(height: 1, color: surfaceColor),
         Expanded(
           child: _selectedRoleName == null
               ? Center(
                   child: Text('ሚና ይምረጡ',
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kAdminPrimaryAccent)))
+                      style: GoogleFonts.notoSansEthiopic(color: primaryColor)))
               : _isDetailLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(color: primaryColor))
                   : ListView.builder(
                       padding: const EdgeInsets.all(16),
                       itemCount: widget.allScreens.length,
                       itemBuilder: (context, index) {
                         final screen = widget.allScreens[index];
                         return Card(
-                          color: kAdminCardColor,
+                          color: surfaceColor,
                           child: CheckboxListTile(
+                            activeColor: primaryColor,
+                            checkColor: Colors.white,
                             title: Text(screen['display_name'],
                                 style: GoogleFonts.notoSansEthiopic(
-                                    color: Colors.white)),
+                                    color: onSurfaceColor)),
                             subtitle: Text(screen['screen_key'],
-                                style: const TextStyle(
-                                    color: kAdminSecondaryText)),
+                                style: TextStyle(color: subtleTextColor)),
                             value: _currentScreenPerms.contains(screen['id']),
                             onChanged: (isChecked) {
                               setState(() {
@@ -815,6 +880,18 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
     'late': 0,
     'permission': 0
   };
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   void _toggleSelection(Map<String, dynamic> user) {
     final id = user['id'].toString();
@@ -876,23 +953,22 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
               final id = user['id'].toString();
               final selected = _selectedUserIds.contains(id);
               return Card(
-                color: selected
-                    ? kAdminPrimaryAccent.withOpacity(0.25)
-                    : kAdminCardColor,
+                color: selected ? primaryColor.withOpacity(0.25) : surfaceColor,
                 child: CheckboxListTile(
                   value: selected,
                   title: Text(user['full_name'] ?? '',
-                      style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: onSurfaceColor)),
                   subtitle: Text(user['email'] ?? '',
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kAdminSecondaryText)),
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: subtleTextColor)),
                   onChanged: (_) => _toggleSelection(user),
                 ),
               );
             },
           ),
         ),
-        const VerticalDivider(width: 1, color: kAdminCardColor),
+        const VerticalDivider(width: 1, color: Colors.transparent),
         Expanded(
           flex: 3,
           child: Padding(
@@ -919,8 +995,8 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
                 if (_selectedUserIds.isEmpty)
                   Center(
                     child: Text('ተጠቃሚዎችን ይምረጡ',
-                        style: GoogleFonts.notoSansEthiopic(
-                            color: kAdminPrimaryAccent)),
+                        style:
+                            GoogleFonts.notoSansEthiopic(color: primaryColor)),
                   )
                 else if (_isComputing)
                   const Center(child: CircularProgressIndicator())
@@ -948,16 +1024,16 @@ class _AttendancePreviewViewState extends State<AttendancePreviewView> {
                             orElse: () => {});
                         final name = user['full_name'] ?? uid;
                         return Card(
-                          color: kAdminCardColor,
+                          color: surfaceColor,
                           margin: const EdgeInsets.only(bottom: 12),
                           child: ListTile(
                             title: Text(name,
                                 style: GoogleFonts.notoSansEthiopic(
-                                    color: Colors.white)),
+                                    color: onSurfaceColor)),
                             subtitle: Text(
                                 'ተገኘ: ${stats['present']} • ቀረ: ${stats['absent']} • አርፈደ: ${stats['late']} • በፍቃድ: ${stats['permission']}',
                                 style: GoogleFonts.notoSansEthiopic(
-                                    color: kAdminSecondaryText)),
+                                    color: subtleTextColor)),
                           ),
                         );
                       }).toList(),
@@ -992,7 +1068,7 @@ Future<bool?> _showConfirmationDialog(
   return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-            backgroundColor: kAdminCardColor,
+            backgroundColor: Theme.of(context).cardColor,
             title: Text(title, style: GoogleFonts.notoSansEthiopic()),
             content: Text(content, style: GoogleFonts.notoSansEthiopic()),
             actions: [
@@ -1001,8 +1077,10 @@ Future<bool?> _showConfirmationDialog(
                   onPressed: () => Navigator.of(context).pop(false)),
               TextButton(
                 style: TextButton.styleFrom(
-                    foregroundColor:
-                        isDestructive ? Colors.redAccent : kAdminPrimaryAccent),
+                    foregroundColor: isDestructive
+                        ? Colors.redAccent
+                        : Provider.of<ThemeProvider>(context)
+                            .getPrimaryColor(context)),
                 child: Text(confirmText, style: GoogleFonts.notoSansEthiopic()),
                 onPressed: () => Navigator.of(context).pop(true),
               ),
@@ -1030,6 +1108,18 @@ class _UserScreenManagerViewState extends State<UserScreenManagerView> {
   Set<int> _currentUserScreenPerms = {}; // Using Screen IDs (int)
   bool _isDetailLoading = false;
   bool _isSaving = false;
+
+  // Theme Getters
+  Color get primaryColor =>
+      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
+  Color get surfaceColor =>
+      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
+  Color get backgroundColor =>
+      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
+  Color get onSurfaceColor =>
+      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  Color get subtleTextColor =>
+      Provider.of<ThemeProvider>(context).getSubtleTextColor(context);
 
   Future<void> _selectUser(Map<String, dynamic> user) async {
     setState(() {
@@ -1091,31 +1181,35 @@ class _UserScreenManagerViewState extends State<UserScreenManagerView> {
               final user = widget.users[index];
               final isSelected = _selectedUser?['id'] == user['id'];
               return Card(
-                color: isSelected
-                    ? kAdminPrimaryAccent.withOpacity(0.25)
-                    : kAdminCardColor,
+                color:
+                    isSelected ? primaryColor.withOpacity(0.15) : surfaceColor,
                 child: ListTile(
                   title: Text(user['full_name'] ?? 'No Name',
-                      style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: onSurfaceColor,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal)),
                   subtitle: Text(user['role'] ?? '',
-                      style: const TextStyle(
-                          color: kAdminSecondaryText, fontSize: 12)),
+                      style: TextStyle(color: subtleTextColor, fontSize: 12)),
+                  selected: isSelected,
+                  selectedTileColor: primaryColor.withOpacity(0.1),
                   onTap: () => _selectUser(user),
                 ),
               );
             },
           ),
         ),
-        const VerticalDivider(width: 1, color: kAdminCardColor),
+        VerticalDivider(width: 1, color: surfaceColor),
         Expanded(
           flex: 3,
           child: _selectedUser == null
               ? Center(
                   child: Text("ፈቃዶችን ለማስተዳደር ተጠቃሚ ይምረጡ",
-                      style: GoogleFonts.notoSansEthiopic(
-                          color: kAdminPrimaryAccent)))
+                      style: GoogleFonts.notoSansEthiopic(color: primaryColor)))
               : _isDetailLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(
+                      child: CircularProgressIndicator(color: primaryColor))
                   : Column(
                       children: [
                         Padding(
@@ -1123,7 +1217,7 @@ class _UserScreenManagerViewState extends State<UserScreenManagerView> {
                           child: Text(
                               "የ'${_selectedUser!['full_name']}' ስክሪን ፈቃዶች",
                               style: GoogleFonts.notoSansEthiopic(
-                                  color: kAdminPrimaryAccent,
+                                  color: primaryColor,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600)),
                         ),
@@ -1133,12 +1227,14 @@ class _UserScreenManagerViewState extends State<UserScreenManagerView> {
                             itemBuilder: (context, index) {
                               final screen = widget.allScreens[index];
                               return CheckboxListTile(
+                                activeColor: primaryColor,
+                                checkColor: Colors.white,
                                 title: Text(screen['display_name'],
                                     style: GoogleFonts.notoSansEthiopic(
-                                        color: Colors.white)),
+                                        color: onSurfaceColor)),
                                 subtitle: Text(screen['screen_key'],
-                                    style: const TextStyle(
-                                        color: Colors.white30, fontSize: 10)),
+                                    style: TextStyle(
+                                        color: subtleTextColor, fontSize: 10)),
                                 value: _currentUserScreenPerms
                                     .contains(screen['id']),
                                 onChanged: (isChecked) {
@@ -1159,11 +1255,15 @@ class _UserScreenManagerViewState extends State<UserScreenManagerView> {
                           child: SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                  ),
                                   onPressed:
                                       _isSaving ? null : _saveUserScreenPerms,
                                   child: _isSaving
                                       ? const CircularProgressIndicator(
-                                          color: kAdminBackgroundColor,
+                                          color: Colors.white,
                                         )
                                       : Text("አስቀምጥ",
                                           style:

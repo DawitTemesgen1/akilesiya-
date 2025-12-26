@@ -110,7 +110,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final languageProvider = context.watch<LanguageProvider>();
-    final tenantProvider = context.watch<TenantProvider>();
+
     final themeProvider = context.watch<ThemeProvider>();
 
     final router = GoRouter(
@@ -236,10 +236,10 @@ class MyApp extends StatelessWidget {
       debugLogDiagnostics: kDebugMode,
     );
 
-    final primary = tenantProvider.currentTenant?.primaryColor ?? primaryColor;
-    final accent = tenantProvider.currentTenant?.accentColor ?? accentColor;
-
     return MaterialApp.router(
+      themeMode: themeProvider.themeMode,
+      theme: _buildThemeData(false),
+      darkTheme: _buildThemeData(true),
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
@@ -252,53 +252,28 @@ class MyApp extends StatelessWidget {
       locale: languageProvider.currentLocale,
       onGenerateTitle: (context) =>
           AppLocalizations.of(context)?.appTitle ?? 'Amde Haymanot',
-      theme: _buildThemeData(primary, accent, Brightness.light),
-      darkTheme: _buildThemeData(primary, accent, Brightness.dark),
-      themeMode: themeProvider.themeMode,
     );
   }
 
-  // =========== THEME REDESIGN: COMPLETE OVERHAUL OF THIS METHOD ===========
-  ThemeData _buildThemeData(
-      Color primaryColor, Color accentColor, Brightness brightness) {
-    final isDark = brightness == Brightness.dark;
+  ThemeData _buildThemeData(bool isDark) {
+    final brightness = isDark ? Brightness.dark : Brightness.light;
+    final primaryColor =
+        isDark ? ThemeProvider.darkPrimary : ThemeProvider.lightPrimary;
+    final accentColor =
+        isDark ? ThemeProvider.darkPrimary : ThemeProvider.lightAccent;
 
-    // --- Define Color Palettes ---
-    final Color scaffoldBg;
-    final Color surfaceColor; // For cards, dialogs
-    final Color textColor;
-    final Color secondaryTextColor;
-    final Color inputFillColor;
-    final Color appBarColor;
-    final Color appBarTextColor;
-
-    // FORCE DARK THEME (As requested: "keep the dark only")
-    // Use Midnight Gold Dark Theme for both Light and Dark modes
-    scaffoldBg = const Color(
-        0xFF0A0E17); // Premium Deep Midnight Blue/Black (Distinct from specific logo blue)
-    surfaceColor = const Color(0xFF1C2230); // Lighter shade for cards/surfaces
-    textColor = accentColor; // GOLDEN TEXT for dark theme!
-    secondaryTextColor =
-        const Color(0xFF9E9E9E); // Silver/Grey for secondary text
-    inputFillColor = const Color(0xFF232936);
-    appBarColor = const Color(0xFF0A0E17); // Match scaffold for seamless look
-    appBarTextColor = accentColor; // Golden app bar text
-
-    /* LIGHT THEME COMMENTED OUT AS REQUESTED
-    if (isDark) {
-      // ... dark theme logic above ...
-    } else {
-      // --- ENHANCED LIGHT THEME WITH PROPER CONTRAST ---
-      scaffoldBg = const Color(0xFFF8F9FA); // Very light grey
-      surfaceColor = Colors.white; // Pure white cards
-      textColor =
-          const Color(0xFF1A1A2E); // Deep navy blue for excellent contrast
-      secondaryTextColor = const Color(0xFF6C757D); // Medium grey
-      inputFillColor = const Color(0xFFF1F3F5);
-      appBarColor = primaryColor; // Your brand's main blue color
-      appBarTextColor = accentColor; // Golden text on dark blue appbar
-    }
-    */
+    final scaffoldBg =
+        isDark ? ThemeProvider.darkBackground : ThemeProvider.lightBackground;
+    final surfaceColor =
+        isDark ? ThemeProvider.darkSurface : ThemeProvider.lightSurface;
+    final textColor =
+        isDark ? ThemeProvider.darkOnSurface : ThemeProvider.lightOnSurface;
+    final secondaryTextColor =
+        isDark ? ThemeProvider.darkSubtle : ThemeProvider.lightSubtle;
+    final inputFillColor =
+        isDark ? const Color(0xFF232936) : const Color(0xFFF1F3F5);
+    final appBarColor = isDark ? ThemeProvider.darkBackground : primaryColor;
+    final appBarTextColor = isDark ? accentColor : Colors.white;
 
     final baseTextTheme =
         isDark ? Typography.whiteHelsinki : Typography.blackHelsinki;
