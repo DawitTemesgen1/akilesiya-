@@ -560,15 +560,30 @@ class _ProfileScreenState extends State<ProfileScreen>
     final color = colors[index % colors.length];
     final courseName = course['course_name']?.toString() ?? 'Course';
 
-    // Calculate total
-    final scores = course['scores'] as List<dynamic>? ?? [];
-    double total = 0;
-    if (scores.isNotEmpty) {
-      for (var s in scores)
-        total += double.tryParse(s['score']?.toString() ?? '0') ?? 0;
-    } else {
-      total = double.tryParse(course['score']?.toString() ?? '0') ?? 0;
+    // Calculate total safely
+    double total = 0.0;
+    double maxScore = 100.0;
+
+    try {
+      final scores = course['scores'];
+      if (scores is List && scores.isNotEmpty) {
+        for (var s in scores) {
+          final scoreVal = double.tryParse(s['score']?.toString() ?? '0') ?? 0;
+          total += scoreVal;
+        }
+      } else {
+        total = double.tryParse(course['score']?.toString() ?? '0') ?? 0;
+        maxScore =
+            double.tryParse(course['total_marks']?.toString() ?? '100') ??
+                100.0;
+      }
+    } catch (e) {
+      total = 0.0;
     }
+
+    if (maxScore <= 0) maxScore = 100.0;
+    final percent = (total / maxScore).clamp(0.0, 1.0);
+    if (total.isNaN) total = 0.0;
 
     return Container(
       width: 160,
@@ -593,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           CircularPercentIndicator(
             radius: 40,
             lineWidth: 8,
-            percent: (total / 100).clamp(0.0, 1.0),
+            percent: percent,
             center: Text(total.toStringAsFixed(0),
                 style: GoogleFonts.poppins(
                     color: Colors.white,
@@ -748,15 +763,22 @@ class _ProfileScreenState extends State<ProfileScreen>
 class _GlassTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar _tabBar;
   _GlassTabBarDelegate(this._tabBar);
+
+  // Calculate height dynamically
+  double get _height => _tabBar.preferredSize.height + 20;
+
   @override
-  double get minExtent => 70;
+  double get minExtent => _height;
+
   @override
-  double get maxExtent => 70;
+  double get maxExtent => _height;
+
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-        padding: const EdgeInsets.only(top: 10, bottom: 10),
+        height: _height,
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: BackdropFilter(
@@ -772,5 +794,5 @@ class _GlassTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      true;
+      true; // Always rebuild to be safe
 }
