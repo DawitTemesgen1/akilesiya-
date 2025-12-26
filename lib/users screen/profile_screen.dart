@@ -661,11 +661,17 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildCourseItem(Map<String, dynamic> c) {
     double score = 0;
     try {
-      score = double.parse(c['score'].toString());
+      if (c['total'] != null) {
+        score = double.parse(c['total'].toString());
+      } else if (c['score'] != null) {
+        score = double.parse(c['score'].toString());
+      }
     } catch (e) {}
 
-    final assessments =
-        c['assessments'] is List ? c['assessments'] as List : [];
+    // Backend returns 'scores' list for assessments, but we support 'assessments' too just in case
+    final assessments = (c['scores'] ?? c['assessments']) is List
+        ? (c['scores'] ?? c['assessments']) as List
+        : [];
 
     return Theme(
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -698,7 +704,15 @@ class _ProfileScreenState extends State<ProfileScreen>
             ...assessments.map((a) {
               final aName = a['assessment_name'] ?? a['name'] ?? '-';
               final aScore = a['score'] ?? 0;
-              final aMax = a['max_score'] ?? a['total'] ?? 100;
+              final aMax = a['max_score'] ??
+                  a['total'] ??
+                  100; // Default to 100 if max not provided? Or just hide it?
+
+              // If we don't know max score, maybe just show score?
+              final scoreText = (a['max_score'] != null || a['total'] != null)
+                  ? "$aScore / $aMax"
+                  : "$aScore";
+
               return Padding(
                 padding: const EdgeInsets.only(left: 48, right: 16, bottom: 8),
                 child: Row(
@@ -706,7 +720,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   children: [
                     Text(aName,
                         style: TextStyle(color: Colors.white70, fontSize: 12)),
-                    Text("$aScore / $aMax",
+                    Text(scoreText,
                         style: TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
                 ),
