@@ -23,7 +23,7 @@ import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 // #########################################################################
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key});
 
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
