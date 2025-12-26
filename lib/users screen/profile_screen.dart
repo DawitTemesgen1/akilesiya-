@@ -726,7 +726,48 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
               );
             }).toList(),
-          SizedBox(height: 8)
+          // Summary Section
+          if (assessments.isNotEmpty) ...[
+            const Divider(
+                color: Colors.white10, height: 16, indent: 16, endIndent: 16),
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("ድምር (Total)",
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: kGoldColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold)),
+                  Text(score.toStringAsFixed(1),
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: kGoldColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("አማካይ (Average)",
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: kGoldColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold)),
+                  Text("${score.toStringAsFixed(1)}%",
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: kGoldColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ] else
+            const SizedBox(height: 8)
         ],
       ),
     );

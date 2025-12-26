@@ -300,6 +300,28 @@ class GradeService {
       debugPrint(
           'DEBUG: Finished fetching all years. gradesByYear keys: ${gradesByYear.keys}');
 
+      // IF no grades found for current year, try to fetch COURSES to show empty state
+      if (!gradesByYear.containsKey(currentYear.toString())) {
+        try {
+          final courses = await getCourses(spiritualClass);
+          if (courses.isNotEmpty) {
+            final emptyGrades = courses
+                .map((c) => {
+                      'course_name': c['course_name'],
+                      'course_id': c['id'],
+                      'scores': [], // No assessments
+                      'total': 0,
+                      'score': 0
+                    })
+                .toList();
+            gradesByYear[currentYear.toString()] = emptyGrades;
+            debugPrint('DEBUG: Added empty course list for year $currentYear');
+          }
+        } catch (e) {
+          debugPrint('DEBUG: Failed to fetch courses for empty state: $e');
+        }
+      }
+
       // If we have grades, return them
       if (gradesByYear.isNotEmpty) {
         return {
