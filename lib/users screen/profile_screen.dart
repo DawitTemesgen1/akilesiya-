@@ -75,25 +75,16 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // --- GOLD TEXT SHADER HELPER ---
   Widget _goldText(String text,
-      {double fontSize = 16,
-      FontWeight fontWeight = FontWeight.bold,
-      String? fontFamily}) {
+      {double fontSize = 16, FontWeight fontWeight = FontWeight.bold}) {
     return ShaderMask(
       shaderCallback: (bounds) => const LinearGradient(
         colors: [kGoldGradientStart, kGoldGradientEnd, kGoldGradientStart],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(bounds),
-      child: Text(
-        text,
-        style: fontFamily == 'cinzel'
-            ? GoogleFonts.cinzel(
-                fontSize: fontSize, fontWeight: fontWeight, color: Colors.white)
-            : GoogleFonts.notoSansEthiopic(
-                fontSize: fontSize,
-                fontWeight: fontWeight,
-                color: Colors.white),
-      ),
+      child: Text(text,
+          style: GoogleFonts.notoSansEthiopic(
+              fontSize: fontSize, fontWeight: fontWeight, color: Colors.white)),
     );
   }
 
@@ -150,18 +141,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                       controller: _tabController,
                       labelColor: kGoldGradientStart,
                       unselectedLabelColor: Colors.grey,
-                      labelStyle: GoogleFonts.cinzel(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 13), // Premium Font
+                      labelStyle: GoogleFonts.notoSansEthiopic(
+                          fontWeight: FontWeight.w900, fontSize: 13),
                       indicatorColor: kGoldGradientStart,
                       indicatorWeight: 3,
                       padding: EdgeInsets.zero,
                       dividerColor: Colors.transparent,
                       tabs: const [
-                        Tab(text: "STATUS"),
-                        Tab(text: "PERSONAL"),
-                        Tab(text: "SPIRITUAL"),
-                        Tab(text: "ACADEMIC"),
+                        Tab(text: "ሁኔታ"), // Status
+                        Tab(text: "የግል"), // Personal
+                        Tab(text: "መንፈሳዊ"), // Spiritual
+                        Tab(text: "ትምህርት"), // Education
                       ],
                     ),
                   ),
@@ -173,8 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               controller: _tabController,
               children: [
                 _buildStatusTab(profile),
-                _buildDetailsList(profile, 'የግል',
-                    profileConfig), // Keeping content logic but wrapped
+                _buildDetailsList(profile, 'የግል', profileConfig),
                 _buildDetailsList(profile, 'መንፈሳዊ', profileConfig),
                 _buildEducationTab(profile, profileConfig),
               ],
@@ -192,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       expandedHeight: 300,
       pinned: true,
       centerTitle: true,
-      title: _goldText("PROFILE", fontSize: 18, fontFamily: 'cinzel'),
+      title: _goldText("መገለጫ"), // Profile
       actions: [
         IconButton(
             icon: const Icon(Iconsax.edit, color: kPlatinum),
@@ -207,15 +196,12 @@ class _ProfileScreenState extends State<ProfileScreen>
         background: Stack(
           alignment: Alignment.center,
           children: [
-            // Diamond Pattern or similar
             Opacity(
                 opacity: 0.05,
                 child: Image.network(
                     "https://www.transparenttextures.com/patterns/cubes.png",
                     repeat: ImageRepeat.repeat,
-                    errorBuilder: (c, o, s) =>
-                        const SizedBox())), // Fallback safe
-
+                    errorBuilder: (c, o, s) => const SizedBox())),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -242,18 +228,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                           : null,
                       child: (avatarUrl == null)
                           ? Text((profile['full_name'] ?? 'U')[0].toUpperCase(),
-                              style: GoogleFonts.cinzel(
+                              style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 50, color: kGoldGradientStart))
                           : null,
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text(profile['full_name'] ?? 'User',
+                Text(profile['full_name'] ?? 'ስም የለም',
                     style: GoogleFonts.notoSansEthiopic(
                         color: kPlatinum,
-                        fontSize: 28,
-                        fontWeight: FontWeight.normal)),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
                 Container(
                   padding:
@@ -262,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       border: Border.all(color: Colors.white10),
                       borderRadius: BorderRadius.circular(30),
                       color: Colors.white.withOpacity(0.05)),
-                  child: Text(profile['spiritual_class'] ?? 'No Class',
+                  child: Text(profile['spiritual_class'] ?? 'ክፍል አልተመደበም',
                       style: GoogleFonts.notoSansEthiopic(
                           color: kGoldGradientEnd,
                           fontSize: 12,
@@ -286,15 +272,15 @@ class _ProfileScreenState extends State<ProfileScreen>
           Row(
             children: [
               Expanded(
-                  child: _buildDiamondCard(
-                      "STATUS", "Active", Iconsax.verify5, Colors.greenAccent)),
+                  child: _buildDiamondCard("ሁኔታ", "ንቁ", Iconsax.verify5,
+                      Colors.greenAccent)), // Status: Active
               const SizedBox(width: 20),
               Expanded(
                   child: _buildDiamondCard(
-                      "SECTOR",
-                      profile['service_sector']?.toString() ?? "-",
+                      "የአገልግሎት ዘርፍ",
+                      profile['service_sector']?.toString() ?? "አልተመደበም",
                       Iconsax.briefcase,
-                      kGoldGradientStart)),
+                      kGoldGradientStart)), // Sector: Not Assigned
             ],
           ),
           const SizedBox(height: 30),
@@ -326,17 +312,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _goldText("ATTENDANCE",
-                              fontFamily: 'cinzel', fontSize: 14),
+                          _goldText("የመገኘት ሁኔታ", fontSize: 14), // Attendance
                           const SizedBox(height: 4),
-                          Text("Yearly Overview",
-                              style: GoogleFonts.poppins(
-                                  color: Colors.white38, fontSize: 10)),
+                          Text("አጠቃላይ ዓመታዊ ሪፖርት",
+                              style: GoogleFonts.notoSansEthiopic(
+                                  color: Colors.white38,
+                                  fontSize: 10)), // Yearly Overview
                         ],
                       ),
                       Text("$present / $total",
-                          style: GoogleFonts.cinzel(
-                              color: kPlatinum, fontSize: 24)),
+                          style: GoogleFonts.notoSansEthiopic(
+                              color: kPlatinum,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -423,7 +411,11 @@ class _ProfileScreenState extends State<ProfileScreen>
               else if (d is List) courses = List<Map<String, dynamic>>.from(d);
             } catch (e) {}
 
-            if (courses.isEmpty) return const SizedBox.shrink();
+            if (courses.isEmpty)
+              return Center(
+                  child: Text("ምንም ውጤት የለም",
+                      style:
+                          GoogleFonts.notoSansEthiopic(color: Colors.white54)));
 
             return Column(
               children: courses.map((c) => _buildGradeItem(c)).toList(),
@@ -434,11 +426,10 @@ class _ProfileScreenState extends State<ProfileScreen>
         _buildGlassContainer(
             child: Column(children: [
           _buildDetailRow(
-              "Academic Level", profile['academic_level']?.toString() ?? '-'),
+              "የትምህርት ደረጃ", profile['academic_level']?.toString() ?? '-'),
+          _buildDetailRow("የወላጅ ስም", profile['parent_name']?.toString() ?? '-'),
           _buildDetailRow(
-              "Parent Name", profile['parent_name']?.toString() ?? '-'),
-          _buildDetailRow("Parent Phone",
-              profile['parent_phone_number']?.toString() ?? '-'),
+              "የወላጅ ስልክ", profile['parent_phone_number']?.toString() ?? '-'),
         ]))
       ],
     );
@@ -503,8 +494,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   overflow: TextOverflow.ellipsis),
               const SizedBox(height: 4),
               Text(title,
-                  style: GoogleFonts.cinzel(
-                      color: Colors.white30, fontSize: 10, letterSpacing: 2)),
+                  style: GoogleFonts.notoSansEthiopic(
+                      color: Colors.white30,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold)),
             ],
           )
         ],
@@ -543,6 +536,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     } catch (e) {}
     if (max <= 0) max = 100;
 
+    final courseName =
+        course['course_name']?.toString() ?? course['subject_name'] ?? 'ኮርስ';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -557,7 +553,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-              child: Text(course['course_name']?.toString() ?? 'Course',
+              child: Text(courseName,
                   style: GoogleFonts.notoSansEthiopic(
                       color: kPlatinum, fontWeight: FontWeight.bold))),
           _goldText("${score.toStringAsFixed(1)}", fontSize: 18),
@@ -619,6 +615,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       'parent_name': 'የወላጅ ስም',
       'parent_phone_number': 'የወላጅ ስልክ ቁጥር',
       'grade_points': 'ውጤት',
+      'full_name': 'ስም',
     };
     return translations[key] ?? key.replaceAll('_', ' ').toUpperCase();
   }
