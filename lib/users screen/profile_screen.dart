@@ -4,13 +4,13 @@ import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/profile_service.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/edit_profile_sheet.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/uploadpp.dart';
-import 'package:animate_do/animate_do.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
+
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 
@@ -178,26 +178,16 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ),
       ),
-      // Center Floating Button
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Container(
-        height: 50,
-        margin: const EdgeInsets.only(bottom: 10),
-        child: FloatingActionButton.extended(
-          onPressed: () => showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (c) => const UserEditProfileScreen())
-              .then((_) => _refreshAllData()),
-          backgroundColor: kGoldColor,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-          icon: const Icon(Icons.edit_outlined, color: Colors.black),
-          label: Text("የግል መረጃ",
-              style: GoogleFonts.notoSansEthiopic(
-                  color: Colors.black, fontWeight: FontWeight.bold)),
-        ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (c) => const UserEditProfileScreen())
+            .then((_) => _refreshAllData()),
+        backgroundColor: kGoldColor,
+        child: const Icon(Icons.edit, color: Colors.black),
       ),
     );
   }
@@ -420,6 +410,34 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildPersonalTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
+    // Build list of rows dynamically
+    final List<Widget> rows = [];
+
+    // Standard fields
+    final standardFields = [
+      {'icon': Iconsax.heart, 'label': 'የክርስትና ስም', 'key': 'christian_name'},
+      {'icon': Iconsax.user_square, 'label': 'የእናት ስም', 'key': 'mother_name'},
+      {'icon': Iconsax.call, 'label': 'ስልክ ቁጥር', 'key': 'phone_number'},
+      {'icon': Icons.cake_outlined, 'label': 'ዕድሜ', 'key': 'age'},
+      {'icon': Icons.date_range_outlined, 'label': 'የትውልድ ቀን', 'key': 'dob'},
+      {'icon': Icons.male, 'label': 'ጾታ', 'key': 'gender'},
+    ];
+
+    for (var field in standardFields) {
+      if (rows.isNotEmpty) rows.add(_buildDivider());
+      rows.add(_buildDetailRow(field['icon'] as IconData,
+          field['label'] as String, profile[field['key']]));
+    }
+
+    // Add custom fields from config
+    final personalFields =
+        config.customFields.where((f) => f.category == 'personal').toList();
+    for (var field in personalFields) {
+      if (rows.isNotEmpty) rows.add(_buildDivider());
+      rows.add(_buildDetailRow(
+          Icons.info_outline, field.label, profile[field.fieldName]));
+    }
+
     return ListView(
       key: const PageStorageKey('personal_tab'),
       padding: const EdgeInsets.all(16),
@@ -429,24 +447,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               color: kCardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white10)),
-          child: Column(
-            children: [
-              _buildDetailRow(
-                  Iconsax.heart, "የክርስትና ስም", profile['christian_name']),
-              _buildDivider(),
-              _buildDetailRow(
-                  Iconsax.user_square, "የእናት ስም", profile['mother_name']),
-              _buildDivider(),
-              _buildDetailRow(Iconsax.call, "ስልክ ቁጥር", profile['phone_number']),
-              _buildDivider(),
-              _buildDetailRow(Icons.cake_outlined, "ዕድሜ", profile['age']),
-              _buildDivider(),
-              _buildDetailRow(
-                  Icons.date_range_outlined, "የትውልድ ቀን", profile['dob']),
-              _buildDivider(),
-              _buildDetailRow(Icons.male, "ጾታ", profile['gender']),
-            ],
-          ),
+          child: Column(children: rows),
         ),
         const SizedBox(height: 80),
       ],
@@ -455,6 +456,39 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildSpiritualTab(
       Map<String, dynamic> profile, ProfileConfigProvider config) {
+    // Build list of rows dynamically
+    final List<Widget> rows = [];
+
+    // Standard fields
+    final standardFields = [
+      {
+        'icon': Iconsax.user,
+        'label': 'የንስሐ አባት ስም',
+        'key': 'confession_father_name'
+      },
+      {
+        'icon': Iconsax.teacher,
+        'label': 'የመንፈሳዊ ትምህርት ክፍል',
+        'key': 'spiritual_class'
+      },
+      {'icon': Iconsax.people, 'label': 'ክፍል', 'key': 'kifil'},
+    ];
+
+    for (var field in standardFields) {
+      if (rows.isNotEmpty) rows.add(_buildDivider());
+      rows.add(_buildDetailRow(field['icon'] as IconData,
+          field['label'] as String, profile[field['key']]));
+    }
+
+    // Add custom fields from config
+    final spiritualFields =
+        config.customFields.where((f) => f.category == 'spiritual').toList();
+    for (var field in spiritualFields) {
+      if (rows.isNotEmpty) rows.add(_buildDivider());
+      rows.add(_buildDetailRow(
+          Icons.info_outline, field.label, profile[field.fieldName]));
+    }
+
     return ListView(
       key: const PageStorageKey('spiritual_tab'),
       padding: const EdgeInsets.all(16),
@@ -464,17 +498,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               color: kCardColor,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white10)),
-          child: Column(
-            children: [
-              _buildDetailRow(Iconsax.user, "የንስሐ አባት ስም",
-                  profile['confession_father_name']),
-              _buildDivider(),
-              _buildDetailRow(Iconsax.teacher, "የመንፈሳዊ ትምህርት ክፍል",
-                  profile['spiritual_class']),
-              _buildDivider(),
-              _buildDetailRow(Iconsax.people, "ክፍል", profile['kifil']),
-            ],
-          ),
+          child: Column(children: rows),
         ),
         const SizedBox(height: 80),
       ],
