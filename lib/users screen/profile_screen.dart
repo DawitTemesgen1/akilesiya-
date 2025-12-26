@@ -535,6 +535,10 @@ class _ProfileScreenState extends State<ProfileScreen>
         FutureBuilder<dynamic>(
           future: _gradesFuture,
           builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              print(
+                  "DEBUG ProfileScreen: Grades snapshot data: ${snapshot.data}");
+            }
             if (!snapshot.hasData) return const SizedBox.shrink();
             List<Map<String, dynamic>> courses = [];
             try {

@@ -202,7 +202,11 @@ class GradeService {
           profileData['name']?.toString();
       final spiritualClass = profileData['spiritual_class']?.toString();
 
+      debugPrint(
+          "DEBUG GradeService: Fetched profile. Spiritual Class: '$spiritualClass'");
+
       if (userId == null && user_id == null && studentIdKey == null) {
+        debugPrint("DEBUG GradeService: No user identifier found");
         return {
           'success': false,
           'message': 'No user identifier found in profile'
@@ -217,6 +221,8 @@ class GradeService {
 
       // If no spiritual class assigned, return empty
       if (spiritualClass == null || spiritualClass.isEmpty) {
+        debugPrint(
+            "DEBUG GradeService: No spiritual class assigned, returning empty result");
         return {
           'success': true,
           'data': {'grades': []},
