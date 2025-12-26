@@ -85,6 +85,16 @@ class _ProfileScreenState extends State<ProfileScreen>
           body: Center(child: CircularProgressIndicator(color: kGoldColor)));
     }
 
+    print("DEBUG ProfileScreen: Profile Keys: ${profile.keys.toList()}");
+    // Custom field debugging
+    profileConfig.customFields.forEach((f) {
+      if (f is Map) {
+        final name = f['name'];
+        print(
+            "DEBUG ProfileScreen: Checking custom field '$name' -> ${profile[name]}");
+      }
+    });
+
     return Scaffold(
       backgroundColor: kPrimaryColor,
       appBar: AppBar(
@@ -568,6 +578,11 @@ class _ProfileScreenState extends State<ProfileScreen>
                   print("Error parsing grades: $e");
                 }
               }
+            }
+
+            if (courses.isNotEmpty) {
+              print(
+                  "DEBUG ProfileScreen: First Course Structure: ${courses[0]}");
             }
 
             if (courses.isEmpty) {
