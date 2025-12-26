@@ -16,6 +16,7 @@ class ProfileConfigProvider with ChangeNotifier {
   String? get error => _error;
 
   ProfileConfigProvider() {
+    print('DEBUG ProfileConfig: Constructor called');
     fetchConfig();
   }
 
