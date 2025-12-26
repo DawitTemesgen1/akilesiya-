@@ -420,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   // --- LIST TABS ---
 
   Widget _buildPersonalTab(
-      Map<String, dynamic> profile, ProfileConfigProvider config) {
+      Map<String, dynamic> profile, ProfileConfigProvider profileConfig) {
     // Build list of rows dynamically
     final List<Widget> rows = [];
 
@@ -441,27 +441,18 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     // Add custom fields from config
-    print('DEBUG: Total custom fields: ${config.customFields.length}');
-    print('DEBUG: Custom fields data: ${config.customFields}');
-
-    final personalFields = config.customFields
+    final personalFields = profileConfig.customFields
         .where((f) =>
             f is Map &&
             f['profile_tab']?.toString().toUpperCase() == 'PERSONAL')
         .toList();
 
-    print('DEBUG: Personal fields found: ${personalFields.length}');
-    print('DEBUG: Personal fields: $personalFields');
-
     for (var field in personalFields) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
       final fieldMap = field as Map<String, dynamic>;
-      print(
-          'DEBUG: Adding personal field: ${fieldMap['name']} (${fieldMap['field_name']}) = ${profile[fieldMap['name']]}');
-      rows.add(_buildDetailRow(
-          Icons.info_outline,
-          fieldMap['name']?.toString() ?? 'Custom Field',
-          profile[fieldMap['name']]));
+      final val = _getCustomFieldValue(profile, fieldMap);
+      rows.add(_buildDetailRow(Icons.info_outline,
+          fieldMap['name']?.toString() ?? 'Custom Field', val));
     }
 
     return ListView(
@@ -482,33 +473,27 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildSpiritualTab(
-      Map<String, dynamic> profile, ProfileConfigProvider config) {
-    // Build list of rows dynamically
-    final List<Widget> rows = [];
+      Map<String, dynamic> profile, ProfileConfigProvider profileConfig) {
+    List<Widget> rows = [];
 
-    // Standard fields
-    final standardFields = [
-      {
-        'icon': Iconsax.user,
-        'label': 'የንስሐ አባት ስም',
-        'key': 'confession_father_name'
-      },
-      {
-        'icon': Iconsax.teacher,
-        'label': 'የመንፈሳዊ ትምህርት ክፍል',
-        'key': 'spiritual_class'
-      },
-      {'icon': Iconsax.people, 'label': 'ክፍል', 'key': 'kifil'},
-    ];
+    if (profileConfig.isWidgetVisible('confession_father_name')) {
+      rows.add(_buildDetailRow(Iconsax.user_square, "የንስሃ አባት ስም",
+          profile['confession_father_name']));
+      rows.add(_buildDivider());
+    }
 
-    for (var field in standardFields) {
+    if (profileConfig.isWidgetVisible('spiritual_class')) {
+      rows.add(_buildDetailRow(
+          Iconsax.teacher, "የመንፈሳዊ ትምህርት ክፍል", profile['spiritual_class']));
+    }
+
+    if (profileConfig.isWidgetVisible('kifil')) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
-      rows.add(_buildDetailRow(field['icon'] as IconData,
-          field['label'] as String, profile[field['key']]));
+      rows.add(_buildDetailRow(Iconsax.people, "ክፍል", profile['kifil']));
     }
 
     // Add custom fields from config
-    final spiritualFields = config.customFields
+    final spiritualFields = profileConfig.customFields
         .where((f) =>
             f is Map &&
             f['profile_tab']?.toString().toUpperCase() == 'SPIRITUAL')
@@ -516,10 +501,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     for (var field in spiritualFields) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
       final fieldMap = field as Map<String, dynamic>;
-      rows.add(_buildDetailRow(
-          Icons.info_outline,
-          fieldMap['name']?.toString() ?? 'Custom Field',
-          profile[fieldMap['name']]));
+      final val = _getCustomFieldValue(profile, fieldMap);
+      rows.add(_buildDetailRow(Icons.info_outline,
+          fieldMap['name']?.toString() ?? 'Custom Field', val));
     }
 
     return ListView(
@@ -537,6 +521,30 @@ class _ProfileScreenState extends State<ProfileScreen>
         const SizedBox(height: 80),
       ],
     );
+  }
+
+  String? _getCustomFieldValue(
+      Map<String, dynamic> profile, Map<String, dynamic> fieldMap) {
+    final name = fieldMap['name']?.toString();
+    if (name == null) return null;
+
+    // 1. Try direct lookup (if merged)
+    if (profile.containsKey(name) && profile[name] != null) {
+      return profile[name]?.toString();
+    }
+
+    // 2. Try looking in custom_fields_detail list (fallback)
+    if (profile['custom_fields_detail'] is List) {
+      final details = profile['custom_fields_detail'] as List;
+      final match = details.firstWhere(
+          (d) => d is Map && d['field_name'] == name,
+          orElse: () => null);
+      if (match != null) {
+        return match['field_value']?.toString();
+      }
+    }
+
+    return null;
   }
 
   Widget _buildEducationTab(
@@ -580,11 +588,6 @@ class _ProfileScreenState extends State<ProfileScreen>
               }
             }
 
-            if (courses.isNotEmpty) {
-              print(
-                  "DEBUG ProfileScreen: First Course Structure: ${courses[0]}");
-            }
-
             if (courses.isEmpty) {
               return Container(
                 padding: const EdgeInsets.all(20),
@@ -625,17 +628,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   color: kGoldColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16)))),
-                  ...courses.map((c) {
-                    double val = 0;
-                    try {
-                      val = double.parse(c['score'].toString());
-                    } catch (e) {}
-                    return _buildDetailRow(
-                        Iconsax.book_1,
-                        c['course_name']?.toString() ?? '-',
-                        val.toStringAsFixed(1),
-                        isGold: true);
-                  }).toList()
+                  ...courses.map((c) => _buildCourseItem(c)).toList()
                 ],
               ),
             );
@@ -662,6 +655,66 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         const SizedBox(height: 80),
       ],
+    );
+  }
+
+  Widget _buildCourseItem(Map<String, dynamic> c) {
+    double score = 0;
+    try {
+      score = double.parse(c['score'].toString());
+    } catch (e) {}
+
+    final assessments =
+        c['assessments'] is List ? c['assessments'] as List : [];
+
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        leading: Icon(Iconsax.book_1, color: kGoldColor, size: 20),
+        title: Text(
+          c['course_name']?.toString() ?? '-',
+          style:
+              GoogleFonts.notoSansEthiopic(color: Colors.white, fontSize: 14),
+        ),
+        trailing: Container(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+              color: kGoldColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8)),
+          child: Text(
+            score.toStringAsFixed(1),
+            style: GoogleFonts.notoSansEthiopic(
+                color: kGoldColor, fontWeight: FontWeight.bold),
+          ),
+        ),
+        children: [
+          if (assessments.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+              child: Text("ምንም የፈተና ዝርዝር የለም",
+                  style: TextStyle(color: Colors.white38, fontSize: 12)),
+            )
+          else
+            ...assessments.map((a) {
+              final aName = a['assessment_name'] ?? a['name'] ?? '-';
+              final aScore = a['score'] ?? 0;
+              final aMax = a['max_score'] ?? a['total'] ?? 100;
+              return Padding(
+                padding: const EdgeInsets.only(left: 48, right: 16, bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(aName,
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    Text("$aScore / $aMax",
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              );
+            }).toList(),
+          SizedBox(height: 8)
+        ],
+      ),
     );
   }
 
