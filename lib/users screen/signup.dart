@@ -59,7 +59,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   // Step 1: Account
   String? _selectedTenantId;
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController(); // Renamed from phone
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
@@ -112,7 +112,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _fullNameController.dispose();
@@ -191,10 +191,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
-    // Call Register API (Phone + OTP flow)
+    // Call Register API (Email + OTP flow)
     final result = await AuthService.register(
       fullName: _fullNameController.text.trim(),
-      phone: _phoneController.text.trim(),
+      email: _emailController.text.trim(),
       tenantName: selectedTenantName,
       christianName: _christianNameController.text.trim(),
       confessionFatherName: _confessionFatherController.text.trim(),
@@ -211,14 +211,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
 
     // Note: Other profile fields are currently not sent to API
-    // as we switched to simplified Phone Auth.
+    // as we switched to simplified Email Auth.
     // They can be updated later via Edit Profile.
 
     if (mounted) {
       if (result['success']) {
-        // Navigate to OTP Screen with phone and password
+        // Navigate to OTP Screen with email and password
         context.push('/otp-verify', extra: {
-          'phone': _phoneController.text.trim(),
+          'email': _emailController.text.trim(),
           'password': _passwordController.text.trim(),
         });
       } else {
@@ -388,7 +388,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  // STEP 1: Account (School + Phone)
+  // STEP 1: Account (School + Email)
   Step _buildStep1(AppLocalizations l10n) {
     return Step(
       title: const Text('Account'),
@@ -398,7 +398,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         key: _step1FormKey,
         child: Column(
           children: [
-            Text('Create your account with phone number and password.',
+            Text('Create your account with email and password.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(color: Colors.white70)),
             const SizedBox(height: 24),
@@ -438,14 +438,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const SizedBox(height: 16),
             TextFormField(
-              controller: _phoneController,
+              controller: _emailController,
               style: const TextStyle(color: Colors.white),
               decoration: _buildInputDecoration(
-                  labelText: "Phone Number", prefixIcon: Icons.phone_android),
-              keyboardType: TextInputType.phone,
+                  labelText: "Email Address", prefixIcon: Icons.email),
+              keyboardType: TextInputType.emailAddress,
               validator: (v) {
                 if (v == null || v.isEmpty) return l10n.errorRequiredField;
-                if (v.length < 9) return "Invalid phone number";
+                final emailRegex =
+                    RegExp(r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+                if (!emailRegex.hasMatch(v)) return "Invalid email address";
                 return null;
               },
             ),

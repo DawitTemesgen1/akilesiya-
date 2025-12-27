@@ -151,15 +151,15 @@ class MyApp extends StatelessWidget {
             if (extra is Map<String, dynamic>) {
               // From signup with password
               return OtpVerificationScreen(
-                phone: extra['phone'] as String,
+                email: extra['email'] as String,
                 password: extra['password'] as String?,
               );
             } else if (extra is String) {
               // From forgot password (legacy)
-              return OtpVerificationScreen(phone: extra);
+              return OtpVerificationScreen(email: extra);
             } else {
               // Fallback - shouldn't happen
-              return OtpVerificationScreen(phone: '');
+              return const OtpVerificationScreen(email: '');
             }
           },
         ),

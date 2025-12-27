@@ -1,13 +1,13 @@
 // lib/screens/family/family_member_detail_screen.dart
 
 import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
-import 'package:amde_haymanot_abalat_guday/models/ethiopian_date_picker.dart'; // Import for EthiopianDate
+
 import 'package:amde_haymanot_abalat_guday/services/family_service.dart';
+import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:intl/intl.dart';
 
 // --- UI Theme Constants ---
 const Color kBackgroundColor = Color(0xFFF4F7FC);
@@ -33,11 +33,29 @@ class RecommendedBook {
       this.isRead = false});
 
   factory RecommendedBook.fromJson(Map<String, dynamic> json) {
+    int parsedId;
+    if (json['id'] is int) {
+      parsedId = json['id'];
+    } else if (json['id'] is String) {
+      parsedId = int.tryParse(json['id']) ?? 0;
+    } else {
+      parsedId = 0;
+    }
+
+    DateTime parsedDeadline;
+    try {
+      parsedDeadline = DateTime.parse(json['deadline'].toString());
+    } catch (_) {
+      parsedDeadline = DateTime.now().add(const Duration(days: 7)); // Fallback
+    }
+
     return RecommendedBook(
-      id: json['id'],
-      title: json['title'],
-      deadline: DateTime.parse(json['deadline']),
-      isRead: json['is_read'] == 1 || json['is_read'] == true,
+      id: parsedId,
+      title: json['title']?.toString() ?? 'No Title',
+      deadline: parsedDeadline,
+      isRead: json['is_read'] == 1 ||
+          json['is_read'] == true ||
+          json['is_read'].toString() == 'true',
     );
   }
 }
@@ -109,20 +127,91 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
 
   Future<void> _fetchStudentDetails() async {
     final result = await FamilyService.getStudentDetails(widget.studentId);
+
+    // DEBUG LOGGING
+    debugPrint("---------------- FAMILY DETAIL DEBUG ----------------");
+    debugPrint("Success: ${result['success']}");
+    if (result['data'] != null) {
+      final data = result['data'];
+      debugPrint("Data Keys: ${data.keys.toList()}");
+
+      if (data['gradeHistory'] != null) {
+        debugPrint("gradeHistory Type: ${data['gradeHistory'].runtimeType}");
+        if (data['gradeHistory'] is List) {
+          debugPrint(
+              "gradeHistory Length: ${(data['gradeHistory'] as List).length}");
+          if ((data['gradeHistory'] as List).isNotEmpty) {
+            debugPrint(
+                "First Grade Entry: ${(data['gradeHistory'] as List).first}");
+          }
+        }
+      } else {
+        debugPrint("gradeHistory is NULL. Checking grade_history...");
+        debugPrint("grade_history: ${data['grade_history']}");
+      }
+
+      if (data['attendanceHistory'] != null) {
+        debugPrint(
+            "attendanceHistory (camel) found. Length: ${(data['attendanceHistory'] as List).length}");
+      } else if (data['attendance_history'] != null) {
+        debugPrint(
+            "attendance_history (snake) found. Length: ${(data['attendance_history'] as List).length}");
+      } else {
+        debugPrint("NO ATTENDANCE DATA FOUND");
+      }
+
+      final rawBooks = data['recommendedBooks'] ?? data['recommended_books'];
+      debugPrint("Books Data: $rawBooks");
+    } else {
+      debugPrint("DATA IS NULL");
+    }
+    debugPrint("-----------------------------------------------------");
+
     if (mounted && result['success']) {
       final data = result['data'];
+
+      // Parse data safely outside setState to prevent crashes aborting strict updates
+      List<RecommendedBook> parsedBooks = [];
+      String? initialGradeYear;
+
+      try {
+        final rawBooks =
+            data['recommendedBooks'] ?? data['recommended_books'] ?? [];
+        if (rawBooks is List) {
+          parsedBooks = rawBooks
+              .map((bookJson) {
+                try {
+                  return RecommendedBook.fromJson(bookJson);
+                } catch (e) {
+                  debugPrint("Error parsing book: $e");
+                  return null;
+                }
+              })
+              .whereType<RecommendedBook>()
+              .toList();
+        }
+      } catch (e) {
+        debugPrint("Error processing books list: $e");
+      }
+
+      try {
+        final gradeHistory = data['gradeHistory'] ?? data['grade_history'];
+        if (gradeHistory != null && (gradeHistory as List).isNotEmpty) {
+          final lastYear = gradeHistory.last as Map<String, dynamic>;
+          final spClass =
+              lastYear['spiritual_class'] ?? lastYear['spiritualClass'] ?? '';
+          final acYear =
+              lastYear['academic_year'] ?? lastYear['academicYear'] ?? '';
+          initialGradeYear = "$spClass - $acYear";
+        }
+      } catch (e) {
+        debugPrint("Error calculating initial grade year: $e");
+      }
+
       setState(() {
         _studentData = data;
-        _books = (data['recommendedBooks'] as List? ?? [])
-            .map((bookJson) => RecommendedBook.fromJson(bookJson))
-            .toList();
-
-        final gradeHistory = data['gradeHistory'] as List<dynamic>?;
-        if (gradeHistory != null && gradeHistory.isNotEmpty) {
-          final lastYear = gradeHistory.last as Map<String, dynamic>;
-          _selectedGradeYear =
-              "${lastYear['spiritualClass']} - ${lastYear['academicYear']}";
-        }
+        _books = parsedBooks;
+        _selectedGradeYear = initialGradeYear;
         _handleFilterChange();
       });
     } else if (mounted) {
@@ -135,8 +224,12 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
   // --- Filtering Logic ---
   void _handleFilterChange() {
     if (_studentData == null) return;
-    final history = List<Map<String, dynamic>>.from(
-        _studentData!['attendanceHistory'] ?? []);
+
+    final rawHistory = _studentData!['attendanceHistory'] ??
+        _studentData!['attendance_history'] ??
+        [];
+    final history = List<Map<String, dynamic>>.from(rawHistory);
+
     final newStats = _calculateAttendanceStats(history);
     setState(() {
       _attendanceStats = newStats;
@@ -162,7 +255,8 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
     }
 
     var filteredHistory = history.where((r) {
-      final dateString = r['attendance_date'] as String?;
+      // Robustly check for date key
+      final dateString = r['attendance_date'] ?? r['date'] as String?;
       if (dateString == null) return false;
       final recordDate = DateTime.tryParse(dateString);
       return recordDate != null && recordDate.isAfter(startDate);
@@ -250,6 +344,24 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
     );
   }
 
+  String _getAbsoluteUrl(String path) {
+    if (path.startsWith('http') || path.startsWith('https')) {
+      return path;
+    }
+    // Remove /api from base url if present to get root url
+    final baseUrl = ApiService.baseUrl.endsWith('/api')
+        ? ApiService.baseUrl.substring(0, ApiService.baseUrl.length - 4)
+        : ApiService.baseUrl;
+
+    // Ensure properly joined path
+    final cleanBase = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+
+    return '$cleanBase/$cleanPath';
+  }
+
   Widget _buildDetailHeader(Map<String, dynamic> data) {
     // Unique tag for the Hero animation
     final heroTag = 'family-member-avatar-${widget.studentId}';
@@ -263,9 +375,10 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
             child: CircleAvatar(
               radius: 40,
               child: ClipOval(
-                child: (data['profile_image_url'] != null)
+                child: (data['profile_image_url'] != null &&
+                        data['profile_image_url'].toString().isNotEmpty)
                     ? Image.network(
-                        data['profile_image_url'],
+                        _getAbsoluteUrl(data['profile_image_url']),
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
@@ -280,19 +393,21 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
             ),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(data['full_name'],
-                  style: GoogleFonts.notoSansEthiopic(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: kPrimaryColor)),
-              const SizedBox(height: 4),
-              Text(data['spiritual_class'] ?? 'ክፍል የለውም',
-                  style: GoogleFonts.notoSansEthiopic(
-                      fontSize: 16, color: kSubtleTextColor)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(data['full_name'],
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: kPrimaryColor)),
+                const SizedBox(height: 4),
+                Text(data['spiritual_class'] ?? 'ክፍል የለውም',
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 16, color: kSubtleTextColor)),
+              ],
+            ),
           ),
         ],
       ),
@@ -313,10 +428,11 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
   }
 
   Widget _buildGradesTab() {
+    final rawGrades =
+        _studentData!['gradeHistory'] ?? _studentData!['grade_history'] ?? [];
     return SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: _buildGradesCard(List<Map<String, dynamic>>.from(
-            _studentData!['gradeHistory'] ?? [])));
+        child: _buildGradesCard(List<Map<String, dynamic>>.from(rawGrades)));
   }
 
   Widget _buildReadingTab() {
@@ -438,15 +554,30 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
   }
 
   Widget _buildGradesCard(List<Map<String, dynamic>> gradeHistory) {
+    // Ensure we are using the correct data in case parameters are passed incorrectly
+    // But since we pass it from build() we should make sure the build() call is correct
+    // Let's rely on the passed gradeHistory, but update the build() text.
+
     final selectedYearData = _selectedGradeYear == null
         ? null
-        : gradeHistory.firstWhere(
-            (g) =>
-                "${g['spiritualClass']} - ${g['academicYear']}" ==
-                _selectedGradeYear,
-            orElse: () => {'grades': [], 'average': 0.0});
+        : gradeHistory.firstWhere((g) {
+            final spClass = g['spiritual_class'] ?? g['spiritualClass'] ?? '';
+            final acYear = g['academic_year'] ?? g['academicYear'] ?? '';
+            return "$spClass - $acYear" == _selectedGradeYear;
+          }, orElse: () => {'grades': [], 'average': 0.0});
     final gradesForTable = selectedYearData?['grades'] as List<dynamic>? ?? [];
     final overallAverage = selectedYearData?['average'] as double? ?? 0.0;
+
+    // Deduplicate history items for dropdown
+    final historySet = <String>{};
+    final uniqueHistory = gradeHistory.where((h) {
+      final spClass = h['spiritual_class'] ?? h['spiritualClass'] ?? '';
+      final acYear = h['academic_year'] ?? h['academicYear'] ?? '';
+      final key = "$spClass - $acYear";
+      if (historySet.contains(key)) return false;
+      historySet.add(key);
+      return true;
+    }).toList();
 
     return Card(
       elevation: 4,
@@ -462,7 +593,7 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
                     fontWeight: FontWeight.bold,
                     color: kPrimaryColor)),
             const SizedBox(height: 16),
-            if (gradeHistory.isNotEmpty)
+            if (uniqueHistory.isNotEmpty)
               DropdownButtonFormField<String>(
                 value: _selectedGradeYear,
                 isExpanded: true,
@@ -471,9 +602,13 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
                     prefixIcon: Icon(Iconsax.calendar_1),
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 10)),
-                items: gradeHistory.map((history) {
-                  final yearString =
-                      "${history['spiritualClass']} - ${history['academicYear']}";
+                items: uniqueHistory.map((history) {
+                  final spClass = history['spiritual_class'] ??
+                      history['spiritualClass'] ??
+                      '';
+                  final acYear =
+                      history['academic_year'] ?? history['academicYear'] ?? '';
+                  final yearString = "$spClass - $acYear";
                   return DropdownMenuItem(
                       value: yearString,
                       child: Text(yearString,
@@ -522,16 +657,49 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
                           numeric: true),
                     ],
                     rows: gradesForTable.map((grade) {
-                      int total = grade['total'] as int;
+                      int total = grade['total'] is int
+                          ? grade['total']
+                          : int.tryParse(grade['total'].toString()) ?? 0;
                       Color gradeColor = total >= 85
                           ? successColor
                           : (total >= 50 ? warningColor : dangerColor);
+
+                      // Handle data mapping
+                      String courseName =
+                          grade['course_name'] ?? grade['courseName'] ?? '';
+                      List scores =
+                          grade['scores'] is List ? grade['scores'] : [];
+
+                      // Helper to find score
+                      dynamic getScore(String key, String legacyKey) {
+                        // 1. Try legacy direct key
+                        if (grade.containsKey(legacyKey))
+                          return grade[legacyKey];
+                        // 2. Try searching in scores list
+                        if (scores.isNotEmpty) {
+                          final match = scores.firstWhere((s) {
+                            final name = s['assessment_name']
+                                    ?.toString()
+                                    .toLowerCase() ??
+                                '';
+                            return name.contains(key.toLowerCase());
+                          }, orElse: () => null);
+                          if (match != null) return match['score'];
+                        }
+                        return '-';
+                      }
+
+                      var assignment = getScore('assignment', 'assignment');
+                      var midExam =
+                          getScore('mid', 'mid_exam'); // Matches 'mid exam'
+                      var finalExam = getScore('final', 'final_exam');
+
                       return DataRow(cells: [
-                        DataCell(Text(grade['courseName'],
+                        DataCell(Text(courseName,
                             style: GoogleFonts.notoSansEthiopic())),
-                        DataCell(Text(grade['assignment'].toString())),
-                        DataCell(Text(grade['mid_exam'].toString())),
-                        DataCell(Text(grade['final_exam'].toString())),
+                        DataCell(Text(assignment.toString())),
+                        DataCell(Text(midExam.toString())),
+                        DataCell(Text(finalExam.toString())),
                         DataCell(Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [

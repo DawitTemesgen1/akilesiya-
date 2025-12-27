@@ -21,7 +21,7 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController(); // Renamed from phone
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -67,7 +67,7 @@ class _LoginState extends State<Login> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -86,12 +86,12 @@ class _LoginState extends State<Login> {
 
     setState(() => _isLoading = true);
 
-    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     // Call Login API with password
     final result = await AuthService.login(
-      phone: phone,
+      email: email,
       password: password,
       tenantName: _selectedTenantName!,
     );
@@ -238,7 +238,7 @@ class _LoginState extends State<Login> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 300),
                             child: Text(
-                              "Login with Phone Number",
+                              "Login with Email",
                               textAlign: TextAlign.center,
                               style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 16, color: Colors.white70),
@@ -255,18 +255,20 @@ class _LoginState extends State<Login> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 500),
                             child: TextFormField(
-                              controller: _phoneController,
+                              controller: _emailController,
                               style: const TextStyle(color: Colors.white),
                               decoration: _buildInputDecoration(
-                                  labelText: "Phone Number",
-                                  prefixIcon: Icons.phone_android),
-                              keyboardType: TextInputType.phone,
+                                  labelText: "Email Address",
+                                  prefixIcon: Icons.email),
+                              keyboardType: TextInputType.emailAddress,
                               validator: (value) {
                                 if (value == null || value.isEmpty)
                                   return l10n.errorRequiredField;
-                                // Simple phone validation?
-                                if (value.length < 9)
-                                  return "Invalid phone number";
+                                // Email validation
+                                final emailRegex = RegExp(
+                                    r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+                                if (!emailRegex.hasMatch(value))
+                                  return "Invalid email address";
                                 return null;
                               },
                             ),

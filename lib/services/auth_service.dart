@@ -9,17 +9,17 @@ import 'dart:developer' as developer;
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 
 class AuthService {
-  /// LOGIN with Phone + Password
+  /// LOGIN with Email + Password
   ///
   /// Traditional login with credentials.
   static Future<Map<String, dynamic>> login({
-    required String phone,
+    required String email,
     required String password,
     required String tenantName,
   }) async {
     try {
       final response = await ApiService.post('/auth/login', {
-        'phone': phone,
+        'email': email,
         'password': password,
         'tenantName': tenantName,
       });
@@ -54,11 +54,11 @@ class AuthService {
 
   /// REGISTER a new user
   ///
-  /// Sends name, phone, school to backend.
+  /// Sends name, email, school to backend.
   /// Backend creates inactive user and sends OTP.
   static Future<Map<String, dynamic>> register({
     required String fullName,
-    required String phone,
+    required String email,
     required String tenantName,
     String? christianName,
     String? confessionFatherName,
@@ -74,7 +74,7 @@ class AuthService {
     try {
       final response = await ApiService.post('/auth/register', {
         'fullName': fullName,
-        'phone': phone,
+        'email': email,
         'tenantName': tenantName,
         'christianName': christianName,
         'confessionFatherName': confessionFatherName,
@@ -113,15 +113,15 @@ class AuthService {
 
   /// VERIFY OTP (for registration)
   ///
-  /// Sends phone + OTP.
+  /// Sends email + OTP.
   /// Backend verifies OTP.
   static Future<Map<String, dynamic>> verifyOtp({
-    required String phone,
+    required String email,
     required String otp,
   }) async {
     try {
       final response = await ApiService.post('/auth/verify-otp', {
-        'phone': phone,
+        'email': email,
         'otp': otp,
       });
 
@@ -142,12 +142,12 @@ class AuthService {
   ///
   /// Completes registration by setting password.
   static Future<Map<String, dynamic>> setPassword({
-    required String phone,
+    required String email,
     required String password,
   }) async {
     try {
       final response = await ApiService.post('/auth/set-password', {
-        'phone': phone,
+        'email': email,
         'password': password,
       });
 
@@ -169,10 +169,10 @@ class AuthService {
 
   /// FORGOT PASSWORD - Request OTP
   static Future<Map<String, dynamic>> forgotPassword(
-      {required String phone}) async {
+      {required String email}) async {
     try {
       final response = await ApiService.post('/auth/forgot-password', {
-        'phone': phone,
+        'email': email,
       });
       final data = json.decode(response.body);
 
@@ -195,13 +195,13 @@ class AuthService {
 
   /// RESET PASSWORD with OTP
   static Future<Map<String, dynamic>> resetPassword({
-    required String phone,
+    required String email,
     required String otp,
     required String newPassword,
   }) async {
     try {
       final response = await ApiService.post('/auth/reset-password', {
-        'phone': phone,
+        'email': email,
         'otp': otp,
         'newPassword': newPassword,
       });
@@ -221,10 +221,10 @@ class AuthService {
   }
 
   /// RESEND OTP
-  static Future<Map<String, dynamic>> resendOtp({required String phone}) async {
+  static Future<Map<String, dynamic>> resendOtp({required String email}) async {
     try {
       final response = await ApiService.post('/auth/resend-otp', {
-        'phone': phone,
+        'email': email,
       });
       final data = json.decode(response.body);
 

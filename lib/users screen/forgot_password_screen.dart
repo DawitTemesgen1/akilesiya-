@@ -13,7 +13,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -30,7 +30,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _otpController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -47,7 +47,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       final result = await AuthService.forgotPassword(
-        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
       );
 
       if (mounted) {
@@ -58,7 +58,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('OTP sent to your phone'),
+              content: Text('OTP sent to your email'),
               backgroundColor: Colors.green,
             ),
           );
@@ -97,7 +97,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       final result = await AuthService.resetPassword(
-        phone: _phoneController.text.trim(),
+        email: _emailController.text.trim(),
         otp: _otpController.text.trim(),
         newPassword: password,
       );
@@ -131,7 +131,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> _handleResendOtp() async {
     setState(() => _isLoading = true);
     final result =
-        await AuthService.resendOtp(phone: _phoneController.text.trim());
+        await AuthService.resendOtp(email: _emailController.text.trim());
     if (mounted) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -198,7 +198,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           Text(
                             _otpSent
                                 ? 'Enter the OTP and your new password'
-                                : 'Enter your phone number to receive an OTP',
+                                : 'Enter your email address to receive an OTP',
                             textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
@@ -207,22 +207,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           ),
                           const SizedBox(height: 32),
 
-                          // Phone Number Field
+                          // Email Field
                           TextFormField(
-                            controller: _phoneController,
+                            controller: _emailController,
                             enabled: !_otpSent,
                             style: const TextStyle(color: Colors.white),
                             decoration: _buildInputDecoration(
-                              labelText: "Phone Number",
-                              prefixIcon: Iconsax.call,
+                              labelText: "Email Address",
+                              prefixIcon: Iconsax.sms,
                             ),
-                            keyboardType: TextInputType.phone,
+                            keyboardType: TextInputType.emailAddress,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please enter your phone number';
+                                return 'Please enter your email';
                               }
-                              if (value.length < 9) {
-                                return 'Invalid phone number';
+                              final emailRegex = RegExp(
+                                  r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+                              if (!emailRegex.hasMatch(value)) {
+                                return 'Invalid email address';
                               }
                               return null;
                             },

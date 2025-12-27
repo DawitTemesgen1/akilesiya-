@@ -9,13 +9,13 @@ import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
-  final String phone;
+  final String email;
   final String? password; // Optional password from signup
   final bool isRegistration; // Flag to determine if this is registration flow
 
   const OtpVerificationScreen({
     super.key,
-    required this.phone,
+    required this.email,
     this.password,
     this.isRegistration = true, // Default to registration flow
   });
@@ -48,7 +48,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     });
 
     try {
-      final result = await AuthService.verifyOtp(phone: widget.phone, otp: otp);
+      final result = await AuthService.verifyOtp(email: widget.email, otp: otp);
 
       if (result['success'] == true) {
         if (mounted) {
@@ -116,7 +116,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     try {
       final result = await AuthService.setPassword(
-        phone: widget.phone,
+        email: widget.email,
         password: password,
       );
 
@@ -124,7 +124,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         if (mounted) {
           // Now login with the new password
           final loginResult = await AuthService.login(
-            phone: widget.phone,
+            email: widget.email,
             password: password,
             tenantName: '', // Will be set from login response
           );
@@ -156,7 +156,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
   Future<void> _handleResend() async {
     setState(() => _isLoading = true);
-    final result = await AuthService.resendOtp(phone: widget.phone);
+    final result = await AuthService.resendOtp(email: widget.email);
     if (mounted) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -194,7 +194,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                _otpVerified ? 'Set Your Password' : 'Verify Phone Number',
+                _otpVerified ? 'Set Your Password' : 'Verify Email Address',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -205,7 +205,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               Text(
                 _otpVerified
                     ? 'Create a secure password for your account'
-                    : 'Enter the code sent to ${widget.phone}',
+                    : 'Enter the code sent to ${widget.email}',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
