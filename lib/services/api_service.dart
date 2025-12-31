@@ -25,7 +25,7 @@ class ApiService {
     if (kIsWeb) return 'http://localhost:3000/api';
 
     // For local dev on Android Emulator
-    if (Platform.isAndroid) return 'http://10.0.2.2:3000/api';
+    if (kDebugMode && Platform.isAndroid) return 'http://10.0.2.2:3000/api';
 
     // Default/iOS
     return 'http://localhost:3000/api';

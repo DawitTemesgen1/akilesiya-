@@ -90,6 +90,14 @@ Future<void> main() async {
 }
 
 String _getApiBaseUrl() {
+  // ---------------------------------------------------------------------------
+  // 🔗 API CONNECTION SETTINGS
+  // ---------------------------------------------------------------------------
+  // Currently pointing to: PRODUCTION SERVER
+  return 'https://akilesiya.amdehaymanot.com/api';
+
+  // --- Local Development Fallbacks (Uncomment to use Localhost) ---
+  /*
   if (kIsWeb) {
     return 'http://localhost:3000/api';
   }
@@ -98,22 +106,29 @@ String _getApiBaseUrl() {
   if (defaultTargetPlatform == TargetPlatform.android) {
     return 'http://10.0.2.2:3000/api';
   }
-
-  // Default fallback for iOS etc.
+  
   return 'http://localhost:3000/api';
+  */
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final userProvider = context.watch<UserProvider>();
-    final languageProvider = context.watch<LanguageProvider>();
+  State<MyApp> createState() => _MyAppState();
+}
 
-    final themeProvider = context.watch<ThemeProvider>();
+class _MyAppState extends State<MyApp> {
+  late final GoRouter _router;
 
-    final router = GoRouter(
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the router once.
+    // We access the UserProvider here to set up refreshListenable and redirects
+    final userProvider = context.read<UserProvider>();
+
+    _router = GoRouter(
       navigatorKey: navigatorKey,
       refreshListenable: userProvider,
       initialLocation: '/splash',
@@ -235,12 +250,19 @@ class MyApp extends StatelessWidget {
       ),
       debugLogDiagnostics: kDebugMode,
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Only these will trigger rebuilds, but Router won't reset
+    final languageProvider = context.watch<LanguageProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
 
     return MaterialApp.router(
       themeMode: themeProvider.themeMode,
       theme: _buildThemeData(false),
       darkTheme: _buildThemeData(true),
-      routerConfig: router,
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
         AppLocalizations.delegate,
