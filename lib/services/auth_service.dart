@@ -90,7 +90,10 @@ class AuthService {
 
       final data = json.decode(response.body);
 
-      if (response.statusCode == 201 && data['success'] == true) {
+      // Backend now returns 200 for OTP-first flow (initiation),
+      // or 201 if user was created directly (legacy/admin).
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          data['success'] == true) {
         return {
           'success': true,
           'message': data['message'] ?? 'Registration successful. Verify OTP.',
@@ -127,7 +130,8 @@ class AuthService {
 
       final data = json.decode(response.body);
 
-      if (response.statusCode == 200 && data['success'] == true) {
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          data['success'] == true) {
         return {'success': true, 'data': data['data']};
       } else {
         return {'success': false, 'message': data['message'] ?? 'Invalid OTP.'};
