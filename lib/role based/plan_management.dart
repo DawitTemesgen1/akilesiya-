@@ -420,8 +420,15 @@ class _PlanControlScreenState extends State<PlanControlScreen>
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
+
+    // DEBUG: Log roles for Plan Failure Diagnosis
+    print('DEBUG PlanControlScreen: User roles = ${userProvider.roles}');
+
     final bool isSuperiorAdmin =
-        userProvider.roles.contains('superior_admin'); // Robust role check
+        userProvider.roles.contains('superior_admin') ||
+            userProvider.roles.contains('system_admin');
+
+    print('DEBUG PlanControlScreen: isSuperiorAdmin = $isSuperiorAdmin');
 
     return DefaultTabController(
       length: isSuperiorAdmin ? 3 : 2,

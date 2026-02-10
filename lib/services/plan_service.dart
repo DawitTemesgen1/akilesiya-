@@ -9,7 +9,11 @@ class PlanService {
       Future<dynamic> request) async {
     try {
       final response = await request;
+      print(
+          'DEBUG PlanService: ${response.request?.url} - Status: ${response.statusCode}');
       final body = json.decode(response.body);
+      print('DEBUG PlanService: Body: $body');
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return {'success': true, 'data': body['data'] ?? body};
       }
