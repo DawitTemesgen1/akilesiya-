@@ -140,15 +140,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
-
-    // DEBUG: Log the actual roles in build
-    print('DEBUG AttendanceScreen build: User roles = ${userProvider.roles}');
-
     final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
     final isAttendanceAdmin = userProvider.roles.contains('attendance_admin');
-
-    print(
-        'DEBUG AttendanceScreen build: isSuperiorAdmin = $isSuperiorAdmin, isAttendanceAdmin = $isAttendanceAdmin');
 
     if (!isSuperiorAdmin && !isAttendanceAdmin) {
       return Scaffold(
@@ -1238,7 +1231,10 @@ class _AttendanceAdminManagementViewState
                       child: ListTile(
                         leading: CircleAvatar(
                             child: Text(
-                                (user['full_name'] ?? '?').substring(0, 1),
+                                (user['full_name'] != null &&
+                                        user['full_name'].toString().isNotEmpty)
+                                    ? user['full_name'].toString()[0]
+                                    : '?',
                                 style: GoogleFonts.notoSansEthiopic())),
                         title: Row(children: [
                           Text(
