@@ -9,10 +9,13 @@ class PlanService {
       Future<dynamic> request) async {
     try {
       final response = await request;
-      print(
+      debugPrint(
           'DEBUG PlanService: ${response.request?.url} - Status: ${response.statusCode}');
       final body = json.decode(response.body);
-      print('DEBUG PlanService: Body: $body');
+
+      if (response.statusCode >= 400) {
+        debugPrint('DEBUG PlanService: Body: $body');
+      }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return {'success': true, 'data': body['data'] ?? body};
@@ -30,7 +33,8 @@ class PlanService {
 
   static Future<Map<String, dynamic>> getPlanData({required int year}) {
     // Correct Route: /plans
-    return _handleRequest(ApiService.get('/plans?year=$year'));
+    // Try passing role context explicitly if backend supports it
+    return _handleRequest(ApiService.get('/plans?year=$year&role=plan_admin'));
   }
 
   static Future<Map<String, dynamic>> createDepartment({

@@ -196,7 +196,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
 
                   // Reconstruct custom fields for print *BEFORE* navigation
                   final List<dynamic> fieldsForPrint = [];
-                  _customFields.forEach((field) {
+                  for (var field in _customFields) {
                     final fieldId = field['id'].toString();
                     final selectedOptionId =
                         _selectedCustomFieldValues[fieldId];
@@ -211,7 +211,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
                         });
                       }
                     }
-                  });
+                  }
 
                   if (mounted) {
                     Navigator.push(
@@ -342,7 +342,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
 
           // --- ታክሏል: የአገልግሎት ሁኔታን ለመቆጣጠር Dropdown ---
           DropdownButtonFormField<String>(
-            value: _serviceStatus,
+            initialValue: _serviceStatus,
             decoration: const InputDecoration(
               labelText: 'የአገልግሎት ሁኔታ',
               prefixIcon: Icon(Iconsax.award),
@@ -369,7 +369,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 16.0),
               child: DropdownButtonFormField<String>(
-                value: _selectedCustomFieldValues[fieldId],
+                initialValue: _selectedCustomFieldValues[fieldId],
                 decoration: InputDecoration(
                     labelText: field['name'],
                     border: const OutlineInputBorder()),
@@ -384,7 +384,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
                 },
               ),
             );
-          }).toList(),
+          }),
 
           SwitchListTile(
             title: const Text('የአካውንት እንቅስቃሴ'),
