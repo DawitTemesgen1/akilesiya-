@@ -144,13 +144,24 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   void initState() {
     super.initState();
     final userProvider = context.read<UserProvider>();
+
+    // DEBUG: Log the actual roles
+    print('DEBUG AttendanceScreen: User roles = ${userProvider.roles}');
+
     final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
     final isAttendanceAdmin = userProvider.roles.contains('attendance_admin');
+
+    print(
+        'DEBUG AttendanceScreen: isSuperiorAdmin = $isSuperiorAdmin, isAttendanceAdmin = $isAttendanceAdmin');
+
     int tabCount = 0;
     if (isAttendanceAdmin || isSuperiorAdmin) tabCount = 1;
     if (isSuperiorAdmin) tabCount = 2;
-    _tabController =
-        TabController(length: tabCount > 0 ? tabCount : 1, vsync: this);
+
+    print('DEBUG AttendanceScreen: tabCount = $tabCount');
+
+    _tabController = TabController(
+        length: tabCount > 0 ? tabCount : 1, vsync: this, initialIndex: 0);
   }
 
   @override
@@ -162,8 +173,15 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
+
+    // DEBUG: Log the actual roles in build
+    print('DEBUG AttendanceScreen build: User roles = ${userProvider.roles}');
+
     final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
     final isAttendanceAdmin = userProvider.roles.contains('attendance_admin');
+
+    print(
+        'DEBUG AttendanceScreen build: isSuperiorAdmin = $isSuperiorAdmin, isAttendanceAdmin = $isAttendanceAdmin');
 
     if (!isSuperiorAdmin && !isAttendanceAdmin) {
       return Scaffold(
@@ -202,7 +220,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     }
 
     if (_tabController.length != tabs.length) {
-      _tabController = TabController(length: tabs.length, vsync: this);
+      final oldIndex = _tabController.index;
+      _tabController.dispose();
+      _tabController = TabController(
+        length: tabs.length,
+        vsync: this,
+        initialIndex: oldIndex < tabs.length ? oldIndex : 0,
+      );
     }
 
     return Scaffold(
@@ -690,7 +714,6 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                           null,
                           ..._dynamicFilterOptions
                               .map((opt) => opt['id'] as int)
-                              
                         ],
                         label: _dynamicFilterField != null
                             ? _dynamicFilterField['name']
@@ -1050,8 +1073,9 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-                color:
-                    isSelected ? activeColor.withValues(alpha: 0.2) : backgroundColor,
+                color: isSelected
+                    ? activeColor.withValues(alpha: 0.2)
+                    : backgroundColor,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                     color: isSelected ? activeColor : Colors.white24,
@@ -1104,7 +1128,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.05), shape: BoxShape.circle),
+                color: primaryColor.withValues(alpha: 0.05),
+                shape: BoxShape.circle),
             child: Icon(Iconsax.profile_2user, color: primaryColor, size: 50)),
         const SizedBox(height: 20),
         Text(AmharicStringsAttendance.emptyStateTitle, // Translated
