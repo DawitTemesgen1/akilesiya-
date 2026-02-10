@@ -2,17 +2,13 @@ import 'package:amde_haymanot_abalat_guday/services/template_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/user_admin_service.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:intl/intl.dart';
-import 'package:collection/collection.dart';
-
-import 'package:amde_haymanot_abalat_guday/admin%20only/user_data_print_preview.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
+import 'package:amde_haymanot_abalat_guday/services/app_theme.dart';
 import 'package:flutter/services.dart';
 import 'dart:typed_data';
 
-// --- ቀለሞች ---
-const Color primaryColor = Color.fromARGB(255, 1, 37, 100);
-const Color dangerColor = Color(0xFFDC3545);
-const Color successColor = Color(0xFF198754);
+import 'package:amde_haymanot_abalat_guday/admin%20only/user_data_print_preview.dart';
+import 'package:collection/collection.dart';
 
 class AdminEditUserScreen extends StatefulWidget {
   final String userId;
@@ -126,7 +122,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
       final wasSuccessful = result['success'] ?? false;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(result['message']!),
-          backgroundColor: wasSuccessful ? successColor : dangerColor));
+          backgroundColor: wasSuccessful ? AppTheme.success : AppTheme.danger));
       if (wasSuccessful) Navigator.of(context).pop(true);
     }
     setState(() => _isSaving = false);
@@ -286,10 +282,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
             _infoTile(Iconsax.call, 'ስልክ ቁጥር', _userDetails?['phone_number']),
             _infoTile(Iconsax.cake, 'ዕድሜ', _userDetails?['age']?.toString()),
             if (_userDetails?['dob'] != null && _userDetails!['dob'].isNotEmpty)
-              _infoTile(
-                  'የትውልድ ቀን',
-                  DateFormat.yMMMd()
-                      .format(DateTime.parse(_userDetails!['dob']))),
+              _infoTile('የትውልድ ቀን', _formatDate(_userDetails!['dob'])),
             _infoTile(Iconsax.rulerpen, 'የትምህርት ደረጃ',
                 _userDetails?['academic_level']),
             const Divider(height: 24),
@@ -399,7 +392,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
             value: _isActive,
             onChanged: (val) => setState(() => _isActive = val),
             secondary: Icon(_isActive ? Iconsax.unlock : Iconsax.lock,
-                color: primaryColor),
+                color: AppTheme.primary),
             contentPadding: EdgeInsets.zero,
           ),
 
@@ -416,7 +409,7 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white))
                   : const Text('የአስተዳዳሪ ለውጦችን ያስቀምጡ'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle:
@@ -427,5 +420,16 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
         ],
       ),
     );
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final dt = DateTime.parse(dateStr);
+      // Hide invalid/default dates like 1899
+      if (dt.year < 1920) return '-';
+      return EthiopianDate.fromGregorian(dt).toString();
+    } catch (e) {
+      return dateStr;
+    }
   }
 }

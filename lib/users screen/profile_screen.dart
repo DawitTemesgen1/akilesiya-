@@ -5,8 +5,7 @@ import 'dart:developer' as developer;
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:animate_do/animate_do.dart';
-import 'package:intl/intl.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -14,12 +13,11 @@ import 'package:percent_indicator/percent_indicator.dart';
 import 'package:amde_haymanot_abalat_guday/providers/profile_config_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
-import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
-import 'package:amde_haymanot_abalat_guday/services/auth_service.dart';
+
 import 'package:amde_haymanot_abalat_guday/services/profile_service.dart';
 import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/edit_profile_sheet.dart';
-import 'package:amde_haymanot_abalat_guday/users%20screen/homepage.dart';
+
 import 'package:amde_haymanot_abalat_guday/users%20screen/user_attendance_history.dart';
 
 // --- EXACT COLOR PALETTE FROM ORIGINAL SCREENSHOTS ---
@@ -617,23 +615,50 @@ class _ProfileScreenState extends State<ProfileScreen>
     final name = fieldMap['name']?.toString();
     if (name == null) return null;
 
-    // 1. Try direct lookup (if merged)
-    if (profile.containsKey(name) && profile[name] != null) {
-      return profile[name]?.toString();
-    }
+    final fieldType = (fieldMap['field_type'] ?? fieldMap['type'])
+            ?.toString()
+            .toUpperCase() ??
+        'TEXT';
+    final options = fieldMap['options'] as List<dynamic>? ?? [];
 
-    // 2. Try looking in custom_fields_detail list (fallback)
-    if (profile['custom_fields_detail'] is List) {
+    String? rawValue;
+
+    // 1. Try direct lookup
+    if (profile.containsKey(name) && profile[name] != null) {
+      rawValue = profile[name]?.toString();
+    }
+    // 2. Try fallback lookup
+    else if (profile['custom_fields_detail'] is List) {
       final details = profile['custom_fields_detail'] as List;
       final match = details.firstWhere(
           (d) => d is Map && d['field_name'] == name,
           orElse: () => null);
       if (match != null) {
-        return match['field_value']?.toString();
+        rawValue = match['field_value']?.toString();
       }
     }
 
-    return null;
+    if (rawValue == null) return null;
+
+    // If it's an option-based type, try to find the label
+    final isChoiceBased = [
+      'DROPDOWN',
+      'RADIO',
+      'CHECKBOX',
+      'MULTISELECT',
+      'VOTE',
+      'TOGGLE'
+    ].contains(fieldType);
+
+    if (isChoiceBased && options.isNotEmpty) {
+      final matches = options.where((opt) => opt['id'].toString() == rawValue);
+      final match = matches.isNotEmpty ? matches.first : null;
+      if (match != null) {
+        return match['option_value']?.toString();
+      }
+    }
+
+    return rawValue;
   }
 
   // State for filtering

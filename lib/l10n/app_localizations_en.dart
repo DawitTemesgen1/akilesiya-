@@ -18,7 +18,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startWelcome => 'Peace';
 
   @override
-  String get startDescription => 'In the name of the Father, the Son, and the Holy Spirit, One God, Amen. The Amde Haymanot Sunday School of the Ethiopian Orthodox Tewahedo Church, St. Mary\'s Cathedral in Jimma Diocese.';
+  String get startDescription =>
+      'In the name of the Father, the Son, and the Holy Spirit, One God, Amen. The Amde Haymanot Sunday School of the Ethiopian Orthodox Tewahedo Church, St. Mary\'s Cathedral in Jimma Diocese.';
 
   @override
   String get loginButton => 'Login';
@@ -81,7 +82,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorPasswordsDoNotMatch => 'Passwords do not match';
 
   @override
-  String get homePageTitle => 'Home';
+  String get homePageTitle => 'News';
+
+  @override
+  String get chatPageTitle => 'Chat';
 
   @override
   String get profilePageTitle => 'Profile';
@@ -90,7 +94,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get learningPageTitle => 'Learning';
 
   @override
-  String get managementPageTitle => 'Management';
+  String get managementPageTitle => 'Community';
+
+  @override
+  String get postScopeAllSchools => 'All Sunday Schools';
+
+  @override
+  String get postScopeMySchoolOnly => 'My Sunday School Only';
+
+  @override
+  String get postScopeSelection => 'Who should see this post?';
 
   @override
   String get settingsTitle => 'Settings';
@@ -246,7 +259,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sysAdminToolsLabel => 'System Admin Tools';
 
   @override
-  String get sysAdminOverviewSubtitle => 'Overall platform status and statistics';
+  String get sysAdminOverviewSubtitle =>
+      'Overall platform status and statistics';
 
   @override
   String get sysAdminRecentActivity => 'Recent Activity';
@@ -276,7 +290,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get attendanceErrorPrefix => 'Error:';
 
   @override
-  String get attendanceNoRecords => 'No attendance records found for this user.';
+  String get attendanceNoRecords =>
+      'No attendance records found for this user.';
 
   @override
   String get attendanceDetailTypeLabel => 'Type';
@@ -315,7 +330,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privateHomeWelcome => 'Welcome Home! 🏡';
 
   @override
-  String get privateHomeMessage => 'Stay connected with your spiritual family. New updates, events, and blessings await.';
+  String get privateHomeMessage =>
+      'Stay connected with your spiritual family. New updates, events, and blessings await.';
 
   @override
   String get privateHomeNewUpdates => 'New Updates';
@@ -459,7 +475,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileGuardianPhone => 'Guardian\'s Phone';
 
   @override
-  String get loginLoadSchoolsError => 'Failed to load schools. Check connection.';
+  String get loginLoadSchoolsError =>
+      'Failed to load schools. Check connection.';
 
   @override
   String get contentLoadError => 'Failed to load page content.';
@@ -477,7 +494,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dateParseError => 'Error parsing date';
 
   @override
-  String get refreshSignalReceived => 'Refresh signal received! Reloading data.';
+  String get refreshSignalReceived =>
+      'Refresh signal received! Reloading data.';
 
   @override
   String get failedToLoadFeed => 'Failed to load feed';
@@ -699,7 +717,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privateHomepageWelcomeHome => 'Welcome Home! 🏡';
 
   @override
-  String get privateHomepageWelcomeMessage => 'Stay connected with your spiritual family. New updates, events, and blessings await you.';
+  String get privateHomepageWelcomeMessage =>
+      'Stay connected with your spiritual family. New updates, events, and blessings await you.';
 
   @override
   String get privateHomepageNewUpdates => 'New Updates';
@@ -906,7 +925,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginFailedPrefix => 'Login failed: ';
 
   @override
-  String get loginPasswordLengthError => 'Password must be at least 6 characters';
+  String get loginPasswordLengthError =>
+      'Password must be at least 6 characters';
 
   @override
   String get loginLoadingSchools => 'Loading Schools...';
@@ -1029,28 +1049,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signupStepAgreement => 'Agreement';
 
   @override
-  String get signupAccountDesc => 'First, select your school and create your login credentials.';
+  String get signupAccountDesc =>
+      'First, select your school and create your login credentials.';
 
   @override
-  String get signupPersonalDesc => 'Please fill in your personal details as per the registration form.';
+  String get signupPersonalDesc =>
+      'Please fill in your personal details as per the registration form.';
 
   @override
-  String get signupGuardianDesc => 'If you are under 18, please provide guardian information.';
+  String get signupGuardianDesc =>
+      'If you are under 18, please provide guardian information.';
 
   @override
-  String get signupServiceDesc => 'Please provide your past service history, if any.';
+  String get signupServiceDesc =>
+      'Please provide your past service history, if any.';
 
   @override
-  String get signupErrorAccountFields => 'Please complete all required fields in the Account step.';
+  String get signupErrorAccountFields =>
+      'Please complete all required fields in the Account step.';
 
   @override
-  String get signupErrorPersonalFields => 'Please complete all required fields in the Personal step.';
+  String get signupErrorPersonalFields =>
+      'Please complete all required fields in the Personal step.';
 
   @override
-  String get signupErrorAgreeRequired => 'You must agree to the pledge to complete registration.';
+  String get signupErrorAgreeRequired =>
+      'You must agree to the pledge to complete registration.';
 
   @override
-  String get signupErrorSchoolNotFound => 'Could not find the selected school. Please try again.';
+  String get signupErrorSchoolNotFound =>
+      'Could not find the selected school. Please try again.';
 
   @override
   String get signupErrorUnknown => 'An unknown error occurred.';

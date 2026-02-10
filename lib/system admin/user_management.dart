@@ -44,6 +44,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       limit: _itemsPerPage,
     );
 
+    if (!mounted) return;
+
     if (result['success'] == true) {
       final data = result['data'];
       setState(() {
@@ -65,6 +67,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
   Future<void> _loadSchools() async {
     final result = await SystemAdminService.getSchools();
+    if (!mounted) return;
     if (result['success'] == true) {
       setState(() => _schools = result['data']['schools']);
     }
@@ -177,7 +180,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Text(
@@ -325,35 +328,42 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         user['id'], // User ID
       );
 
+      if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
 
       if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Successfully promoted ${user['full_name']} to Superior Admin!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Successfully promoted ${user['full_name']} to Superior Admin!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
 
         // Refresh the user list to show updated role
         _loadUsers();
       } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to promote user: ${result['message']}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to promote user: ${result['message']}'),
+            content: Text('Error promoting user: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      Navigator.pop(context); // Close loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error promoting user: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -405,6 +415,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final newStatus = user['is_active'] != 1;
     final result =
         await SystemAdminService.toggleUserStatus(user['id'], newStatus);
+
+    if (!mounted) return;
 
     if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(

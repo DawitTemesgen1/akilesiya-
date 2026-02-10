@@ -10,7 +10,10 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
+import 'package:amde_haymanot_abalat_guday/services/public_feed_service.dart'; // Added
 import 'package:amde_haymanot_abalat_guday/providers/tenant_provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart'; // Added
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart'; // Fixed import path
 
 // =================================================================
 // --- FIX: Import the new, centralized refresh service ---
@@ -62,10 +65,17 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
       final postsResult = await PrivateFeedService.getPrivatePosts(tenantId);
       if (mounted) {
         if (postsResult['success']) {
+          final dynamic rawData = postsResult['data'];
+          List<dynamic> postsList = [];
+
+          if (rawData is List) {
+            postsList = rawData;
+          } else if (rawData is Map && rawData['posts'] is List) {
+            postsList = rawData['posts'];
+          }
+
           setState(() {
-            _posts = (postsResult['data'] as List)
-                .map((p) => PrivatePost.fromJson(p))
-                .toList();
+            _posts = postsList.map((p) => PrivatePost.fromJson(p)).toList();
             _isLoading = false;
           });
         } else {
@@ -124,6 +134,15 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
         TextEditingController(text: post?.imageUrl ?? '');
     PostType selectedType = post?.type ?? PostType.news;
     bool isImportant = post?.isImportant ?? false;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final canManagePublicPosts = userProvider.canManagePublicPosts;
+    bool isGlobalPost = false; // By default private in this screen
+    // Note: Since this screen lists private posts, newly created ones are private by default.
+    // In edit mode, if we were to support switching, we'd need more metadata.
+    // For now, let's keep it simple as per user request.
+
+    // Removed availableGroups and selectedTargetGroups for school-scope targeting.
+
     bool isSubmitting = false;
     XFile? selectedImageXFile;
     Uint8List? selectedImageBytes;
@@ -165,6 +184,7 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                 'imageUrl':
                     selectedImageXFile == null ? imageUrlController.text : '',
               };
+
               try {
                 Map<String, dynamic> result;
                 if (isEditing) {
@@ -173,20 +193,39 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                       postId: currentPost!.id,
                       fields: fields,
                       file: selectedImageXFile!,
+                      targetGroups: [], // No longer using specific roles
                     );
                   } else {
+                    final data = Map<String, dynamic>.from(fields);
+                    data['targetGroups'] = [];
                     result = await PrivateFeedService.updatePrivatePost(
-                        currentPost!.id, Map<String, dynamic>.from(fields));
+                        currentPost!.id, data);
                   }
                 } else {
-                  if (selectedImageXFile != null) {
-                    result = await PrivateFeedService.createPostWithImage(
-                      fields: fields,
-                      file: selectedImageXFile!,
-                    );
+                  if (isGlobalPost) {
+                    // Call Public Feed Service
+                    if (selectedImageXFile != null) {
+                      result =
+                          await PublicFeedService.createPublicPostWithImage(
+                        fields: fields,
+                        file: selectedImageXFile!,
+                      );
+                    } else {
+                      result = await PublicFeedService.createPublicPost(fields);
+                    }
                   } else {
-                    result = await PrivateFeedService.createPrivatePost(
-                        Map<String, dynamic>.from(fields));
+                    // Call Private Feed Service
+                    if (selectedImageXFile != null) {
+                      result = await PrivateFeedService.createPostWithImage(
+                        fields: fields,
+                        file: selectedImageXFile!,
+                        targetGroups: [],
+                      );
+                    } else {
+                      final data = Map<String, dynamic>.from(fields);
+                      data['targetGroups'] = [];
+                      result = await PrivateFeedService.createPrivatePost(data);
+                    }
                   }
                 }
                 if (!Navigator.of(dialogContext).mounted) return;
@@ -286,6 +325,42 @@ class _AdminPostManagementScreenState extends State<AdminPostManagementScreen> {
                             value: isImportant,
                             onChanged: (val) =>
                                 setDialogState(() => isImportant = val)),
+                        const Divider(height: 32),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                              AppLocalizations.of(context)!.postScopeSelection,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(height: 8),
+                        RadioListTile<bool>(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(AppLocalizations.of(context)!
+                              .postScopeMySchoolOnly),
+                          value: false,
+                          groupValue: isGlobalPost,
+                          onChanged: isEditing
+                              ? null // Disable scope change on edit for now
+                              : (val) =>
+                                  setDialogState(() => isGlobalPost = val!),
+                        ),
+                        RadioListTile<bool>(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(AppLocalizations.of(context)!
+                              .postScopeAllSchools),
+                          value: true,
+                          groupValue: isGlobalPost,
+                          onChanged: (isEditing || !canManagePublicPosts)
+                              ? null
+                              : (val) =>
+                                  setDialogState(() => isGlobalPost = val!),
+                          subtitle: !canManagePublicPosts
+                              ? const Text("Requires higher permissions",
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.red))
+                              : null,
+                        ),
                       ],
                     ),
                   ),

@@ -8,17 +8,33 @@ class PublicFeedService {
       Future<http.Response> futureResponse) async {
     try {
       final response = await futureResponse;
-      final body = json.decode(response.body);
+      final dynamic body = json.decode(response.body);
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
+        dynamic responseData;
+        String? message;
+
+        if (body is Map) {
+          responseData = body['data'] ?? body;
+          message = body['message']?.toString();
+        } else {
+          // If it's a list or something else, handle it directly
+          responseData = body;
+        }
+
         return {
           'success': true,
-          'data': body['data'] ?? body,
-          'message': body['message']
+          'data': responseData,
+          'message': message,
         };
       } else {
+        String errorMessage = 'An API error occurred.';
+        if (body is Map && body['message'] != null) {
+          errorMessage = body['message'].toString();
+        }
         return {
           'success': false,
-          'message': body['message'] ?? 'An API error occurred.'
+          'message': errorMessage,
         };
       }
     } catch (e) {
@@ -54,8 +70,12 @@ class PublicFeedService {
   static Future<Map<String, dynamic>> createPublicPostWithImage({
     required Map<String, String> fields,
     required XFile file,
+    List<String>? targetGroups,
   }) async {
     try {
+      if (targetGroups != null && targetGroups.isNotEmpty) {
+        fields['targetGroups'] = json.encode(targetGroups);
+      }
       final streamedResponse = await ApiService.upload(
         'public-feed/admin/posts', // Use the new admin endpoint
         fields: fields,
@@ -71,12 +91,18 @@ class PublicFeedService {
 
   static Future<Map<String, dynamic>> createPublicPost(
       Map<String, dynamic> postData) {
+    if (postData['targetGroups'] != null && postData['targetGroups'] is List) {
+      postData['targetGroups'] = json.encode(postData['targetGroups']);
+    }
     return _processResponse(
         ApiService.post('public-feed/admin/posts', postData));
   }
 
   static Future<Map<String, dynamic>> updatePublicPost(
       String postId, Map<String, dynamic> postData) {
+    if (postData['targetGroups'] != null && postData['targetGroups'] is List) {
+      postData['targetGroups'] = json.encode(postData['targetGroups']);
+    }
     return _processResponse(
         ApiService.put('public-feed/admin/posts/$postId', postData));
   }

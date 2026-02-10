@@ -26,16 +26,27 @@ class TemplateService {
   }
 
   static Future<Map<String, dynamic>> createCustomField(
-      String name, String managedBy, String profileTab) {
+      String name, String managedBy, String profileTab, String fieldType) {
     return _handleResponse(ApiService.post('/template/fields', {
       'name': name,
       'managed_by': managedBy,
       'profile_tab': profileTab,
+      'field_type': fieldType,
     }));
   }
 
   static Future<Map<String, dynamic>> deleteCustomField(int id) {
     return _handleResponse(ApiService.delete('/template/fields/$id'));
+  }
+
+  static Future<Map<String, dynamic>> updateCustomField(int id, String name,
+      String managedBy, String profileTab, String fieldType) {
+    return _handleResponse(ApiService.put('/template/fields/$id', {
+      'name': name,
+      'managed_by': managedBy,
+      'profile_tab': profileTab,
+      'field_type': fieldType,
+    }));
   }
 
   // === Option Functions ===

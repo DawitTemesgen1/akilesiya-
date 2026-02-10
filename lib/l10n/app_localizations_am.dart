@@ -18,7 +18,8 @@ class AppLocalizationsAm extends AppLocalizations {
   String get startWelcome => 'ሰላም';
 
   @override
-  String get startDescription => 'በስመ አብ ወወልድ ወመንፈስ ቅዱስ አሐዱ አምላክ አሜን። በኢትዮጵያ ኦርቶዶክስ ተዋህዶ ቤተክርስቲያን በጅማ ሀገረ ስብከት የጅማ ደ/ኤ/ቅ/ድ ማርያም ካቴድራል ዓምደ ሃይማኖት ሰ/ት/ቤት።';
+  String get startDescription =>
+      'በስመ አብ ወወልድ ወመንፈስ ቅዱስ አሐዱ አምላክ አሜን። በኢትዮጵያ ኦርቶዶክስ ተዋህዶ ቤተክርስቲያን በጅማ ሀገረ ስብከት የጅማ ደ/ኤ/ቅ/ድ ማርያም ካቴድራል ዓምደ ሃይማኖት ሰ/ት/ቤት።';
 
   @override
   String get loginButton => 'ይግቡ';
@@ -81,7 +82,10 @@ class AppLocalizationsAm extends AppLocalizations {
   String get errorPasswordsDoNotMatch => 'የይለፍ ቃሎች አይዛመዱም';
 
   @override
-  String get homePageTitle => 'ዋና ገጽ';
+  String get homePageTitle => 'ዜና';
+
+  @override
+  String get chatPageTitle => 'ውይይት';
 
   @override
   String get profilePageTitle => 'የግል መረጃ';
@@ -90,7 +94,16 @@ class AppLocalizationsAm extends AppLocalizations {
   String get learningPageTitle => 'ትምህርት';
 
   @override
-  String get managementPageTitle => 'አስተዳደር';
+  String get managementPageTitle => 'ማህበረሰብ';
+
+  @override
+  String get postScopeAllSchools => 'ለሁሉም ሰንበት ትምህርት ቤቶች';
+
+  @override
+  String get postScopeMySchoolOnly => 'ለእኔ ሰንበት ትምህርት ቤት ብቻ';
+
+  @override
+  String get postScopeSelection => 'ይህ ልጥፍ ለማን ይታይ?';
 
   @override
   String get settingsTitle => 'ቅንብሮች';
@@ -315,7 +328,8 @@ class AppLocalizationsAm extends AppLocalizations {
   String get privateHomeWelcome => 'እንኳን ደህና መጡ! 🏡';
 
   @override
-  String get privateHomeMessage => 'ከመንፈሳዊ ቤተሰብዎ ጋር እንደተገናኙ ይቆዩ። አዲስ ዝመናዎች፣ ዝግጅቶች እና በረከቶች ይጠብቆታል።';
+  String get privateHomeMessage =>
+      'ከመንፈሳዊ ቤተሰብዎ ጋር እንደተገናኙ ይቆዩ። አዲስ ዝመናዎች፣ ዝግጅቶች እና በረከቶች ይጠብቆታል።';
 
   @override
   String get privateHomeNewUpdates => 'አዲስ ዝመናዎች';
@@ -699,7 +713,8 @@ class AppLocalizationsAm extends AppLocalizations {
   String get privateHomepageWelcomeHome => 'እንኳን ደህና መጡ! 🏡';
 
   @override
-  String get privateHomepageWelcomeMessage => 'ከመንፈሳዊ ቤተሰብዎ ጋር እንደተገናኙ ይቆዩ። አዲስ ዝመናዎች፣ ዝግጅቶች እና በረከቶች ይጠብቆታል።';
+  String get privateHomepageWelcomeMessage =>
+      'ከመንፈሳዊ ቤተሰብዎ ጋር እንደተገናኙ ይቆዩ። አዲስ ዝመናዎች፣ ዝግጅቶች እና በረከቶች ይጠብቆታል።';
 
   @override
   String get privateHomepageNewUpdates => 'አዲስ ዝመናዎች';
@@ -1029,7 +1044,8 @@ class AppLocalizationsAm extends AppLocalizations {
   String get signupStepAgreement => 'ስምምነት';
 
   @override
-  String get signupAccountDesc => 'በመጀመሪያ ትምህርት ቤትዎን ይምረጡ እና የመግቢያ ማረጋገጫዎን ይፍጠሩ።';
+  String get signupAccountDesc =>
+      'በመጀመሪያ ትምህርት ቤትዎን ይምረጡ እና የመግቢያ ማረጋገጫዎን ይፍጠሩ።';
 
   @override
   String get signupPersonalDesc => 'እባክዎን የግል መረጃዎን በምዝገባው ቅጽ መሰረት ያስገቡ።';
@@ -1041,16 +1057,19 @@ class AppLocalizationsAm extends AppLocalizations {
   String get signupServiceDesc => 'እባክዎን ያለፈውን የአገልግሎት ታሪክዎን ያቅርቡ (ካለ)።';
 
   @override
-  String get signupErrorAccountFields => 'እባክዎን በመለያ ደረጃ ውስጥ ሁሉንም የሚያስፈልጉ መስኮችን ይሙሉ።';
+  String get signupErrorAccountFields =>
+      'እባክዎን በመለያ ደረጃ ውስጥ ሁሉንም የሚያስፈልጉ መስኮችን ይሙሉ።';
 
   @override
-  String get signupErrorPersonalFields => 'እባክዎን በግል መረጃ ደረጃ ውስጥ ሁሉንም የሚያስፈልጉ መስኮችን ይሙሉ።';
+  String get signupErrorPersonalFields =>
+      'እባክዎን በግል መረጃ ደረጃ ውስጥ ሁሉንም የሚያስፈልጉ መስኮችን ይሙሉ።';
 
   @override
   String get signupErrorAgreeRequired => 'ምዝገባውን ለማጠናቀቅ ቃል መግባት አለብዎት።';
 
   @override
-  String get signupErrorSchoolNotFound => 'የተመረጠውን ትምህርት ቤት ማግኘት አልተቻለም። እባክዎን እንደገና ይሞክሩ።';
+  String get signupErrorSchoolNotFound =>
+      'የተመረጠውን ትምህርት ቤት ማግኘት አልተቻለም። እባክዎን እንደገና ይሞክሩ።';
 
   @override
   String get signupErrorUnknown => 'ያልታወቀ ስህተት ተፈጥሯል።';

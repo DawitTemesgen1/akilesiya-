@@ -480,11 +480,14 @@ class _LearningContentCardState extends State<_LearningContentCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
-    final cardColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
-    final borderColor =
-        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.2);
-    final shadowColor =
-        isDark ? Colors.black.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1);
+    final cardColor =
+        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.grey.withValues(alpha: 0.2);
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.2)
+        : Colors.grey.withValues(alpha: 0.1);
     final textColor = isDark ? Colors.white : Colors.black87;
     final subTextColor = isDark ? Colors.white70 : Colors.black54;
 
@@ -513,48 +516,55 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                          color:
-                              Theme.of(context).primaryColor.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: Theme.of(context)
-                                  .primaryColor
-                                  .withValues(alpha: 0.5))),
-                      child: Text(
-                          widget.content.category.isEmpty
-                              ? AppLocalizations.of(context)!
-                                  .learningCategoryGeneral
-                                  .toUpperCase()
-                              : widget.content.category.toUpperCase(),
-                          style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                    ),
-                    Container(
+                    Flexible(
+                      child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                            color:
-                                _getDifficultyColor(widget.content.difficulty)
-                                    .withValues(alpha: 0.1),
+                            color: Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                                color:
-                                    _getDifficultyColor(widget.content.difficulty)
-                                        .withValues(alpha: 0.3))),
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withValues(alpha: 0.5))),
                         child: Text(
-                            _getLocalizedDifficulty(
-                                context, widget.content.difficulty),
+                            widget.content.category.isEmpty
+                                ? AppLocalizations.of(context)!
+                                    .learningCategoryGeneral
+                                    .toUpperCase()
+                                : widget.content.category.toUpperCase(),
                             style: GoogleFonts.poppins(
                                 fontSize: 10,
-                                color:
-                                    _getDifficultyColor(widget.content.difficulty),
-                                fontWeight: FontWeight.bold))),
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                              color:
+                                  _getDifficultyColor(widget.content.difficulty)
+                                      .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color:
+                                      _getDifficultyColor(widget.content.difficulty)
+                                          .withValues(alpha: 0.3))),
+                          child: Text(
+                              _getLocalizedDifficulty(
+                                  context, widget.content.difficulty),
+                              style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  color: _getDifficultyColor(widget.content.difficulty),
+                                  fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis)),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -654,8 +664,9 @@ class _LearningContentCardState extends State<_LearningContentCard> {
     final primaryColor = Theme.of(context).primaryColor;
     final cardColor = isDark ? const Color(0xFF1E1E2E) : Colors.white;
     final borderColor = primaryColor.withValues(alpha: 0.3);
-    final shadowColor =
-        isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.2);
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.3)
+        : Colors.grey.withValues(alpha: 0.2);
     final textColor = isDark ? Colors.white : Colors.black87;
     final subTextColor = isDark ? Colors.white54 : Colors.black54;
 
@@ -872,7 +883,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           color: premiumDark,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           border: Border(
-              top: BorderSide(color: premiumGold.withValues(alpha: 0.3), width: 1))),
+              top: BorderSide(
+                  color: premiumGold.withValues(alpha: 0.3), width: 1))),
       child: Column(
         children: [
           // Handle
@@ -969,8 +981,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                       child: Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                            color:
-                                                Colors.white.withValues(alpha: 0.05),
+                                            color: Colors.white
+                                                .withValues(alpha: 0.05),
                                             borderRadius:
                                                 const BorderRadius.only(
                                               topRight: Radius.circular(16),

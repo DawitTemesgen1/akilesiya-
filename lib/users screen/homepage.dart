@@ -6,11 +6,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/public_feed_service.dart';
+import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/private_homepage.dart';
+import 'package:amde_haymanot_abalat_guday/admin%20only/post_management.dart';
 
 // --- MODELS AND ENUMS ---
 
@@ -53,7 +56,7 @@ class Comment {
   }
 }
 
-class Post {
+class UnifiedPost {
   final String id;
   final String title;
   final String description;
@@ -69,7 +72,13 @@ class Post {
   final DateTime? eventDate;
   final bool isImportant;
 
-  Post({
+  // Fields specific to unified feed
+  final bool isPrivate; // true if from private feed
+  final String? tenantId; // Sunday School ID for private posts
+  final String? tenantName; // Sunday School name for display
+  final List<String> targetGroups; // For private posts
+
+  UnifiedPost({
     required this.id,
     required this.title,
     required this.description,
@@ -84,9 +93,13 @@ class Post {
     this.location = '',
     this.eventDate,
     this.isImportant = false,
+    this.isPrivate = false,
+    this.tenantId,
+    this.tenantName,
+    this.targetGroups = const [],
   });
 
-  factory Post.fromJson(Map<String, dynamic> json) {
+  factory UnifiedPost.fromPublicPost(Map<String, dynamic> json) {
     PostType typeFromString(String? typeStr) {
       switch (typeStr?.toLowerCase()) {
         case 'event':
@@ -113,7 +126,7 @@ class Post {
       return '$baseUrl/$cleanPath';
     }
 
-    return Post(
+    return UnifiedPost(
       id: json['id'].toString(),
       title: json['title'] ?? 'ርዕስ የለም',
       description: json['description'] ?? '',
@@ -130,6 +143,64 @@ class Post {
           ? DateTime.tryParse(json['eventDate'])
           : null,
       isImportant: json['isImportant'] == 1 || json['isImportant'] == true,
+      isPrivate: false, // Public post
+      targetGroups: json['targetGroups'] != null
+          ? List<String>.from(json['targetGroups'])
+          : [],
+    );
+  }
+
+  factory UnifiedPost.fromPrivatePost(Map<String, dynamic> json,
+      {String? tenantName}) {
+    PostType typeFromString(String? typeStr) {
+      switch (typeStr?.toLowerCase()) {
+        case 'event':
+          return PostType.event;
+        case 'announcement':
+          return PostType.announcement;
+        case 'news':
+          return PostType.news;
+        case 'prayer':
+          return PostType.prayer;
+        default:
+          return PostType.news;
+      }
+    }
+
+    String? buildFullUrl(String? pathOrUrl) {
+      if (pathOrUrl == null || pathOrUrl.isEmpty) return null;
+      if (pathOrUrl.startsWith('http')) return pathOrUrl;
+      final baseUrl = ApiService.baseUrl.endsWith('/api')
+          ? ApiService.baseUrl.substring(0, ApiService.baseUrl.length - 4)
+          : ApiService.baseUrl;
+      final cleanPath =
+          pathOrUrl.startsWith('/') ? pathOrUrl.substring(1) : pathOrUrl;
+      return '$baseUrl/$cleanPath';
+    }
+
+    return UnifiedPost(
+      id: json['id']?.toString() ?? UniqueKey().toString(),
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      imageUrl: buildFullUrl(json['imageUrl']),
+      author: json['author'] ?? '',
+      authorAvatar: buildFullUrl(json['authorAvatar']),
+      date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
+      type: typeFromString(json['type']),
+      likes: (json['likes'] as num?)?.toInt() ?? 0,
+      isLiked: json['isLiked'] == true,
+      commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
+      location: json['location'] ?? '',
+      eventDate: json['eventDate'] != null
+          ? DateTime.tryParse(json['eventDate'])
+          : null,
+      isImportant: json['isImportant'] == 1 || json['isImportant'] == true,
+      isPrivate: true, // Private post
+      tenantId: json['tenantId']?.toString(),
+      tenantName: tenantName,
+      targetGroups: json['targetGroups'] != null
+          ? List<String>.from(json['targetGroups'])
+          : [],
     );
   }
 }
@@ -140,64 +211,100 @@ const Color premiumGold = Color(0xFFFFD700);
 
 // --- MAIN WIDGET ---
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class UnifiedHomePage extends StatefulWidget {
+  const UnifiedHomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<UnifiedHomePage> createState() => _UnifiedHomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  List<Post> _posts = [];
-  List<Post> _featuredPosts = [];
+class _UnifiedHomePageState extends State<UnifiedHomePage> {
+  // Unified Feed State
+  List<UnifiedPost> _posts = [];
+  List<UnifiedPost> _featuredPosts = [];
   bool _isLoading = true;
   String? _error;
+  SundaySchool? _userSundaySchool;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
+      _loadUnifiedFeed();
     });
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadUnifiedFeed() async {
     if (!mounted) return;
-    // Initial setState is redundant for first load as _isLoading is true,
-    // and if called later (e.g. refresh), we want it.
-    // However, to be safe and avoid "dirty build" if called rapidly:
-    if (!_isLoading) {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-    }
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     try {
-      final result = await PublicFeedService.getPublicPosts();
-      if (mounted) {
-        if (result['success']) {
-          final allPosts =
-              (result['data'] as List).map((p) => Post.fromJson(p)).toList();
-          setState(() {
-            // Logic: Important posts or Events go to featured, rest to feed
-            _featuredPosts = allPosts
-                .where((p) => p.isImportant || p.type == PostType.event)
-                .toList()
-              ..sort((a, b) => b.date.compareTo(a.date));
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final tenantId = userProvider.userProfile?['tenant_id'];
 
-            // If no featured posts, take the top 3 latest
-            if (_featuredPosts.isEmpty && allPosts.isNotEmpty) {
-              _featuredPosts = allPosts.take(3).toList();
-            }
+      List<UnifiedPost> allPosts = [];
 
-            // The rest go to the main feed
-            _posts = allPosts;
-            _isLoading = false;
-          });
-        } else {
-          throw Exception(result['message']);
+      // Fetch public posts
+      final publicResponse = await PublicFeedService.getPublicPosts();
+      if (publicResponse['success']) {
+        final publicData = publicResponse['data'] as List;
+        allPosts.addAll(
+          publicData.map((json) => UnifiedPost.fromPublicPost(json)),
+        );
+      }
+
+      // Fetch private posts if user has Sunday School
+      if (tenantId != null && tenantId.isNotEmpty) {
+        final privateResponse =
+            await PrivateFeedService.getPrivatePosts(tenantId);
+        if (privateResponse['success']) {
+          final responseData = privateResponse['data'];
+
+          // Store Sunday School info
+          if (responseData is Map && responseData['tenant'] != null) {
+            _userSundaySchool = SundaySchool.fromJson(responseData['tenant']);
+          }
+
+          // Add private posts
+          if (responseData is Map && responseData['posts'] != null) {
+            final privateData = responseData['posts'] as List;
+            allPosts.addAll(
+              privateData.map((json) => UnifiedPost.fromPrivatePost(
+                    json,
+                    tenantName: _userSundaySchool?.name,
+                  )),
+            );
+          } else if (responseData is List) {
+            // Case where the response is a direct list of posts
+            allPosts.addAll(
+              responseData.map((json) => UnifiedPost.fromPrivatePost(
+                    json,
+                    tenantName: _userSundaySchool?.name,
+                  )),
+            );
+          }
         }
+      }
+
+      // Sort by date (newest first)
+      allPosts.sort((a, b) => b.date.compareTo(a.date));
+
+      // Extract featured posts
+      final featured = allPosts
+          .where((p) => p.isImportant || p.type == PostType.event)
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _posts = allPosts;
+          _featuredPosts = featured.isNotEmpty
+              ? featured.take(5).toList()
+              : allPosts.take(3).toList();
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -209,7 +316,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _showComments(Post post) {
+  void _showComments(UnifiedPost post) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -225,12 +332,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool canManagePosts =
-        context.watch<UserProvider>().canManagePublicPosts;
-    final userProfile = context.watch<UserProvider>().userProfile;
+    final userProvider = context.watch<UserProvider>();
+    final canManagePublicPosts = userProvider.canManagePublicPosts;
+    final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
+
+    final userProfile = userProvider.userProfile;
     final userName = userProfile != null
         ? (userProfile['christian_name'] ?? userProfile['full_name'] ?? 'ምዕመን')
         : 'ምዕመን';
+
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = themeProvider.isDarkMode(context);
     final bgColor = themeProvider.getBackgroundColor(context);
@@ -241,82 +351,142 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      // Drawer removed - already provided by parent HomeScreen
-      body: Container(
-        color: bgColor,
-        child: RefreshIndicator(
-          onRefresh: _loadData,
-          color: primaryColor,
-          backgroundColor: surfaceColor,
-          child: CustomScrollView(
-            slivers: [
-              _buildSliverAppBar(context, userName, primaryColor, surfaceColor,
-                  textColor, subtleText, isDark, themeProvider.toggleTheme),
-              if (_isLoading)
-                SliverFillRemaining(
-                  child: Center(
-                      child: CircularProgressIndicator(color: primaryColor)),
-                )
-              else if (_error != null)
-                SliverFillRemaining(
-                    child: _buildErrorWidget(primaryColor, subtleText))
-              else ...[
-                if (_featuredPosts.isNotEmpty) ...[
-                  SliverToBoxAdapter(
-                      child: _buildSectionHeader(
-                          "ልዩ ትኩረት", Iconsax.star1, primaryColor, textColor)),
-                  SliverToBoxAdapter(child: _buildFeaturedCarousel()),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _loadUnifiedFeed,
+        color: primaryColor,
+        backgroundColor: surfaceColor,
+        child: CustomScrollView(
+          slivers: [
+            _buildSliverAppBar(context, userName, primaryColor, surfaceColor,
+                textColor, subtleText, isDark, themeProvider.toggleTheme),
+            if (_isLoading)
+              SliverFillRemaining(
+                child: Center(
+                    child: CircularProgressIndicator(color: primaryColor)),
+              )
+            else if (_error != null)
+              SliverFillRemaining(
+                  child: _buildErrorWidget(primaryColor, subtleText))
+            else ...[
+              const SliverToBoxAdapter(child: SizedBox(height: 10)),
+              if (_featuredPosts.isNotEmpty) ...[
                 SliverToBoxAdapter(
                     child: _buildSectionHeader(
-                        "የቅርብ ጊዜ", Iconsax.activity, primaryColor, textColor)),
-                if (_posts.isEmpty)
-                  SliverFillRemaining(
-                      child: Center(
-                          child: Text("ምንም መረጃ የለም",
-                              style: TextStyle(color: subtleText))))
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        return FadeInUp(
-                          duration: const Duration(milliseconds: 500),
-                          child: PostCard(
-                            post: _posts[index],
-                            onInteraction: () => setState(() {}),
-                            onComment: () => _showComments(_posts[index]),
-                          ),
-                        );
-                      },
-                      childCount: _posts.length,
-                    ),
+                        "ልዩ ትኩረት", Iconsax.star1, primaryColor, textColor)),
+                SliverToBoxAdapter(child: _buildFeaturedCarousel()),
+              ],
+              SliverToBoxAdapter(
+                  child: _buildSectionHeader(
+                      "የቅርብ ጊዜ", Iconsax.activity, primaryColor, textColor)),
+              if (_posts.isEmpty)
+                SliverFillRemaining(
+                    child: Center(
+                        child: Text("ምንም መረጃ የለም",
+                            style: TextStyle(color: subtleText))))
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return FadeInUp(
+                        duration: const Duration(milliseconds: 500),
+                        child: PostCard(
+                          post: _posts[index],
+                          onInteraction: () => setState(() {}),
+                          onComment: () => _showComments(_posts[index]),
+                        ),
+                      );
+                    },
+                    childCount: _posts.length,
                   ),
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              ]
-            ],
-          ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ]
+          ],
         ),
       ),
-      floatingActionButton: canManagePosts
-          ? FloatingActionButton(
-              heroTag: 'home_screen_fab', // Unique tag
-              onPressed: () async {
-                final result = await Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          const AdminPublicPostManagementScreen()),
-                );
-                if (result == true) {
-                  _loadData();
-                }
-              },
-              backgroundColor: premiumGold,
-              foregroundColor: premiumDark,
-              enableFeedback: true,
-              child: const Icon(Iconsax.edit),
-            )
-          : null,
+      floatingActionButton: _buildFloatingActionButton(
+          canManagePublicPosts, isSuperiorAdmin, primaryColor),
     );
+  }
+
+  Widget _buildFloatingActionButton(
+      bool canManagePublic, bool isSuperiorAdmin, Color primaryColor) {
+    // Show public post management FAB for authorized users
+    if (canManagePublic) {
+      return FloatingActionButton(
+        heroTag: 'home_screen_fab',
+        onPressed: () async {
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(
+                builder: (context) => const AdminPublicPostManagementScreen()),
+          );
+          if (result == true) {
+            _loadUnifiedFeed();
+          }
+        },
+        backgroundColor: premiumGold,
+        foregroundColor: premiumDark,
+        enableFeedback: true,
+        child: const Icon(Iconsax.edit),
+      );
+    }
+
+    // Show private post management FABs for superior admins with Sunday School
+    if (isSuperiorAdmin && _userSundaySchool != null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'manage_private_posts_fab',
+            onPressed: () async {
+              final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => AdminPostManagementScreen(
+                            tenantId: _userSundaySchool?.id,
+                          )));
+              if (result == true) {
+                _loadUnifiedFeed();
+              }
+            },
+            backgroundColor: premiumGold,
+            foregroundColor: premiumDark,
+            elevation: 4,
+            icon: const Icon(Iconsax.document_text),
+            label: Text(
+              "ልጥፎችን ያስተዳድሩ",
+              style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton.extended(
+            heroTag: 'edit_tenant_fab',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => EditTenantDialog(
+                  sundaySchool: _userSundaySchool!,
+                  onSave: () {
+                    _loadUnifiedFeed();
+                  },
+                ),
+              );
+            },
+            backgroundColor: Colors.white,
+            foregroundColor: premiumDark,
+            elevation: 4,
+            icon: const Icon(Iconsax.edit),
+            label: Text(
+              "መገለጫ አርትዕ",
+              style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildSliverAppBar(
@@ -448,7 +618,7 @@ class _HomePageState extends State<HomePage> {
           Text(_error ?? "Unknown Error", style: TextStyle(color: subtleText)),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _loadData,
+            onPressed: _loadUnifiedFeed,
             style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor, foregroundColor: Colors.white),
             child: const Text("እንደገና ሞክር"),
@@ -460,7 +630,7 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _FeaturedPostCard extends StatelessWidget {
-  final Post post;
+  final UnifiedPost post;
   const _FeaturedPostCard({required this.post});
 
   @override
@@ -538,7 +708,7 @@ class _FeaturedPostCard extends StatelessWidget {
 }
 
 class PostCard extends StatelessWidget {
-  final Post post;
+  final UnifiedPost post;
   final VoidCallback onInteraction;
   final VoidCallback onComment;
   const PostCard(
@@ -603,8 +773,7 @@ class PostCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (post.isImportant)
-                  Icon(Iconsax.verify, color: primaryColor, size: 20),
+                Icon(Iconsax.verify, color: primaryColor, size: 20),
               ],
             ),
           ),
@@ -686,7 +855,7 @@ class PostImage extends StatelessWidget {
 }
 
 class PostFooter extends StatefulWidget {
-  final Post post;
+  final UnifiedPost post;
   final VoidCallback onInteraction;
   final VoidCallback onComment;
   const PostFooter(
@@ -767,7 +936,7 @@ class _PostFooterState extends State<PostFooter> {
 }
 
 class _CommentsSheet extends StatefulWidget {
-  final Post post;
+  final UnifiedPost post;
   final ValueChanged<int> onCommentCountChanged;
   const _CommentsSheet(
       {required this.post, required this.onCommentCountChanged});
@@ -977,3 +1146,5 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     );
   }
 }
+
+// --- HELPER CLASSES ---

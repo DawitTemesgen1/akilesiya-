@@ -26,9 +26,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
     if (result['success'] == true) {
       setState(() => _userData = result['data']);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'])),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message'])),
+        );
+      }
     }
     setState(() => _isLoading = false);
   }

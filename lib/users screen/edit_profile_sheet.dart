@@ -110,55 +110,66 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
       _isInitialized = true;
     });
 
-    // 3. Fetch Custom Fields Definitions Directly (Bypassing Provider)
+    // 3. Fetch Custom Fields Definitions Directly
     if (profile['tenant_id'] != null) {
       await _fetchCustomFieldsDirectly(profile['tenant_id'].toString());
 
-      // 4. Fallback: If _selectedCustomFieldValues is empty but we have details, try to map them back to IDs
-      // This handles cases where backend sends "details" but not the "ids" map.
-      if (_selectedCustomFieldValues.isEmpty &&
-          profile['custom_fields_detail'] is List) {
+      // 4. Populate values from custom_fields_detail (Robust fallback)
+      if (profile['custom_fields_detail'] is List) {
         final details = profile['custom_fields_detail'] as List;
-        final newMap = <String, String>{};
-
         for (var detail in details) {
-          if (detail is Map &&
-              detail['field_name'] != null &&
-              detail['field_value'] != null) {
+          if (detail is Map && detail['field_name'] != null) {
             final fieldName = detail['field_name'];
-            final fieldValue = detail['field_value'];
+            final fieldValue = detail['field_value']?.toString();
+            if (fieldValue == null) continue;
 
-            // Find the corresponding custom field definition
             try {
-              final fieldDef =
-                  _localCustomFields.firstWhere((f) => f['name'] == fieldName);
+              final fieldDef = _localCustomFields.firstWhere(
+                (f) => f['name'] == fieldName,
+                orElse: () => null,
+              );
+              if (fieldDef == null) continue;
+
               final fieldId = fieldDef['id'].toString();
+              final fieldType = (fieldDef['field_type'] ?? fieldDef['type'])
+                      ?.toString()
+                      .toUpperCase() ??
+                  'TEXT';
 
-              // Find the option ID that matches the text value
-              if (fieldDef['options'] is List) {
-                final options = fieldDef['options'] as List;
-                final matchingOption = options.firstWhere(
-                    (opt) => opt['option_value'].toString() == fieldValue,
-                    orElse: () => null);
-
-                if (matchingOption != null) {
-                  newMap[fieldId] = matchingOption['id'].toString();
-                  developer.log(
-                      "DEBUG: Recovered ID for field '$fieldName': $fieldValue -> ${matchingOption['id']}",
-                      name: 'EditProfileSheet');
+              // If it's an option-based type, we need the option ID
+              if (['DROPDOWN', 'RADIO', 'CHECKBOX', 'MULTISELECT', 'VOTE']
+                  .contains(fieldType)) {
+                if (fieldDef['options'] is List) {
+                  final options = fieldDef['options'] as List;
+                  final matchingOption = options.firstWhere(
+                    (opt) =>
+                        opt['option_value'].toString().trim() ==
+                        fieldValue.trim(),
+                    orElse: () => null,
+                  );
+                  if (matchingOption != null) {
+                    _selectedCustomFieldValues[fieldId] =
+                        matchingOption['id'].toString();
+                  } else {
+                    // Fallback: maybe the value recorded IS the option ID?
+                    final isOptionIdMatch = options.any(
+                        (opt) => opt['id'].toString() == fieldValue.trim());
+                    if (isOptionIdMatch) {
+                      _selectedCustomFieldValues[fieldId] = fieldValue.trim();
+                    }
+                  }
                 }
+              } else {
+                // For text types, use the raw value
+                _selectedCustomFieldValues[fieldId] = fieldValue;
               }
             } catch (e) {
-              // Field definition not found or match failed, ignore
+              developer.log("DEBUG: Error mapping field $fieldName: $e",
+                  name: 'EditProfileSheet');
             }
           }
         }
-
-        if (newMap.isNotEmpty) {
-          setState(() {
-            _selectedCustomFieldValues.addAll(newMap);
-          });
-        }
+        setState(() {});
       }
     } else {
       developer.log("DEBUG: No tenant_id found for fields fetch.",
@@ -175,7 +186,8 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
 
       final userFields = fields.where((f) {
         final managedBy = f['managed_by']?.toString().toUpperCase();
-        return managedBy == 'USER' || managedBy == null || managedBy == 'NULL';
+        // Hide fields explicitly managed by ADMIN or SYSTEM
+        return managedBy == 'USER' || managedBy == null;
       }).toList();
 
       setState(() {
@@ -209,18 +221,16 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     if (!_formKey.currentState!.validate() || _isSaving) return;
     setState(() => _isSaving = true);
 
-    final fullProfile = context.read<UserProvider>().userProfile ?? {};
     final Map<String, dynamic> updatedData = {
-      ...fullProfile,
-      'full_name': _fullNameController.text,
-      'christian_name': _christianNameController.text,
-      'phone_number': _phoneController.text,
-      'mother_name': _motherNameController.text,
-      'confession_father_name': _confessionFatherController.text,
-      'academic_level': _academicLevelController.text,
-      'kifil': _kifilController.text,
-      'parent_name': _parentNameController.text,
-      'parent_phone_number': _parentPhoneController.text,
+      'full_name': _fullNameController.text.trim(),
+      'christian_name': _christianNameController.text.trim(),
+      'phone_number': _phoneController.text.trim(),
+      'mother_name': _motherNameController.text.trim(),
+      'confession_father_name': _confessionFatherController.text.trim(),
+      'academic_level': _academicLevelController.text.trim(),
+      'kifil': _kifilController.text.trim(),
+      'parent_name': _parentNameController.text.trim(),
+      'parent_phone_number': _parentPhoneController.text.trim(),
       'gender': _gender,
       'dob': _dob?.toIso8601String().substring(0, 10),
       'spiritual_class': _spiritualClass,
@@ -350,44 +360,84 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   AppLocalizations.of(context)!.profileAdditionalInfo),
               ...userCustomFields.map((field) {
                 final fieldId = field['id'].toString();
+                final fieldType = (field['field_type'] ?? field['type'])
+                        ?.toString()
+                        .toUpperCase() ??
+                    'TEXT';
                 final options = field['options'] as List<dynamic>? ?? [];
 
-                // Validate value exists in options to prevent Dropdown crash
-                var val = _selectedCustomFieldValues[fieldId];
-                if (val != null && options.isNotEmpty) {
-                  final exists =
-                      options.any((opt) => opt['id'].toString() == val);
-                  if (!exists) {
-                    print(
-                        "DEBUG: Value $val not found in options for field $fieldId. Options: ${options.map((e) => e['id'])}");
+                final isTextArea = fieldType == 'TEXTAREA';
+                final isChoiceBased = [
+                  'DROPDOWN',
+                  'RADIO',
+                  'CHECKBOX',
+                  'MULTISELECT',
+                  'VOTE',
+                  'TOGGLE'
+                ].contains(fieldType);
+
+                // 1. Prioritize Choice-based if options exist
+                if (isChoiceBased && options.isNotEmpty) {
+                  // Validate value exists in options to prevent Dropdown crash
+                  var val = _selectedCustomFieldValues[fieldId];
+                  if (val != null && options.isNotEmpty) {
+                    final rawValue = val.toString();
+                    final matches = options
+                        .where((opt) => opt['id'].toString() == rawValue);
+                    final match = matches.isNotEmpty ? matches.first : null;
+                    if (match == null) {
+                      developer.log(
+                          "DEBUG: Value $val not found in options for field $fieldId.",
+                          name: 'EditProfileSheet');
+                      val = null;
+                    }
+                  } else if (val != null && options.isEmpty) {
                     val = null;
                   }
-                } else if (val != null && options.isEmpty) {
-                  print(
-                      "DEBUG: Value $val exists but options are empty for field $fieldId");
-                  val = null;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: DropdownButtonFormField<String>(
+                      key: ValueKey('dropdown_$fieldId'),
+                      initialValue: val,
+                      decoration: InputDecoration(
+                          labelText: field['name'],
+                          border: const OutlineInputBorder(),
+                          prefixIcon: Icon(fieldType == 'VOTE'
+                              ? Iconsax.ranking
+                              : Iconsax.document_filter)),
+                      items: [
+                        DropdownMenuItem(
+                            value: null,
+                            child: Text(
+                                AppLocalizations.of(context)!.profileNotSet)),
+                        ...options.map((opt) => DropdownMenuItem(
+                            value: opt['id'].toString(),
+                            child: Text(opt['option_value'])))
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomFieldValues[fieldId] = value;
+                        });
+                      },
+                    ),
+                  );
                 }
 
+                // 2. Default to Text-based (includes TEXT, TEXTAREA, and fallbacks)
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
-                  child: DropdownButtonFormField<String>(
-                    key: ValueKey(fieldId), // Add Key to prevent state mix-ups
-                    initialValue: val,
+                  child: TextFormField(
+                    key: ValueKey('text_$fieldId'),
+                    initialValue: _selectedCustomFieldValues[fieldId],
+                    maxLines: isTextArea ? 3 : 1,
                     decoration: InputDecoration(
                         labelText: field['name'],
                         border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Iconsax.document_filter)),
-                    items: [
-                      DropdownMenuItem(
-                          value: null,
-                          child: Text(
-                              AppLocalizations.of(context)!.profileNotSet)),
-                      ...options.map((opt) => DropdownMenuItem(
-                          value: opt['id'].toString(),
-                          child: Text(opt['option_value'])))
-                    ],
+                        prefixIcon: Icon(isTextArea
+                            ? Iconsax.document_text
+                            : Iconsax.edit_2)),
                     onChanged: (value) {
-                      print("DEBUG: Selected $value for field $fieldId");
                       setState(() {
                         _selectedCustomFieldValues[fieldId] = value;
                       });

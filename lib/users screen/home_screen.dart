@@ -7,9 +7,9 @@ import 'package:provider/provider.dart';
 
 // Screens
 import 'package:amde_haymanot_abalat_guday/users%20screen/homepage.dart';
-import 'package:amde_haymanot_abalat_guday/users%20screen/private_homepage.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/learning_screen.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/profile_screen.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/chat_screen.dart';
 
 // Providers
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
@@ -46,8 +46,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final userId = userProvider.userProfile?['id']?.toString() ?? 'anonymous';
 
     final List<Widget> pages = [
-      const HomePage(),
-      PrivateHomePage(tenantId: userProvider.tenantId ?? 'default-tenant'),
+      const UnifiedHomePage(),
+      const ChatScreen(),
       const LearningScreen(),
       const ProfileScreen(),
     ];
@@ -303,10 +303,9 @@ class AppBottomNavBar extends StatelessWidget {
             unselectedIcon: unselectedIcon,
           ),
           _NavBarItem(
-            icon: Iconsax
-                .cloud_connection, // Changed to better represent "Private" or "Connect"
-            activeIcon: Iconsax.cloud_connection5,
-            label: l10n.managementPageTitle, // Updated from hardcoded "ማህበረሰብ"
+            icon: Iconsax.messages_1,
+            activeIcon: Iconsax.messages_15,
+            label: l10n.chatPageTitle,
             isSelected: selectedIndex == 1,
             onTap: () => onItemTapped(1),
             selectedBg: selectedBg,
@@ -325,7 +324,7 @@ class AppBottomNavBar extends StatelessWidget {
           ),
           _NavBarItem(
             icon: Iconsax.user,
-            activeIcon: Iconsax.user5, // Filled version
+            activeIcon: Iconsax.user5,
             label: l10n.profilePageTitle,
             isSelected: selectedIndex == 3,
             onTap: () => onItemTapped(3),
@@ -472,8 +471,8 @@ class AppNavigationRail extends StatelessWidget {
           ),
           _buildNavRailDestination(
             context: context,
-            icon: Iconsax.category,
-            label: l10n.managementPageTitle,
+            icon: Iconsax.messages_1,
+            label: l10n.chatPageTitle,
             isSelected: selectedIndex == 1,
             locale: currentLocale,
           ),

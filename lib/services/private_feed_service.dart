@@ -8,17 +8,33 @@ class PrivateFeedService {
       Future<http.Response> futureResponse) async {
     try {
       final response = await futureResponse;
-      final body = json.decode(response.body);
+      final dynamic body = json.decode(response.body);
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
+        dynamic responseData;
+        String? message;
+
+        if (body is Map) {
+          responseData = body['data'] ?? body;
+          message = body['message']?.toString() ?? 'Success';
+        } else {
+          responseData = body;
+          message = 'Success';
+        }
+
         return {
           'success': true,
-          'data': body['data'] ?? body,
-          'message': body['message'] ?? 'Success'
+          'data': responseData,
+          'message': message,
         };
       } else {
+        String errorMessage = 'An API error occurred.';
+        if (body is Map && body['message'] != null) {
+          errorMessage = body['message'].toString();
+        }
         return {
           'success': false,
-          'message': body['message'] ?? 'An API error occurred.'
+          'message': errorMessage,
         };
       }
     } catch (e) {
@@ -36,14 +52,21 @@ class PrivateFeedService {
 
   static Future<Map<String, dynamic>> createPrivatePost(
       Map<String, dynamic> postData) {
+    if (postData['targetGroups'] != null && postData['targetGroups'] is List) {
+      postData['targetGroups'] = json.encode(postData['targetGroups']);
+    }
     return _processResponse(ApiService.post('private-feed/posts', postData));
   }
 
   static Future<Map<String, dynamic>> createPostWithImage({
     required Map<String, String> fields,
     required XFile file,
+    List<String>? targetGroups,
   }) async {
     try {
+      if (targetGroups != null && targetGroups.isNotEmpty) {
+        fields['targetGroups'] = json.encode(targetGroups);
+      }
       final streamedResponse = await ApiService.upload(
         'private-feed/posts',
         fields: fields,
@@ -61,8 +84,12 @@ class PrivateFeedService {
     required String postId,
     required Map<String, String> fields,
     required XFile file,
+    List<String>? targetGroups,
   }) async {
     try {
+      if (targetGroups != null && targetGroups.isNotEmpty) {
+        fields['targetGroups'] = json.encode(targetGroups);
+      }
       final streamedResponse = await ApiService.upload(
         'private-feed/posts/$postId',
         fields: fields,
@@ -78,6 +105,9 @@ class PrivateFeedService {
 
   static Future<Map<String, dynamic>> updatePrivatePost(
       String postId, Map<String, dynamic> postData) {
+    if (postData['targetGroups'] != null && postData['targetGroups'] is List) {
+      postData['targetGroups'] = json.encode(postData['targetGroups']);
+    }
     return _processResponse(
         ApiService.put('private-feed/posts/$postId', postData));
   }

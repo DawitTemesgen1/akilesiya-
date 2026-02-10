@@ -51,22 +51,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       final result = await AuthService.verifyOtp(email: widget.email, otp: otp);
 
       if (result['success'] == true) {
-        if (mounted) {
-          if (widget.isRegistration && widget.password != null) {
-            // For registration with password from signup, automatically set password
-            await _handleSetPassword();
-          } else if (widget.isRegistration) {
-            // For registration without password, show password input
-            setState(() {
-              _otpVerified = true;
-              _isLoading = false;
-            });
-          } else {
-            // For password reset, go directly to home
-            context.read<TenantProvider>().setTenant(result['data']['tenant']);
-            await context.read<UserProvider>().handleSuccessfulAuth();
-            context.go('/home');
-          }
+        if (!mounted) return;
+        if (widget.isRegistration && widget.password != null) {
+          // For registration with password from signup, automatically set password
+          await _handleSetPassword();
+        } else if (widget.isRegistration) {
+          // For registration without password, show password input
+          setState(() {
+            _otpVerified = true;
+            _isLoading = false;
+          });
+        } else {
+          // For password reset, go directly to home
+          final tenantProvider = context.read<TenantProvider>();
+          final userProvider = context.read<UserProvider>();
+          tenantProvider.setTenant(result['data']['tenant']);
+          await userProvider.handleSuccessfulAuth();
+          if (mounted) context.go('/home');
         }
       } else {
         if (mounted) {
@@ -121,23 +122,25 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       );
 
       if (result['success'] == true) {
-        if (mounted) {
-          // Now login with the new password
-          final loginResult = await AuthService.login(
-            email: widget.email,
-            password: password,
-            tenantName: '', // Will be set from login response
-          );
+        if (!mounted) return;
+        // Now login with the new password
+        final loginResult = await AuthService.login(
+          email: widget.email,
+          password: password,
+          tenantName: '', // Will be set from login response
+        );
 
-          if (loginResult['success'] == true) {
-            final data = loginResult['data'];
-            context.read<TenantProvider>().setTenant(data['tenant']);
-            await context.read<UserProvider>().handleSuccessfulAuth();
-            context.go('/home');
-          } else {
-            setState(() => _errorMessage =
-                "Login failed. Please try logging in manually.");
-          }
+        if (!mounted) return;
+        if (loginResult['success'] == true) {
+          final data = loginResult['data'];
+          final tenantProvider = context.read<TenantProvider>();
+          final userProvider = context.read<UserProvider>();
+          tenantProvider.setTenant(data['tenant']);
+          await userProvider.handleSuccessfulAuth();
+          if (mounted) context.go('/home');
+        } else {
+          setState(() =>
+              _errorMessage = "Login failed. Please try logging in manually.");
         }
       } else {
         if (mounted) {

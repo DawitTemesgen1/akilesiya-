@@ -9,13 +9,12 @@ import 'package:provider/provider.dart';
 import 'dart:developer';
 
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
-import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:amde_haymanot_abalat_guday/admin%20only/post_management.dart';
 
 // --- Re-usable UI Constants ---
 // Note: We use local constants for the premium theme to ensure consistency.
@@ -584,20 +583,27 @@ class SundaySchool {
 
 // --- MAIN WIDGET ---
 
-class PrivateHomePage extends StatefulWidget {
+class PrivateFeedView extends StatefulWidget {
   final String tenantId;
-  const PrivateHomePage({super.key, required this.tenantId});
+  final Function(SundaySchool?)? onDataLoaded;
+
+  const PrivateFeedView({
+    super.key,
+    required this.tenantId,
+    this.onDataLoaded,
+  });
 
   @override
-  State<PrivateHomePage> createState() => _PrivateHomePageState();
+  State<PrivateFeedView> createState() => _PrivateFeedViewState();
 }
 
-class _PrivateHomePageState extends State<PrivateHomePage> {
+class _PrivateFeedViewState extends State<PrivateFeedView> {
   SundaySchool? _sundaySchool;
   List<PrivatePost> _privatePosts = [];
   bool _isLoading = true;
   String? _error;
   final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -607,7 +613,7 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
   }
 
   void _onRefreshSignal() {
-    log("Refresh signal received! Reloading data for PrivateHomePage.");
+    log("Refresh signal received! Reloading data for PrivateFeedView.");
     _loadData();
   }
 
@@ -644,10 +650,25 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
       if (!postsResult['success']) throw Exception(postsResult['message']);
       setState(() {
         _sundaySchool = SundaySchool.fromJson(tenantResult['data']);
-        _privatePosts = (postsResult['data'] as List)
+
+        final dynamic rawData = postsResult['data'];
+        List<dynamic> postsList = [];
+
+        if (rawData is List) {
+          postsList = rawData;
+        } else if (rawData is Map && rawData['posts'] is List) {
+          postsList = rawData['posts'];
+        }
+
+        _privatePosts = postsList
             .map((postJson) => PrivatePost.fromJson(postJson))
             .toList();
         _isLoading = false;
+
+        // Notify parent if callback provided
+        if (widget.onDataLoaded != null) {
+          widget.onDataLoaded!(_sundaySchool);
+        }
       });
     } catch (e) {
       if (mounted) {
@@ -660,54 +681,34 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     }
   }
 
-  void _showEditTenantDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _EditTenantDialog(
-        sundaySchool: _sundaySchool!,
-        onSave: () {
-          _loadData();
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final userProvider = context.watch<UserProvider>();
-    final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
+    // Scaffold removed to allow embedding in UnifiedHomePage
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode(context);
     final bgColor = themeProvider.getBackgroundColor(context);
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? [
-                    Theme.of(context).primaryColor.withValues(alpha: 0.8),
-                    premiumDark,
-                    Colors.black,
-                  ]
-                : [
-                    Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                    bgColor,
-                    bgColor,
-                  ],
-            stops: const [0.0, 0.4, 1.0],
-          ),
+    // Use a Container with gradient background as the root
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [
+                  Theme.of(context).primaryColor.withValues(alpha: 0.8),
+                  premiumDark,
+                  Colors.black,
+                ]
+              : [
+                  Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  bgColor,
+                  bgColor,
+                ],
+          stops: const [0.0, 0.4, 1.0],
         ),
-        child: _buildBody(context),
       ),
-      floatingActionButton:
-          // Add a check to ensure data is loaded and sundaySchool is not null
-          isSuperiorAdmin && !_isLoading && _sundaySchool != null
-              ? _buildFloatingActionButton()
-              : null,
+      child: _buildBody(context),
     );
   }
 
@@ -900,9 +901,11 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtleText = isDark ? Colors.white70 : Colors.black54;
-    final cardColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
-    final borderColor =
-        isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2);
+    final cardColor =
+        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.grey.withValues(alpha: 0.2);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -952,9 +955,11 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtleText = isDark ? Colors.white60 : Colors.black54;
-    final cardColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
-    final borderColor =
-        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.2);
+    final cardColor =
+        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.grey.withValues(alpha: 0.2);
 
     final stats = [
       {
@@ -998,7 +1003,8 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: (stat['color'] as Color).withValues(alpha: 0.2),
+                          color:
+                              (stat['color'] as Color).withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(stat['icon'] as IconData,
@@ -1089,7 +1095,9 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+                        color: Theme.of(context)
+                            .primaryColor
+                            .withValues(alpha: 0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -1175,9 +1183,11 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
     final textColor = isDark ? Colors.white : Colors.black87;
     final subtleText = isDark ? Colors.white54 : Colors.black54;
-    final cardColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
-    final borderColor =
-        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.2);
+    final cardColor =
+        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : Colors.grey.withValues(alpha: 0.2);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1234,7 +1244,8 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      color:
+                          Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -1390,47 +1401,6 @@ class _PrivateHomePageState extends State<PrivateHomePage> {
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        FloatingActionButton.extended(
-          heroTag: 'manage_posts_fab',
-          onPressed: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => AdminPostManagementScreen(
-                          tenantId: _sundaySchool?.id,
-                        )));
-          },
-          backgroundColor: premiumGold,
-          foregroundColor: premiumDark,
-          elevation: 4,
-          icon: const Icon(Iconsax.document_text),
-          label: Text(
-            "ልጥፎችን ያስተዳድሩ",
-            style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(height: 16),
-        FloatingActionButton.extended(
-          heroTag: 'edit_tenant_fab',
-          onPressed: _showEditTenantDialog,
-          backgroundColor: Colors.white,
-          foregroundColor: premiumDark,
-          elevation: 4,
-          icon: const Icon(Iconsax.edit),
-          label: Text(
-            "መገለጫ አርትዕ",
-            style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildInitialsAvatar(PrivatePost post) {
     return Container(
       width: 40,
@@ -1488,17 +1458,21 @@ class _InteractionButton extends StatelessWidget {
   }
 }
 
-class _EditTenantDialog extends StatefulWidget {
+class EditTenantDialog extends StatefulWidget {
   final SundaySchool sundaySchool;
   final VoidCallback onSave;
 
-  const _EditTenantDialog({required this.sundaySchool, required this.onSave});
+  const EditTenantDialog({
+    super.key,
+    required this.sundaySchool,
+    required this.onSave,
+  });
 
   @override
-  State<_EditTenantDialog> createState() => _EditTenantDialogState();
+  State<EditTenantDialog> createState() => _EditTenantDialogState();
 }
 
-class _EditTenantDialogState extends State<_EditTenantDialog> {
+class _EditTenantDialogState extends State<EditTenantDialog> {
   // ... (Keep existing logic, just styling update if needed, but Dialogs usually inherit theme)
   // For brevity, skipping full rewrite of dialog logic unless specifically asked, but I will include it to prevent errors.
   final _formKey = GlobalKey<FormState>();
@@ -1743,7 +1717,8 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
         color: premiumDark,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(
-            top: BorderSide(color: premiumGold.withValues(alpha: 0.3), width: 1)),
+            top: BorderSide(
+                color: premiumGold.withValues(alpha: 0.3), width: 1)),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.5),
@@ -1859,8 +1834,8 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                                       child: Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                            color:
-                                                Colors.white.withValues(alpha: 0.05),
+                                            color: Colors.white
+                                                .withValues(alpha: 0.05),
                                             borderRadius:
                                                 const BorderRadius.only(
                                               topRight: Radius.circular(16),
