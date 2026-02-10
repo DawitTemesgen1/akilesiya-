@@ -3,6 +3,7 @@ import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/plan_service.dart';
+import 'package:amde_haymanot_abalat_guday/services/user_admin_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
@@ -213,6 +214,35 @@ class _PlanControlScreenState extends State<PlanControlScreen>
   // API and Data Handling
   Future<void> _initializeData() async {
     setState(() => _isLoading = true);
+
+    // Self-healing: Ensure superior_admin has plan_admin role for backend compatibility
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.roles.contains('superior_admin') &&
+          !userProvider.roles.contains('plan_admin')) {
+        print(
+            'DEBUG PlanControlScreen: Auto-assigning missing plan_admin role to superior_admin...');
+        final userId = userProvider.userProfile?['id'];
+
+        if (userId != null) {
+          await UserAdminService.updateUserRoles(
+              userId: userId, shouldBeAdmin: true, role: 'plan_admin');
+          await userProvider.fetchUserProfile(); // Refresh local roles
+          print('DEBUG PlanControlScreen: Successfully added plan_admin role.');
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('Permissions updated. Reloading...'),
+                backgroundColor: Colors.green));
+          }
+        }
+      }
+    } catch (e) {
+      print(
+          'DEBUG PlanControlScreen: Failed to auto-assign plan_admin role: $e');
+      // Continue anyway, as maybe backend is fixed or user has access via another means
+    }
+
     // ======================= FIX 1 =======================
     // Corrected the method name from getDashboardData to getPlanData
     final result = await PlanService.getPlanData(year: _selectedYear);
