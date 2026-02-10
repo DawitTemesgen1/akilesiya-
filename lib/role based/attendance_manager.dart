@@ -144,10 +144,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   void initState() {
     super.initState();
     final userProvider = context.read<UserProvider>();
-    final canManage = userProvider.canManageAttendance;
-    final isSuperiorAdmin = userProvider.isSuperiorOrSystemAdmin;
+    final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
+    final isAttendanceAdmin = userProvider.roles.contains('attendance_admin');
     int tabCount = 0;
-    if (canManage) tabCount = 1;
+    if (isAttendanceAdmin || isSuperiorAdmin) tabCount = 1;
     if (isSuperiorAdmin) tabCount = 2;
     _tabController =
         TabController(length: tabCount > 0 ? tabCount : 1, vsync: this);
@@ -162,10 +162,10 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
-    final canManage = userProvider.canManageAttendance;
-    final isSuperiorAdmin = userProvider.isSuperiorOrSystemAdmin;
+    final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
+    final isAttendanceAdmin = userProvider.roles.contains('attendance_admin');
 
-    if (!canManage) {
+    if (!isSuperiorAdmin && !isAttendanceAdmin) {
       return Scaffold(
           appBar: AppBar(
               title: Text(AmharicStringsAttendance.screenTitle,
@@ -187,11 +187,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     List<Widget> tabs = [];
     List<Widget> tabViews = [];
-    if (canManage) {
+    if (isAttendanceAdmin || isSuperiorAdmin) {
       tabs.add(Tab(
           icon: const Icon(Iconsax.document_text),
-          text: AmharicStringsAttendance.tabTakeAttendance));
-      final bool isReadOnly = !canManage;
+          text: AmharicStringsAttendance.tabTakeAttendance)); // Translated
+      final bool isReadOnly = !isAttendanceAdmin;
       tabViews.add(AttendanceTakerView(isReadOnly: isReadOnly));
     }
     if (isSuperiorAdmin) {
@@ -690,6 +690,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                           null,
                           ..._dynamicFilterOptions
                               .map((opt) => opt['id'] as int)
+                              
                         ],
                         label: _dynamicFilterField != null
                             ? _dynamicFilterField['name']
@@ -1049,9 +1050,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-                color: isSelected
-                    ? activeColor.withValues(alpha: 0.2)
-                    : backgroundColor,
+                color:
+                    isSelected ? activeColor.withValues(alpha: 0.2) : backgroundColor,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                     color: isSelected ? activeColor : Colors.white24,
@@ -1104,8 +1104,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.05),
-                shape: BoxShape.circle),
+                color: primaryColor.withValues(alpha: 0.05), shape: BoxShape.circle),
             child: Icon(Iconsax.profile_2user, color: primaryColor, size: 50)),
         const SizedBox(height: 20),
         Text(AmharicStringsAttendance.emptyStateTitle, // Translated
@@ -1166,9 +1165,10 @@ class _AttendanceAdminManagementViewState
   Future<void> _toggleAdmin(String userId, String currentRoleString) async {
     bool isCurrentlyAdmin = currentRoleString.contains('attendance_admin');
     try {
-      await UserAdminService.updateAttendanceAdminRole(
+      await UserAdminService.updateUserRoles(
         userId: userId,
         shouldBeAdmin: !isCurrentlyAdmin,
+        role: 'attendance_admin',
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
