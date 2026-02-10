@@ -122,10 +122,7 @@ class AttendanceScreen extends StatefulWidget {
   State<AttendanceScreen> createState() => _AttendanceScreenState();
 }
 
-class _AttendanceScreenState extends State<AttendanceScreen>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
-
+class _AttendanceScreenState extends State<AttendanceScreen> {
   Color get primaryColor =>
       Provider.of<ThemeProvider>(context).getPrimaryColor(context);
   Color get backgroundColor =>
@@ -139,36 +136,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   Color get accentColor =>
       Provider.of<ThemeProvider>(context).getPrimaryColor(context);
   Color get dangerColor => const Color(0xFFEF4444);
-
-  @override
-  void initState() {
-    super.initState();
-    final userProvider = context.read<UserProvider>();
-
-    // DEBUG: Log the actual roles
-    print('DEBUG AttendanceScreen: User roles = ${userProvider.roles}');
-
-    final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
-    final isAttendanceAdmin = userProvider.roles.contains('attendance_admin');
-
-    print(
-        'DEBUG AttendanceScreen: isSuperiorAdmin = $isSuperiorAdmin, isAttendanceAdmin = $isAttendanceAdmin');
-
-    int tabCount = 0;
-    if (isAttendanceAdmin || isSuperiorAdmin) tabCount = 1;
-    if (isSuperiorAdmin) tabCount = 2;
-
-    print('DEBUG AttendanceScreen: tabCount = $tabCount');
-
-    _tabController = TabController(
-        length: tabCount > 0 ? tabCount : 1, vsync: this, initialIndex: 0);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -219,41 +186,33 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       tabViews.add(const _AttendanceAdminManagementView());
     }
 
-    if (_tabController.length != tabs.length) {
-      final oldIndex = _tabController.index;
-      _tabController.dispose();
-      _tabController = TabController(
-        length: tabs.length,
-        vsync: this,
-        initialIndex: oldIndex < tabs.length ? oldIndex : 0,
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: Text('📊 ${AmharicStringsAttendance.screenTitle}', // Translated
-            style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.bold, color: onSurfaceColor)),
+    return DefaultTabController(
+      length: tabs.length > 0 ? tabs.length : 1,
+      child: Scaffold(
         backgroundColor: backgroundColor,
-        elevation: 0,
-        iconTheme: IconThemeData(color: primaryColor),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(child: SyncStatusIndicator(compact: true)),
-          ),
-        ],
-        bottom: TabBar(
-            controller: _tabController,
-            labelColor: primaryColor,
-            unselectedLabelColor: subtleTextColor,
-            indicatorColor: primaryColor,
-            tabs: tabs),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: tabViews,
+        appBar: AppBar(
+          title: Text(
+              '📊 ${AmharicStringsAttendance.screenTitle}', // Translated
+              style: GoogleFonts.notoSansEthiopic(
+                  fontWeight: FontWeight.bold, color: onSurfaceColor)),
+          backgroundColor: backgroundColor,
+          elevation: 0,
+          iconTheme: IconThemeData(color: primaryColor),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(child: SyncStatusIndicator(compact: true)),
+            ),
+          ],
+          bottom: TabBar(
+              labelColor: primaryColor,
+              unselectedLabelColor: subtleTextColor,
+              indicatorColor: primaryColor,
+              tabs: tabs),
+        ),
+        body: TabBarView(
+          children: tabViews,
+        ),
       ),
     );
   }
