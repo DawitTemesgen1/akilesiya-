@@ -421,7 +421,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final bool isSuperiorAdmin =
-        userProvider.roles.contains('superior_admin'); // Robust role check
+        userProvider.isSuperiorOrSystemAdmin; // Use centralized check
 
     return DefaultTabController(
       length: isSuperiorAdmin ? 3 : 2,

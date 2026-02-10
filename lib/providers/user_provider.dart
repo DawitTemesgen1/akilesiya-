@@ -23,23 +23,39 @@ class UserProvider extends ChangeNotifier {
 
   /// A general check for any administrative role.
   bool get isAdmin {
-    return _roles.contains('system_admin') || // ADDED
-        _roles.contains('superior_admin') ||
-        _roles.contains('plan_admin') ||
-        _roles.contains('development_admin') ||
-        _roles.contains('grade_admin') ||
-        _roles.contains('attendance_admin') ||
-        _roles.contains('library_admin');
+    return _roles.any((r) => [
+          'system_admin',
+          'superior_admin',
+          'plan_admin',
+          'development_admin',
+          'grade_admin',
+          'attendance_admin',
+          'library_admin'
+        ].contains(r.trim()));
   }
 
-  /// A specific check for the highest-level administrator.
+  /// Specific check for the highest-level administrators.
+  bool get isSuperiorOrSystemAdmin =>
+      _roles.contains('system_admin') || _roles.contains('superior_admin');
+
   bool get isSystemAdmin => _roles.contains('system_admin');
+  bool get isSuperiorAdmin => _roles.contains('superior_admin');
 
-  /// A centralized check to determine if the user has permission
-  /// to manage the public homepage posts.
-  bool get canManagePublicPosts {
-    return _roles.contains('system_admin') || _roles.contains('superior_admin');
-  }
+  /// Centralized permission helpers - direct checks only
+  bool get canManageAttendance =>
+      _roles.contains('system_admin') ||
+      _roles.contains('superior_admin') ||
+      _roles.contains('attendance_admin');
+
+  bool get canManagePlans =>
+      _roles.contains('system_admin') ||
+      _roles.contains('superior_admin') ||
+      _roles.contains('plan_admin');
+
+  bool get canManagePublicPosts =>
+      _roles.contains('system_admin') ||
+      _roles.contains('superior_admin') ||
+      _roles.contains('content_admin');
 
   // =======================================================
   // --- MODIFICATIONS END HERE ---
@@ -91,12 +107,22 @@ class UserProvider extends ChangeNotifier {
         : null;
     _isLoggedIn = true;
 
-    _roles = (profileData['role'] is String)
-        ? (profileData['role'] as String)
-            .split(',')
-            .where((r) => r.isNotEmpty)
-            .toList()
-        : [];
+    // Robust role parsing: handle comma-separated string, List, or null
+    final rawRole = profileData['role'];
+    if (rawRole is String) {
+      _roles = rawRole
+          .split(',')
+          .map((r) => r.trim())
+          .where((r) => r.isNotEmpty)
+          .toList();
+    } else if (rawRole is List) {
+      _roles = rawRole
+          .map((r) => r.toString().trim())
+          .where((r) => r.isNotEmpty)
+          .toList();
+    } else {
+      _roles = [];
+    }
 
     // Parse Allowed Screens
     _allowedScreens = (profileData['allowed_screens'] is List)
