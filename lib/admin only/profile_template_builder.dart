@@ -262,6 +262,9 @@ class _ProfileTemplateBuilderScreenState
     List<String> draftOptions = [];
     bool isSubmitting = false;
 
+    debugPrint(
+        'DEBUG: Edit dialog - field[type]="${field['type']}", rawFieldType="$rawFieldType", final fieldType="$fieldType"');
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
