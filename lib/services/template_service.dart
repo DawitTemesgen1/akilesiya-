@@ -31,7 +31,7 @@ class TemplateService {
       'name': name,
       'managed_by': managedBy,
       'profile_tab': profileTab,
-      'field_type': fieldType,
+      'type': fieldType,
     }));
   }
 
@@ -45,7 +45,7 @@ class TemplateService {
       'name': name,
       'managed_by': managedBy,
       'profile_tab': profileTab,
-      'field_type': fieldType,
+      'type': fieldType,
     }));
   }
 
