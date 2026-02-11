@@ -2,6 +2,7 @@ import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/appdrawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
@@ -247,7 +248,7 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
 const Color premiumDark = Color(0xFF0F0F1E);
 const Color premiumGold = Color(0xFFFFD700);
 
-class AppBottomNavBar extends StatelessWidget {
+class AppBottomNavBar extends StatefulWidget {
   final int selectedIndex;
   final Function(int) onItemTapped;
   final AppLocalizations l10n;
@@ -260,102 +261,174 @@ class AppBottomNavBar extends StatelessWidget {
   });
 
   @override
+  State<AppBottomNavBar> createState() => _AppBottomNavBarState();
+}
+
+class _AppBottomNavBarState extends State<AppBottomNavBar>
+    with TickerProviderStateMixin {
+  late AnimationController _morphController;
+  late AnimationController _rippleController;
+  late Animation<double> _morphAnimation;
+  int _previousIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _morphController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _rippleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _morphAnimation = CurvedAnimation(
+      parent: _morphController,
+      curve: Curves.elasticOut,
+    );
+    _previousIndex = widget.selectedIndex;
+  }
+
+  @override
+  void didUpdateWidget(AppBottomNavBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedIndex != widget.selectedIndex) {
+      _previousIndex = oldWidget.selectedIndex;
+      _morphController.forward(from: 0);
+      _rippleController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _morphController.dispose();
+    _rippleController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = themeProvider.isDarkMode(context);
     final bgColor = isDark ? const Color(0xFF0F0F1E) : Colors.white;
-    final borderColor = isDark
-        ? const Color(0xFFFFD700).withValues(alpha: 0.2)
-        : const Color(0xFF1E3A8A).withValues(alpha: 0.1);
     final selectedBg =
         isDark ? const Color(0xFFFFD700) : const Color(0xFF1E3A8A);
     final selectedText = isDark ? const Color(0xFF0F0F1E) : Colors.white;
     final unselectedIcon = isDark ? Colors.white54 : const Color(0xFF64748B);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            bgColor.withValues(alpha: 0.98),
-            bgColor.withValues(alpha: 0.95),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: borderColor, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.5)
-                : Colors.black.withValues(alpha: 0.1),
-            blurRadius: 25,
-            spreadRadius: 2,
-            offset: const Offset(0, 10),
+    return AnimatedBuilder(
+      animation: _morphAnimation,
+      builder: (context, child) {
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          height: 75,
+          child: Stack(
+            children: [
+              // Morphing island background
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: MorphingIslandPainter(
+                    selectedIndex: widget.selectedIndex,
+                    previousIndex: _previousIndex,
+                    progress: _morphAnimation.value,
+                    isDark: isDark,
+                    primaryColor: selectedBg,
+                  ),
+                ),
+              ),
+              // Glassmorphism overlay
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(35),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            bgColor.withValues(alpha: 0.7),
+                            bgColor.withValues(alpha: 0.5),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(35),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.05),
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // Navigation items
+              Positioned.fill(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _FloatingNavItem(
+                      icon: Iconsax.home_2,
+                      activeIcon: Iconsax.home_25,
+                      label: widget.l10n.homePageTitle,
+                      isSelected: widget.selectedIndex == 0,
+                      onTap: () => widget.onItemTapped(0),
+                      selectedBg: selectedBg,
+                      selectedText: selectedText,
+                      unselectedIcon: unselectedIcon,
+                      animationProgress:
+                          widget.selectedIndex == 0 ? _morphAnimation.value : 0,
+                    ),
+                    _FloatingNavItem(
+                      icon: Iconsax.messages_1,
+                      activeIcon: Iconsax.messages_15,
+                      label: widget.l10n.chatPageTitle,
+                      isSelected: widget.selectedIndex == 1,
+                      onTap: () => widget.onItemTapped(1),
+                      selectedBg: selectedBg,
+                      selectedText: selectedText,
+                      unselectedIcon: unselectedIcon,
+                      animationProgress:
+                          widget.selectedIndex == 1 ? _morphAnimation.value : 0,
+                    ),
+                    _FloatingNavItem(
+                      icon: Iconsax.teacher,
+                      activeIcon: Iconsax.teacher5,
+                      label: widget.l10n.learningPageTitle,
+                      isSelected: widget.selectedIndex == 2,
+                      onTap: () => widget.onItemTapped(2),
+                      selectedBg: selectedBg,
+                      selectedText: selectedText,
+                      unselectedIcon: unselectedIcon,
+                      animationProgress:
+                          widget.selectedIndex == 2 ? _morphAnimation.value : 0,
+                    ),
+                    _FloatingNavItem(
+                      icon: Iconsax.user,
+                      activeIcon: Iconsax.user5,
+                      label: widget.l10n.profilePageTitle,
+                      isSelected: widget.selectedIndex == 3,
+                      onTap: () => widget.onItemTapped(3),
+                      selectedBg: selectedBg,
+                      selectedText: selectedText,
+                      unselectedIcon: unselectedIcon,
+                      animationProgress:
+                          widget.selectedIndex == 3 ? _morphAnimation.value : 0,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          // Inner glow effect
-          BoxShadow(
-            color: isDark
-                ? selectedBg.withValues(alpha: 0.05)
-                : selectedBg.withValues(alpha: 0.02),
-            blurRadius: 15,
-            spreadRadius: -5,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _NavBarItem(
-            icon: Iconsax.home_2,
-            activeIcon: Iconsax.home_25,
-            label: l10n.homePageTitle,
-            isSelected: selectedIndex == 0,
-            onTap: () => onItemTapped(0),
-            selectedBg: selectedBg,
-            selectedText: selectedText,
-            unselectedIcon: unselectedIcon,
-          ),
-          _NavBarItem(
-            icon: Iconsax.messages_1,
-            activeIcon: Iconsax.messages_15,
-            label: l10n.chatPageTitle,
-            isSelected: selectedIndex == 1,
-            onTap: () => onItemTapped(1),
-            selectedBg: selectedBg,
-            selectedText: selectedText,
-            unselectedIcon: unselectedIcon,
-          ),
-          _NavBarItem(
-            icon: Iconsax.teacher,
-            activeIcon: Iconsax.teacher5,
-            label: l10n.learningPageTitle,
-            isSelected: selectedIndex == 2,
-            onTap: () => onItemTapped(2),
-            selectedBg: selectedBg,
-            selectedText: selectedText,
-            unselectedIcon: unselectedIcon,
-          ),
-          _NavBarItem(
-            icon: Iconsax.user,
-            activeIcon: Iconsax.user5,
-            label: l10n.profilePageTitle,
-            isSelected: selectedIndex == 3,
-            onTap: () => onItemTapped(3),
-            selectedBg: selectedBg,
-            selectedText: selectedText,
-            unselectedIcon: unselectedIcon,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _NavBarItem extends StatelessWidget {
+class _FloatingNavItem extends StatelessWidget {
   final IconData icon;
   final IconData activeIcon;
   final String label;
@@ -364,8 +437,9 @@ class _NavBarItem extends StatelessWidget {
   final Color selectedBg;
   final Color selectedText;
   final Color unselectedIcon;
+  final double animationProgress;
 
-  const _NavBarItem({
+  const _FloatingNavItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
@@ -374,71 +448,138 @@ class _NavBarItem extends StatelessWidget {
     required this.selectedBg,
     required this.selectedText,
     required this.unselectedIcon,
+    required this.animationProgress,
   });
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return GestureDetector(
       onTap: () {
-        HapticFeedback.mediumImpact();
+        HapticFeedback.lightImpact();
         onTap();
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOutQuart,
-        padding: EdgeInsets.symmetric(
-            horizontal: isSelected ? 20 : 12, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? selectedBg : Colors.transparent,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: selectedBg.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected ? selectedText : unselectedIcon,
-              size: 24,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Transform.translate(
+            offset: Offset(0,
+                isSelected ? -Interpolation.lerp(0, 4, animationProgress) : 0),
+            child: Transform.scale(
+              scale: isSelected
+                  ? Interpolation.lerp(1.0, 1.2, animationProgress)
+                  : 1.0,
+              child: Icon(
+                isSelected ? activeIcon : icon,
+                color: isSelected
+                    ? Color.lerp(unselectedIcon, selectedBg, animationProgress)
+                    : unselectedIcon,
+                size: 26,
+              ),
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-              child: SizedBox(width: isSelected ? 8 : 0),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-              child: isSelected
-                  ? Text(
-                      label,
-                      style: l10n.localeName == 'am'
-                          ? GoogleFonts.notoSansEthiopic(
-                              color: selectedText,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
-                            )
-                          : GoogleFonts.poppins(
-                              color: selectedText,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
+          ),
+          const SizedBox(height: 4),
+          AnimatedOpacity(
+            opacity: isSelected ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: Text(
+              label,
+              style: l10n.localeName == 'am'
+                  ? GoogleFonts.notoSansEthiopic(
+                      color: isDark(context) ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
                     )
-                  : const SizedBox.shrink(),
+                  : GoogleFonts.poppins(
+                      color: isDark(context) ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+}
+
+/// Helper for simple interpolation
+class Interpolation {
+  static double lerp(double start, double end, double t) =>
+      start + (end - start) * t;
+}
+
+class MorphingIslandPainter extends CustomPainter {
+  final int selectedIndex;
+  final int previousIndex;
+  final double progress;
+  final bool isDark;
+  final Color primaryColor;
+
+  MorphingIslandPainter({
+    required this.selectedIndex,
+    required this.previousIndex,
+    required this.progress,
+    required this.isDark,
+    required this.primaryColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Calculate item width
+    final itemWidth = size.width / 4;
+
+    // Calculate positions
+    final double prevX = (previousIndex * itemWidth) + (itemWidth / 2);
+    final double targetX = (selectedIndex * itemWidth) + (itemWidth / 2);
+
+    // Interpolate current X
+    final double currentX = prevX + (targetX - prevX) * progress;
+
+    // Draw the active indicator blob
+    final blobPaint = Paint()
+      ..color = primaryColor.withValues(alpha: isDark ? 0.8 : 1.0)
+      ..maskFilter =
+          MaskFilter.blur(BlurStyle.normal, 10 * (1 - progress).abs());
+
+    // Morphing factor (stretching while moving)
+    final distance = (targetX - prevX).abs();
+    final stretch =
+        (progress < 0.5 ? progress : 1 - progress) * (distance / 40);
+
+    final Rect blobRect = Rect.fromCenter(
+      center: Offset(currentX, size.height / 2),
+      width: 50 + stretch * 20,
+      height: 45 - stretch * 5,
+    );
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(blobRect, Radius.circular(22)),
+      blobPaint,
+    );
+
+    // Draw subtle glow
+    final glowPaint = Paint()
+      ..color = primaryColor.withValues(alpha: isDark ? 0.3 : 0.2)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+
+    canvas.drawCircle(
+      Offset(currentX, size.height / 2),
+      25 + stretch * 10,
+      glowPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant MorphingIslandPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.selectedIndex != selectedIndex;
   }
 }
 
