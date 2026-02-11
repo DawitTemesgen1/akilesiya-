@@ -246,7 +246,7 @@ class _ProfileTemplateBuilderScreenState
     final optionController = TextEditingController();
     String managedBy = field['managed_by'] ?? 'ADMIN';
     String profileTab = field['profile_tab'] ?? 'PERSONAL';
-    String fieldType = field['field_type'] ?? 'TEXT';
+    String fieldType = field['type'] ?? 'TEXT';
     List<dynamic> existingOptions = List.from(field['options'] ?? []);
     List<String> draftOptions = [];
     bool isSubmitting = false;
@@ -545,7 +545,7 @@ class _ProfileTemplateBuilderScreenState
                             'ትር: ${_profileTabTranslations[field['profile_tab']?.toString().toUpperCase()] ?? field['profile_tab']} | የሚስተካከለው በ: ${_managedByTranslations[field['managed_by']?.toString().toUpperCase()] ?? field['managed_by']}',
                             style: GoogleFonts.notoSansEthiopic(fontSize: 12)),
                         Text(
-                            'ዓይነት: ${_fieldTypeTranslations[field['field_type']?.toString().toUpperCase()] ?? field['field_type'] ?? 'ያልታወቀ'}',
+                            'ዓይነት: ${_fieldTypeTranslations[field['type']?.toString().toUpperCase()] ?? field['type'] ?? 'ያልታወቀ'}',
                             style: GoogleFonts.notoSansEthiopic(
                                 fontSize: 12, color: Colors.blueGrey)),
                       ],
@@ -576,7 +576,7 @@ class _ProfileTemplateBuilderScreenState
                         'RADIO',
                         'CHECKBOX',
                         'VOTE'
-                      ].contains(field['field_type']?.toString().toUpperCase()))
+                      ].contains(field['type']?.toString().toUpperCase()))
                         TextButton.icon(
                             icon: const Icon(Iconsax.add),
                             label: Text('አማራጭ ያክሉ',
