@@ -193,11 +193,11 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
           name: 'EditProfileSheet');
 
       final userFields = fields.where((f) {
-        final filledBy = f['filled_by']?.toString().toUpperCase();
+        final managedBy = f['managed_by']?.toString().toUpperCase();
         final passes =
-            filledBy == 'USER' || filledBy == 'BOTH' || filledBy == null;
+            managedBy == 'USER' || managedBy == 'BOTH' || managedBy == null;
         developer.log(
-            "Field: ${f['name']}, filled_by: $filledBy, passes: $passes",
+            "Field: ${f['name']}, managed_by: $managedBy, passes: $passes",
             name: 'EditProfileSheet');
         return passes;
       }).toList();
