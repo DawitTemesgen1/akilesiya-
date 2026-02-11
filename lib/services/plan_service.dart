@@ -31,10 +31,14 @@ class PlanService {
     }
   }
 
-  static Future<Map<String, dynamic>> getPlanData({required int year}) {
+  static Future<Map<String, dynamic>> getPlanData(
+      {required int year, String? role}) {
     // Correct Route: /plans
-    // Try passing role context explicitly if backend supports it
-    return _handleRequest(ApiService.get('/plans?year=$year&role=plan_admin'));
+    String route = '/plans?year=$year';
+    if (role != null && role.isNotEmpty) {
+      route += '&role=$role';
+    }
+    return _handleRequest(ApiService.get(route));
   }
 
   static Future<Map<String, dynamic>> createDepartment({

@@ -97,8 +97,10 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
     if (rawCustomValues is List) {
       _selectedCustomFieldValues = {
         for (var item in rawCustomValues)
-          if (item['field_id'] != null && item['option_id'] != null)
-            item['field_id'].toString(): item['option_id'].toString()
+          if (item['field_id'] != null)
+            item['field_id'].toString():
+                (item['value'] ?? item['option_id'] ?? item['value_text'])
+                    ?.toString()
       };
     } else if (rawCustomValues is Map) {
       _selectedCustomFieldValues = Map<String, String?>.from(rawCustomValues);

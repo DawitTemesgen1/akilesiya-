@@ -145,20 +145,17 @@ class PlanControlScreen extends StatefulWidget {
 }
 
 class _PlanControlScreenState extends State<PlanControlScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _isLoading = true;
-
   final _formKey = GlobalKey<FormState>();
 
-  // Theme Getters
-  Color get primaryColor =>
-      Provider.of<ThemeProvider>(context).getBackgroundColor(context);
-  Color get accentColor =>
-      Provider.of<ThemeProvider>(context).getPrimaryColor(context);
-  Color get cardColor =>
-      Provider.of<ThemeProvider>(context).getSurfaceColor(context);
-  Color get onSurfaceColor =>
-      Provider.of<ThemeProvider>(context).getOnSurfaceColor(context);
+  // Theme Colors (assigned in build to be safe)
+  late Color primaryColor;
+  late Color accentColor;
+  late Color cardColor;
+  late Color onSurfaceColor;
+
+  late TabController _tabController;
 
   List<User> _allUsers = [];
   List<Department> _allowedDepartments = [];
@@ -177,14 +174,40 @@ class _PlanControlScreenState extends State<PlanControlScreen>
   @override
   void initState() {
     super.initState();
-    // TabController is no longer initialized here to allow for dynamic tab length
     _selectedYear = DateTime.now().year;
-    _initializeData();
+
+    // Initialize TabController with a default length (updated later if needed)
+    // We start with 2 (Standard User). If Superior Admin, we'll need to update or handle it.
+    // To be safe and simple, we'll initialize it in `didChangeDependencies` or just check roles here?
+    // Actually, accessing Provider in initState with listen:false is safe.
+    // Let's defer strict length setting to initialization or use a safe default.
+    // Better strategy: Initialize with expected length based on current role state if possible,
+    // or handle dynamic length by disposing and re-initializing if roles change (rare).
+    // For now, let's look at how we determine `isSuperiorAdmin`.
+    // We can't easily change tab controller length.
+    // Let's assume standard behavior: we will initialize it after checking roles or just use a builder.
+    // Wait, `isSuperiorAdmin` relies on `UserProvider`.
+    // Let's initialize `_tabController` in `didChangeDependencies` or `_initializeData`.
+    // Actually, `TabController` needs `vsync`.
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabSelection);
+
+    // Defer data load to next frame to allow context access
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+    });
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.indexIsChanging) {
+      setState(() {}); // Rebuild to update FAB visibility
+    }
   }
 
   @override
   void dispose() {
-    // No manual TabController to dispose
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -218,6 +241,12 @@ class _PlanControlScreenState extends State<PlanControlScreen>
     // Self-healing: Ensure superior_admin has plan_admin role for backend compatibility
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+      // FIX: Force refresh profile to ensure roles are in sync with backend
+      print(
+          'DEBUG PlanControlScreen: Refreshing user profile to sync roles...');
+      await userProvider.refreshProfile();
+
       if (userProvider.roles.contains('superior_admin') &&
           !userProvider.roles.contains('plan_admin')) {
         print(
@@ -244,8 +273,37 @@ class _PlanControlScreenState extends State<PlanControlScreen>
     }
 
     // ======================= FIX 1 =======================
+    // Determine the most privileged role to send to backend context
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+    // Re-init TabController if role changes tab count requirements
+    final bool isSuperiorAdmin =
+        userProvider.roles.contains('superior_admin') ||
+            userProvider.roles.contains('system_admin');
+    final int requiredTabs = isSuperiorAdmin ? 3 : 2;
+    if (_tabController.length != requiredTabs) {
+      _tabController.removeListener(_handleTabSelection);
+      _tabController.dispose();
+      _tabController = TabController(length: requiredTabs, vsync: this);
+      _tabController.addListener(_handleTabSelection);
+      // Trigger rebuild to update TabBar with new controller
+      if (mounted) setState(() {});
+    }
+
+    String? effectiveRole;
+
+    // BACKEND FIXED: Now we can prioritize the highest role
+    if (userProvider.roles.contains('superior_admin')) {
+      effectiveRole = 'superior_admin';
+    } else if (userProvider.roles.contains('system_admin')) {
+      effectiveRole = 'system_admin';
+    } else if (userProvider.roles.contains('plan_admin')) {
+      effectiveRole = 'plan_admin';
+    }
+
     // Corrected the method name from getDashboardData to getPlanData
-    final result = await PlanService.getPlanData(year: _selectedYear);
+    final result =
+        await PlanService.getPlanData(year: _selectedYear, role: effectiveRole);
     // =======================================================
     if (mounted && result['success']) {
       final data = result['data'];
@@ -271,8 +329,19 @@ class _PlanControlScreenState extends State<PlanControlScreen>
   Future<void> _refreshPlans() async {
     setState(() => _isLoading = true);
     // ======================= FIX 2 =======================
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    String? effectiveRole;
+    if (userProvider.roles.contains('superior_admin')) {
+      effectiveRole = 'superior_admin';
+    } else if (userProvider.roles.contains('system_admin')) {
+      effectiveRole = 'system_admin';
+    } else if (userProvider.roles.contains('plan_admin')) {
+      effectiveRole = 'plan_admin';
+    }
+
     // Corrected the method name from getPlansForYear to getPlanData
-    final result = await PlanService.getPlanData(year: _selectedYear);
+    final result =
+        await PlanService.getPlanData(year: _selectedYear, role: effectiveRole);
     // =======================================================
     if (mounted && result['success']) {
       final data = result['data'];
@@ -382,12 +451,21 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         isRecurring: isRecurring,
         academicYear: academicYear);
     if (mounted && result['success']) {
-      final newPlan = PlanItem.fromJson(result['data']);
-      if (newPlan.academicYear == _selectedYear) {
-        setState(() => _plans.insert(0, newPlan));
+      print('DEBUG: _addPlan result data: ${result['data']}');
+      try {
+        final newPlan = PlanItem.fromJson(result['data']);
+        if (newPlan.academicYear == _selectedYear) {
+          setState(() => _plans.insert(0, newPlan));
+        }
+        _showSuccessSnackbar(
+            'Plan added successfully for ${newPlan.academicYear}.');
+      } catch (e) {
+        print('CRITICAL ERROR parsing new plan: $e');
+        // Don't crash, just show error and maybe refresh
+        _showErrorSnackbar(
+            'Plan created, but failed to display immediately. Refreshing...');
+        _initializeData();
       }
-      _showSuccessSnackbar(
-          'Plan added successfully for ${newPlan.academicYear}.');
     } else if (mounted) {
       _showErrorSnackbar(result['message'] ?? 'Failed to add plan.');
     }
@@ -449,6 +527,13 @@ class _PlanControlScreenState extends State<PlanControlScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Safe Theme Access
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    primaryColor = themeProvider.getBackgroundColor(context);
+    accentColor = themeProvider.getPrimaryColor(context);
+    cardColor = themeProvider.getSurfaceColor(context);
+    onSurfaceColor = themeProvider.getOnSurfaceColor(context);
+
     final userProvider = context.watch<UserProvider>();
 
     // DEBUG: Log roles for Plan Failure Diagnosis
@@ -460,25 +545,27 @@ class _PlanControlScreenState extends State<PlanControlScreen>
 
     print('DEBUG PlanControlScreen: isSuperiorAdmin = $isSuperiorAdmin');
 
-    return DefaultTabController(
-      length: isSuperiorAdmin ? 3 : 2,
-      child: Scaffold(
-        backgroundColor: primaryColor,
-        appBar: _buildAppBar(isSuperiorAdmin),
-        body: _isLoading
-            ? Center(child: CircularProgressIndicator(color: accentColor))
-            : TabBarView(
-                children: [
-                  _buildDepartmentGrid(isSuperiorAdmin),
-                  _buildPlanList(isSuperiorAdmin),
-                  if (isSuperiorAdmin) _buildAdminManagementTab(),
-                ],
-              ),
-        floatingActionButton: Builder(
-          builder: (context) =>
-              _buildFloatingActionButton(isSuperiorAdmin, context),
-        ),
-      ),
+    // Ensure controller matches role (in case build happens before initData finishes re-sync)
+    // Be careful not to dispose/init during build. We rely on _initializeData to correct it.
+    // If mismatch, we might show fewer tabs temporarily or error.
+    // Ideally we'd key the Scaffold or Controller, but for now we trust _initializeData.
+
+    return Scaffold(
+      backgroundColor: primaryColor,
+      appBar: _buildAppBar(isSuperiorAdmin),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: accentColor))
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildDepartmentGrid(isSuperiorAdmin),
+                _buildPlanList(isSuperiorAdmin),
+                if (isSuperiorAdmin && _tabController.length >= 3)
+                  _buildAdminManagementTab(),
+              ],
+            ),
+      floatingActionButton:
+          _buildFloatingActionButton(isSuperiorAdmin), // Contex removed
     );
   }
 
@@ -523,6 +610,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           ),
       ],
       bottom: TabBar(
+        controller: _tabController,
         indicatorColor: accentColor,
         indicatorWeight: 3,
         labelColor: accentColor,
@@ -531,7 +619,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         tabs: [
           const Tab(icon: Icon(Icons.dashboard_rounded), text: "ክፍላት"),
           const Tab(icon: Icon(Icons.list_alt_rounded), text: "ሁሉም እቅዶች"),
-          if (isSuperiorAdmin)
+          if (isSuperiorAdmin && _tabController.length >= 3)
             const Tab(
                 icon: Icon(Icons.admin_panel_settings), text: "Permissions"),
         ],
@@ -539,14 +627,13 @@ class _PlanControlScreenState extends State<PlanControlScreen>
     );
   }
 
-  Widget _buildFloatingActionButton(
-      bool isSuperiorAdmin, BuildContext context) {
-    final tabController = DefaultTabController.of(context);
+  Widget _buildFloatingActionButton(bool isSuperiorAdmin) {
+    // No context needed, we use _tabController directly
     return AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         transitionBuilder: (child, animation) =>
             ScaleTransition(scale: animation, child: child),
-        child: tabController.index == 0
+        child: _tabController.index == 0
             ? (isSuperiorAdmin
                 ? FloatingActionButton.extended(
                     key: const ValueKey('add_dept'),
@@ -557,9 +644,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                     label: Text("አዲስ ክፍል",
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.bold)),
+                    tooltip: 'Add Department',
                   )
                 : null)
-            : (tabController.index == 1
+            : (_tabController.index == 1
                 ? FloatingActionButton.extended(
                     key: const ValueKey('add_plan'),
                     onPressed: _allowedDepartments.isNotEmpty
@@ -604,14 +692,15 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           final department = _allowedDepartments[index];
           return FadeInUp(
             delay: Duration(milliseconds: index * 50),
-            child: _buildDepartmentCard(department, isSuperiorAdmin),
+            child: _buildDepartmentCard(department, isSuperiorAdmin, context),
           );
         },
       ),
     );
   }
 
-  Widget _buildDepartmentCard(Department department, bool isSuperiorAdmin) {
+  Widget _buildDepartmentCard(
+      Department department, bool isSuperiorAdmin, BuildContext context) {
     final plansForDept =
         _plans.where((p) => p.departmentId == department.id).toList();
     final completedCount = plansForDept.where((p) => p.isDone).length;
@@ -631,7 +720,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
       child: InkWell(
         onTap: () {
           setState(() => _selectedDepartmentIdForFilter = department.id);
-          DefaultTabController.of(context).animateTo(1);
+          _tabController.animateTo(1);
         },
         child: Padding(
           padding: const EdgeInsets.all(16),
