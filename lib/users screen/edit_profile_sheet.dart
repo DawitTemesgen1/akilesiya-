@@ -189,11 +189,22 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
       final fields = await AuthService.getTenantCustomFields(tenantId);
       if (!mounted) return;
 
+      developer.log("DEBUG: Received ${fields.length} total custom fields",
+          name: 'EditProfileSheet');
+
       final userFields = fields.where((f) {
         final filledBy = f['filled_by']?.toString().toUpperCase();
-        // Show fields that can be filled by USER
-        return filledBy == 'USER' || filledBy == 'BOTH' || filledBy == null;
+        final passes =
+            filledBy == 'USER' || filledBy == 'BOTH' || filledBy == null;
+        developer.log(
+            "Field: ${f['name']}, filled_by: $filledBy, passes: $passes",
+            name: 'EditProfileSheet');
+        return passes;
       }).toList();
+
+      developer.log(
+          "DEBUG: Filtered to ${userFields.length} user-editable fields",
+          name: 'EditProfileSheet');
 
       setState(() {
         _localCustomFields = userFields;
