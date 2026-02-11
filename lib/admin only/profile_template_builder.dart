@@ -409,6 +409,8 @@ class _ProfileTemplateBuilderScreenState
                             fieldType);
 
                         if (result['success'] == true) {
+                          debugPrint(
+                              'DEBUG: Updated field response: ${result['data']}');
                           final fieldId =
                               int.tryParse(field['id'].toString()) ?? 0;
                           if (draftOptions.isNotEmpty) {
