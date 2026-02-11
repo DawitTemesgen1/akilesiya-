@@ -631,20 +631,32 @@ class _MemberDetailSheetState extends State<MemberDetailSheet> {
         ),
         _buildAdminTile(
           "መታወቂያ",
-          _userDetail!['is_verified'] == 1 ? "የጸደቀ" : "ያልጸደቀ",
+          (_userDetail!['is_verified'] == 1 ||
+                  _userDetail!['is_verified'] == true)
+              ? "የጸደቀ"
+              : "ያልጸደቀ",
           Iconsax.verify,
-          onTap: _userDetail!['is_verified'] == 1 ? null : () => _verifyUser(),
+          onTap: (_userDetail!['is_verified'] == 1 ||
+                  _userDetail!['is_verified'] == true ||
+                  _isSaving)
+              ? null
+              : () => _verifyUser(),
           trailing: Icon(
-            _userDetail!['is_verified'] == 1 ? Iconsax.verify5 : Iconsax.verify,
-            color:
-                _userDetail!['is_verified'] == 1 ? Colors.green : Colors.grey,
+            (_userDetail!['is_verified'] == 1 ||
+                    _userDetail!['is_verified'] == true)
+                ? Iconsax.verify5
+                : Iconsax.verify,
+            color: (_userDetail!['is_verified'] == 1 ||
+                    _userDetail!['is_verified'] == true)
+                ? Colors.green
+                : Colors.grey,
           ),
         ),
         _buildAdminTile(
           "ሚና (Role)",
           _userDetail!['role'] ?? "user",
           Iconsax.shield,
-          onTap: () => _showRolePicker(primaryColor, isDark),
+          onTap: _isSaving ? null : () => _showRolePicker(primaryColor, isDark),
           trailing: const Icon(Iconsax.edit),
         ),
       ],
