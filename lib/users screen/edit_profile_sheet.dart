@@ -190,9 +190,9 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
       if (!mounted) return;
 
       final userFields = fields.where((f) {
-        final managedBy = f['managed_by']?.toString().toUpperCase();
-        // Hide fields explicitly managed by ADMIN or SYSTEM
-        return managedBy == 'USER' || managedBy == null;
+        final filledBy = f['filled_by']?.toString().toUpperCase();
+        // Show fields that can be filled by USER
+        return filledBy == 'USER' || filledBy == 'BOTH' || filledBy == null;
       }).toList();
 
       setState(() {
