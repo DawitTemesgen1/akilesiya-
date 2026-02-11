@@ -506,33 +506,38 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
           ),
         ),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 20),
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              "እንኳን ደህና መጡ፣",
-              style: GoogleFonts.notoSansEthiopic(
-                fontSize: 14,
-                color: subtleText,
-                fontWeight: FontWeight.w500,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: Container(
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.only(left: 20, bottom: 16, right: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "እንኳን ደህና መጡ፣",
+                style: GoogleFonts.notoSansEthiopic(
+                  fontSize: 14,
+                  color: subtleText,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              userName,
-              style: GoogleFonts.notoSansEthiopic(
-                fontSize: 22,
-                color: textColor,
-                fontWeight: FontWeight.bold,
-                height: 1.1,
+              const SizedBox(height: 4),
+              Text(
+                userName,
+                style: GoogleFonts.notoSansEthiopic(
+                  fontSize: 22,
+                  color: textColor,
+                  fontWeight: FontWeight.bold,
+                  height: 1.1,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
