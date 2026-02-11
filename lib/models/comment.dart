@@ -2,7 +2,7 @@ import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 
 class Comment {
   final int id;
-  final int userId;
+  final String userId;
   final int? parentId;
   final String author;
   final String? authorAvatar;
@@ -35,9 +35,7 @@ class Comment {
 
     return Comment(
       id: json['id'] is String ? int.parse(json['id']) : json['id'],
-      userId: json['userId'] is String
-          ? int.parse(json['userId'])
-          : (json['userId'] ?? 0),
+      userId: json['userId']?.toString() ?? '',
       parentId: json['parentId'] != null
           ? (json['parentId'] is String
               ? int.parse(json['parentId'])

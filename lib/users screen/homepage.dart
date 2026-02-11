@@ -1045,7 +1045,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final currentUserId = userProvider.userProfile?['user_id'] ?? 0;
+    final currentUserId =
+        userProvider.userProfile?['user_id']?.toString() ?? '';
     final isSuperiorAdmin = userProvider.isSuperiorAdmin;
     final isSystemAdmin = userProvider.isSystemAdmin;
     final userTenantId = userProvider.tenantId;
