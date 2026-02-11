@@ -4,10 +4,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:iconsax_plus/iconsax_plus.dart';
-import 'package:provider/provider.dart';
 
 import 'dart:developer';
 
+import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
 
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
@@ -384,6 +385,7 @@ enum PostType { event, announcement, news, prayer }
 
 class PrivateComment {
   final int id;
+  final String userId;
   final String text;
   final DateTime timestamp;
   final String author;
@@ -391,6 +393,7 @@ class PrivateComment {
 
   PrivateComment({
     required this.id,
+    required this.userId,
     required this.text,
     required this.timestamp,
     required this.author,
@@ -411,6 +414,7 @@ class PrivateComment {
 
     return PrivateComment(
       id: json['id'],
+      userId: json['userId']?.toString() ?? '',
       text: json['text'] ?? '',
       timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
       author: json['author'] ?? '',
@@ -1643,6 +1647,7 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
   bool _isLoading = true;
   bool _isSending = false;
   String? _error;
+  PrivateComment? _editingComment;
 
   @override
   void initState() {
@@ -1682,29 +1687,77 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
 
   Future<void> _submitComment() async {
     final text = _commentController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isSending) return;
 
     setState(() {
       _isSending = true;
     });
 
-    final result =
-        await PrivateFeedService.createPostComment(widget.post.id, text);
+    Map<String, dynamic> result;
+    if (_editingComment != null) {
+      result =
+          await PrivateFeedService.updatePostComment(_editingComment!.id, text);
+    } else {
+      result = await PrivateFeedService.createPostComment(widget.post.id, text);
+    }
 
     if (mounted) {
-      setState(() {
-        _isSending = false;
-      });
-
       if (result['success']) {
         _commentController.clear();
+        setState(() {
+          _editingComment = null;
+        });
         _fetchComments(); // Refresh list
-        widget.onCommentAdded(_comments.length + 1); // Optimistic update
+        if (_editingComment == null) {
+          widget.onCommentAdded(
+              _comments.length + 1); // Optimistic update only for new comments
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(result['message'] ?? 'Failed to post comment'),
           backgroundColor: Colors.redAccent,
         ));
+      }
+      setState(() {
+        _isSending = false;
+      });
+    }
+  }
+
+  Future<void> _deleteComment(PrivateComment comment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: premiumDark,
+        title: const Text("Delete Comment?",
+            style: TextStyle(color: Colors.white)),
+        content: const Text("Are you sure you want to delete this comment?",
+            style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel",
+                  style: TextStyle(color: Colors.white54))),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Delete",
+                  style: TextStyle(color: Colors.redAccent))),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final result = await PrivateFeedService.deletePostComment(comment.id);
+      if (mounted) {
+        if (result['success']) {
+          _fetchComments();
+          widget.onCommentAdded(_comments.length - 1);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(result['message'] ?? 'Failed to delete comment'),
+            backgroundColor: Colors.red,
+          ));
+        }
       }
     }
   }
@@ -1805,87 +1858,162 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                             itemCount: _comments.length,
                             itemBuilder: (context, index) {
                               final comment = _comments[index];
+                              final isOwner = comment.userId ==
+                                  (Provider.of<UserProvider>(context,
+                                              listen: false)
+                                          .userProfile?['id']
+                                          ?.toString() ??
+                                      '');
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    CircleAvatar(
-                                      radius: 18,
-                                      backgroundColor: Colors.white10,
-                                      backgroundImage:
-                                          comment.authorAvatar != null
-                                              ? CachedNetworkImageProvider(
-                                                  comment.authorAvatar!)
-                                              : null,
-                                      child: comment.authorAvatar == null
-                                          ? Text(
-                                              comment.author.isNotEmpty
-                                                  ? comment.author[0]
-                                                  : '?',
-                                              style: GoogleFonts.poppins(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: premiumGold),
-                                            )
-                                          : null,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.05),
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                              topRight: Radius.circular(16),
-                                              bottomLeft: Radius.circular(16),
-                                              bottomRight: Radius.circular(16),
-                                            )),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(
-                                                  comment.author,
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 18,
+                                          backgroundColor: Colors.white10,
+                                          backgroundImage:
+                                              comment.authorAvatar != null
+                                                  ? CachedNetworkImageProvider(
+                                                      comment.authorAvatar!)
+                                                  : null,
+                                          child: comment.authorAvatar == null
+                                              ? Text(
+                                                  comment.author.isNotEmpty
+                                                      ? comment.author[0]
+                                                      : '?',
                                                   style: GoogleFonts.poppins(
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      color: Colors.white,
-                                                      fontSize: 13),
+                                                      color: premiumGold),
+                                                )
+                                              : null,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.05),
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                  topRight: Radius.circular(16),
+                                                  bottomLeft:
+                                                      Radius.circular(16),
+                                                  bottomRight:
+                                                      Radius.circular(16),
+                                                )),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      comment.author,
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color:
+                                                                  Colors.white,
+                                                              fontSize: 13),
+                                                    ),
+                                                    Text(
+                                                      DateFormat.yMMMd().format(
+                                                          comment.timestamp),
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                              color: Colors
+                                                                  .white24,
+                                                              fontSize: 10),
+                                                    ),
+                                                  ],
                                                 ),
+                                                const SizedBox(height: 4),
                                                 Text(
-                                                  DateFormat.yMMMd().format(
-                                                      comment.timestamp),
-                                                  style: GoogleFonts.poppins(
-                                                      color: Colors.white24,
-                                                      fontSize: 10),
+                                                  comment.text,
+                                                  style: GoogleFonts
+                                                      .notoSansEthiopic(
+                                                          color: Colors.white70,
+                                                          fontSize: 14),
                                                 ),
                                               ],
                                             ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              comment.text,
-                                              style:
-                                                  GoogleFonts.notoSansEthiopic(
-                                                      color: Colors.white70,
-                                                      fontSize: 14),
-                                            ),
-                                          ],
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ),
+                                    if (isOwner)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextButton.icon(
+                                              onPressed: () {
+                                                setState(() {
+                                                  _editingComment = comment;
+                                                  _commentController.text =
+                                                      comment.text;
+                                                });
+                                              },
+                                              icon: const Icon(Iconsax.edit,
+                                                  size: 14,
+                                                  color: Colors.white54),
+                                              label: const Text("Edit",
+                                                  style: TextStyle(
+                                                      color: Colors.white54,
+                                                      fontSize: 12))),
+                                          TextButton.icon(
+                                              onPressed: () =>
+                                                  _deleteComment(comment),
+                                              icon: const Icon(Iconsax.trash,
+                                                  size: 14,
+                                                  color: Colors.redAccent),
+                                              label: const Text("Delete",
+                                                  style: TextStyle(
+                                                      color: Colors.redAccent,
+                                                      fontSize: 12))),
+                                        ],
+                                      )
                                   ],
                                 ),
                               );
                             },
                           ),
           ),
+          // Editing Indicator
+          if (_editingComment != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.white.withValues(alpha: 0.1),
+              child: Row(
+                children: [
+                  const Icon(Iconsax.edit, size: 16, color: premiumGold),
+                  const SizedBox(width: 8),
+                  const Text("Editing comment...",
+                      style: TextStyle(color: Colors.white70)),
+                  const Spacer(),
+                  IconButton(
+                      icon: const Icon(Icons.close,
+                          size: 16, color: Colors.white54),
+                      onPressed: () {
+                        setState(() {
+                          _editingComment = null;
+                          _commentController.clear();
+                        });
+                      })
+                ],
+              ),
+            ),
           // Input
           Container(
             padding: EdgeInsets.fromLTRB(

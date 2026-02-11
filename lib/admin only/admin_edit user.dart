@@ -5,7 +5,6 @@ import 'package:iconsax/iconsax.dart';
 import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/services/app_theme.dart';
 import 'package:flutter/services.dart';
-import 'dart:typed_data';
 
 import 'package:amde_haymanot_abalat_guday/admin%20only/user_data_print_preview.dart';
 import 'package:collection/collection.dart';

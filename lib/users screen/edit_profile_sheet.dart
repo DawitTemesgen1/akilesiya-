@@ -462,7 +462,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                             },
                             contentPadding: EdgeInsets.zero,
                           );
-                        }).toList(),
+                        }),
                         const SizedBox(height: 16),
                       ],
                     );
@@ -522,7 +522,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: DropdownButtonFormField<String>(
                       key: ValueKey('dropdown_$fieldId'),
-                      value: val,
+                      initialValue: val,
                       decoration: InputDecoration(
                           labelText: label,
                           border: const OutlineInputBorder(),

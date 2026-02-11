@@ -1,6 +1,7 @@
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/appdrawer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
@@ -275,7 +276,14 @@ class AppBottomNavBar extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: bgColor.withValues(alpha: 0.95),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            bgColor.withValues(alpha: 0.98),
+            bgColor.withValues(alpha: 0.95),
+          ],
+        ),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: borderColor, width: 1),
         boxShadow: [
@@ -286,7 +294,16 @@ class AppBottomNavBar extends StatelessWidget {
             blurRadius: 25,
             spreadRadius: 2,
             offset: const Offset(0, 10),
-          )
+          ),
+          // Inner glow effect
+          BoxShadow(
+            color: isDark
+                ? selectedBg.withValues(alpha: 0.05)
+                : selectedBg.withValues(alpha: 0.02),
+            blurRadius: 15,
+            spreadRadius: -5,
+            offset: const Offset(0, -5),
+          ),
         ],
       ),
       child: Row(
@@ -363,7 +380,10 @@ class _NavBarItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOutQuart,
@@ -372,6 +392,16 @@ class _NavBarItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? selectedBg : Colors.transparent,
           borderRadius: BorderRadius.circular(24),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: selectedBg.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [

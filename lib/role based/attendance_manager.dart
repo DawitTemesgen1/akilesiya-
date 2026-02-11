@@ -180,7 +180,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     }
 
     return DefaultTabController(
-      length: tabs.length > 0 ? tabs.length : 1,
+      length: tabs.isNotEmpty ? tabs.length : 1,
       child: Scaffold(
         backgroundColor: backgroundColor,
         appBar: AppBar(

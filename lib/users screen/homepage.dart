@@ -10,6 +10,7 @@ import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/post_detail_page.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/private_homepage.dart';
@@ -807,101 +808,113 @@ class PostCard extends StatelessWidget {
           : null,
     );
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: cardDecoration,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: primaryColor.withValues(alpha: 0.5),
-                      width: 2,
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => PostDetailPage(post: post),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: cardDecoration,
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: primaryColor.withValues(alpha: 0.5),
+                        width: 2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor:
+                          isDark ? Colors.black38 : Colors.grey[200],
+                      backgroundImage: post.authorAvatar != null
+                          ? CachedNetworkImageProvider(post.authorAvatar!)
+                          : null,
+                      child: post.authorAvatar == null
+                          ? Icon(Iconsax.user, color: subtleText)
+                          : null,
                     ),
                   ),
-                  child: CircleAvatar(
-                    radius: 22,
-                    backgroundColor: isDark ? Colors.black38 : Colors.grey[200],
-                    backgroundImage: post.authorAvatar != null
-                        ? CachedNetworkImageProvider(post.authorAvatar!)
-                        : null,
-                    child: post.authorAvatar == null
-                        ? Icon(Iconsax.user, color: subtleText)
-                        : null,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(post.author,
+                            style: GoogleFonts.notoSansEthiopic(
+                                color: textColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Icon(Iconsax.clock, size: 12, color: subtleText),
+                            const SizedBox(width: 4),
+                            Text(DateFormat.yMMMd().format(post.date),
+                                style: GoogleFonts.poppins(
+                                    color: subtleText, fontSize: 12)),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(post.author,
-                          style: GoogleFonts.notoSansEthiopic(
-                              color: textColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Iconsax.clock, size: 12, color: subtleText),
-                          const SizedBox(width: 4),
-                          Text(DateFormat.yMMMd().format(post.date),
-                              style: GoogleFonts.poppins(
-                                  color: subtleText, fontSize: 12)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Iconsax.more, color: subtleText),
-              ],
+                  Icon(Iconsax.more, color: subtleText),
+                ],
+              ),
             ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(post.title,
-                    style: GoogleFonts.notoSansEthiopic(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        height: 1.3,
-                        color: textColor)),
-                const SizedBox(height: 8),
-                Text(post.description,
-                    style: GoogleFonts.notoSansEthiopic(
-                        color: subtleText, fontSize: 14, height: 1.6),
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (post.imageUrl != null)
+            // Content
             Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: PostImage(imageUrl: post.imageUrl!, postId: post.id),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(post.title,
+                      style: GoogleFonts.notoSansEthiopic(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          height: 1.3,
+                          color: textColor)),
+                  const SizedBox(height: 8),
+                  Text(post.description,
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: subtleText, fontSize: 14, height: 1.6),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
+            const SizedBox(height: 16),
+            if (post.imageUrl != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: PostImage(imageUrl: post.imageUrl!, postId: post.id),
+              ),
 
-          // Interactions
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: PostFooter(
-                post: post, onInteraction: onInteraction, onComment: onComment),
-          ),
-          const SizedBox(height: 8),
-        ],
+            // Interactions
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: PostFooter(
+                  post: post,
+                  onInteraction: onInteraction,
+                  onComment: onComment),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
