@@ -916,6 +916,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   Comment? _replyingTo;
   Comment? _editingComment;
 
+  final Set<int> _expandedComments = {};
+  int _topLevelLimit = 10;
+
   @override
   void initState() {
     super.initState();
@@ -1105,29 +1108,88 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     : ListView.builder(
                         controller: controller,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: topLevelComments.length,
+                        itemCount: (topLevelComments.length > _topLevelLimit)
+                            ? _topLevelLimit + 1
+                            : topLevelComments.length,
                         itemBuilder: (context, index) {
+                          if (index == _topLevelLimit &&
+                              topLevelComments.length > _topLevelLimit) {
+                            return Center(
+                              child: TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _topLevelLimit += 10;
+                                  });
+                                },
+                                child: const Text("ተጨማሪ አስተያየቶችን ይመልከቱ",
+                                    style: TextStyle(color: premiumGold)),
+                              ),
+                            );
+                          }
+
                           final comment = topLevelComments[index];
                           final replies = repliesMap[comment.id] ?? [];
+                          final bool isExpanded =
+                              _expandedComments.contains(comment.id);
+                          final int repliesToShow =
+                              (replies.length >= 2 && !isExpanded)
+                                  ? 0
+                                  : replies.length;
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildCommentItem(comment, currentUserId,
                                   isSystemAdmin, isSuperiorAdmin, userTenantId),
-                              if (replies.isNotEmpty)
+                              if (replies.isNotEmpty && repliesToShow == 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 48.0, bottom: 12),
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _expandedComments.add(comment.id);
+                                      });
+                                    },
+                                    child: Text(
+                                      "ሁሉንም ${replies.length} ምላሾች ይመልከቱ",
+                                      style: const TextStyle(
+                                          color: premiumGold,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ),
+                              if (repliesToShow > 0)
                                 Padding(
                                   padding: const EdgeInsets.only(left: 32.0),
                                   child: Column(
-                                    children: replies
-                                        .map((reply) => _buildCommentItem(
-                                            reply,
-                                            currentUserId,
-                                            isSystemAdmin,
-                                            isSuperiorAdmin,
-                                            userTenantId,
-                                            isReply: true))
-                                        .toList(),
+                                    children: [
+                                      ...replies.map((reply) =>
+                                          _buildCommentItem(
+                                              reply,
+                                              currentUserId,
+                                              isSystemAdmin,
+                                              isSuperiorAdmin,
+                                              userTenantId,
+                                              isReply: true)),
+                                      if (isExpanded)
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: TextButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _expandedComments
+                                                    .remove(comment.id);
+                                              });
+                                            },
+                                            child: const Text("ምላሾችን ሰብስብ",
+                                                style: TextStyle(
+                                                    color: Colors.white54,
+                                                    fontSize: 12)),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
                             ],
