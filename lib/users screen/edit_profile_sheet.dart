@@ -53,7 +53,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
   String? _gender;
   DateTime? _dob;
   String? _spiritualClass;
-  Map<String, String?> _selectedCustomFieldValues = {};
+  Map<String, dynamic> _selectedCustomFieldValues = {};
   List<dynamic> _localCustomFields = [];
   bool _isLoadingFields = false;
 
@@ -92,20 +92,30 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
         : null;
     _spiritualClass = profile['spiritual_class'];
 
-    // 2. Parse Saved Values
+    // 2. Group Saved Values by Field ID
     final rawCustomValues = profile['custom_field_values'];
+    _selectedCustomFieldValues = {};
     if (rawCustomValues is List) {
-      _selectedCustomFieldValues = {
-        for (var item in rawCustomValues)
-          if (item['field_id'] != null)
-            item['field_id'].toString():
-                (item['value'] ?? item['option_id'] ?? item['value_text'])
-                    ?.toString()
-      };
+      for (var item in rawCustomValues) {
+        if (item['field_id'] == null) continue;
+        final fid = item['field_id'].toString();
+        final val = (item['value'] ?? item['option_id'] ?? item['value_text'])
+            ?.toString();
+        if (val == null) continue;
+
+        if (_selectedCustomFieldValues.containsKey(fid)) {
+          final existing = _selectedCustomFieldValues[fid];
+          if (existing is List) {
+            if (!existing.contains(val)) existing.add(val);
+          } else if (existing != val) {
+            _selectedCustomFieldValues[fid] = [existing, val];
+          }
+        } else {
+          _selectedCustomFieldValues[fid] = val;
+        }
+      }
     } else if (rawCustomValues is Map) {
-      _selectedCustomFieldValues = Map<String, String?>.from(rawCustomValues);
-    } else {
-      _selectedCustomFieldValues = {};
+      _selectedCustomFieldValues = Map<String, dynamic>.from(rawCustomValues);
     }
 
     setState(() {
@@ -382,36 +392,141 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   'TOGGLE'
                 ].contains(fieldType);
 
-                // 1. Prioritize Choice-based if options exist
+                // 1. Choice-based fields
                 if (isChoiceBased && options.isNotEmpty) {
-                  // Validate value exists in options to prevent Dropdown crash
-                  var val = _selectedCustomFieldValues[fieldId];
-                  if (val != null && options.isNotEmpty) {
-                    final rawValue = val.toString();
-                    final matches = options
-                        .where((opt) => opt['id'].toString() == rawValue);
-                    final match = matches.isNotEmpty ? matches.first : null;
-                    if (match == null) {
-                      developer.log(
-                          "DEBUG: Value $val not found in options for field $fieldId.",
-                          name: 'EditProfileSheet');
-                      val = null;
-                    }
-                  } else if (val != null && options.isEmpty) {
-                    val = null;
+                  final label = field['name'] ?? '';
+                  final currentValue = _selectedCustomFieldValues[fieldId];
+
+                  // A. MULTISELECT or CHECKBOX (Group Selection)
+                  if (fieldType == 'MULTISELECT' || fieldType == 'CHECKBOX') {
+                    final List<String> selectedList = currentValue is List
+                        ? List<String>.from(currentValue)
+                        : (currentValue != null
+                            ? [currentValue.toString()]
+                            : []);
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8.0,
+                          children: options.map((opt) {
+                            final oid = opt['id'].toString();
+                            final isSelected = selectedList.contains(oid);
+                            return FilterChip(
+                              label: Text(opt['option_value']),
+                              selected: isSelected,
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    selectedList.add(oid);
+                                  } else {
+                                    selectedList.remove(oid);
+                                  }
+                                  _selectedCustomFieldValues[fieldId] =
+                                      selectedList.isEmpty
+                                          ? null
+                                          : selectedList;
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  }
+
+                  // B. RADIO Buttons
+                  if (fieldType == 'RADIO') {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        ...options.map((opt) {
+                          final oid = opt['id'].toString();
+                          return RadioListTile<String>(
+                            title: Text(opt['option_value']),
+                            value: oid,
+                            groupValue: currentValue?.toString(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedCustomFieldValues[fieldId] = value;
+                              });
+                            },
+                            contentPadding: EdgeInsets.zero,
+                          );
+                        }).toList(),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  }
+
+                  // C. VOTE / RATING (Star-like or Chip choice)
+                  if (fieldType == 'VOTE') {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: options.map((opt) {
+                              final oid = opt['id'].toString();
+                              final isSelected =
+                                  currentValue?.toString() == oid;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: ChoiceChip(
+                                  label: Text(opt['option_value']),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      _selectedCustomFieldValues[fieldId] =
+                                          selected ? oid : null;
+                                    });
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  }
+
+                  // D. Fallback to Dropdown (for DROPDOWN and others)
+                  var val = currentValue is List
+                      ? (currentValue.isEmpty
+                          ? null
+                          : currentValue.first.toString())
+                      : currentValue?.toString();
+                  // Validate value exists in options
+                  if (val != null) {
+                    final match =
+                        options.any((opt) => opt['id'].toString() == val);
+                    if (!match) val = null;
                   }
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: DropdownButtonFormField<String>(
                       key: ValueKey('dropdown_$fieldId'),
-                      initialValue: val,
+                      value: val,
                       decoration: InputDecoration(
-                          labelText: field['name'],
+                          labelText: label,
                           border: const OutlineInputBorder(),
-                          prefixIcon: Icon(fieldType == 'VOTE'
-                              ? Iconsax.ranking
-                              : Iconsax.document_filter)),
+                          prefixIcon: const Icon(Iconsax.document_filter)),
                       items: [
                         DropdownMenuItem(
                             value: null,
@@ -431,9 +546,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                 }
 
                 // 2. Date Picker
-                if (fieldType == 'DATE' ||
-                    fieldType == 'DATE & TIME' ||
-                    fieldType == 'DATETIME') {
+                if (fieldType == 'DATE') {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: TextFormField(
@@ -472,6 +585,60 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                             _selectedCustomFieldValues[fieldId] =
                                 picked.toIso8601String().substring(0, 10);
                           });
+                        }
+                      },
+                    ),
+                  );
+                }
+
+                // 2.5 Date & Time Picker
+                if (fieldType == 'DATE & TIME' || fieldType == 'DATETIME') {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: TextFormField(
+                      key: ValueKey('datetime_$fieldId'),
+                      readOnly: true,
+                      controller: TextEditingController(
+                        text: _selectedCustomFieldValues[fieldId] ?? '',
+                      ),
+                      decoration: InputDecoration(
+                        labelText: field['name'],
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Iconsax.calendar_1),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Iconsax.close_circle),
+                          onPressed: () {
+                            setState(() {
+                              _selectedCustomFieldValues[fieldId] = null;
+                            });
+                          },
+                        ),
+                      ),
+                      onTap: () async {
+                        final DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2100),
+                        );
+                        if (pickedDate != null && mounted) {
+                          final TimeOfDay? pickedTime = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.now(),
+                          );
+                          if (pickedTime != null) {
+                            final fullDateTime = DateTime(
+                              pickedDate.year,
+                              pickedDate.month,
+                              pickedDate.day,
+                              pickedTime.hour,
+                              pickedTime.minute,
+                            );
+                            setState(() {
+                              _selectedCustomFieldValues[fieldId] =
+                                  fullDateTime.toIso8601String();
+                            });
+                          }
                         }
                       },
                     ),
@@ -624,12 +791,49 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   );
                 }
 
+                // 10. File / Image / Location (Placeholders)
+                if (fieldType == 'FILE' ||
+                    fieldType == 'IMAGE' ||
+                    fieldType == 'LOCATION') {
+                  IconData icon = Iconsax.document_upload;
+                  if (fieldType == 'IMAGE') icon = Iconsax.gallery;
+                  if (fieldType == 'LOCATION') icon = Iconsax.location;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: TextFormField(
+                      key: ValueKey('placeholder_$fieldId'),
+                      initialValue: _selectedCustomFieldValues[fieldId],
+                      decoration: InputDecoration(
+                        labelText: '${field['name']} ($fieldType)',
+                        hintText: 'Enter $fieldType value...',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: Icon(icon),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Iconsax.info_circle),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(
+                                    "$fieldType upload feature coming soon!")));
+                          },
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomFieldValues[fieldId] = value;
+                        });
+                      },
+                    ),
+                  );
+                }
+
                 // 9. Default to Text-based (includes TEXT, TEXTAREA, and fallbacks)
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: TextFormField(
                     key: ValueKey('text_$fieldId'),
-                    initialValue: _selectedCustomFieldValues[fieldId],
+                    initialValue:
+                        _selectedCustomFieldValues[fieldId]?.toString(),
                     maxLines: isTextArea ? 3 : 1,
                     decoration: InputDecoration(
                         labelText: field['name'],

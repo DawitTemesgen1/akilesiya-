@@ -112,7 +112,7 @@ class _ProfileTemplateBuilderScreenState
                       labelStyle: GoogleFonts.notoSansEthiopic())),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: managedBy,
+                value: managedBy,
                 decoration: InputDecoration(
                     labelText: 'ይህን መስክ ማስተካከል የሚችለው ማን ነው?',
                     labelStyle: GoogleFonts.notoSansEthiopic()),
@@ -126,7 +126,7 @@ class _ProfileTemplateBuilderScreenState
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: profileTab,
+                value: profileTab,
                 decoration: InputDecoration(
                     labelText: 'በየትኛው የመገለጫ ትር ላይ ይታይ?',
                     labelStyle: GoogleFonts.notoSansEthiopic()),
@@ -140,7 +140,7 @@ class _ProfileTemplateBuilderScreenState
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: fieldType,
+                value: fieldType,
                 decoration: InputDecoration(
                     labelText: 'የመስክ ዓይነት (Field Type)',
                     labelStyle: GoogleFonts.notoSansEthiopic()),
@@ -270,7 +270,7 @@ class _ProfileTemplateBuilderScreenState
                       labelStyle: GoogleFonts.notoSansEthiopic())),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: managedBy,
+                value: managedBy,
                 decoration: InputDecoration(
                     labelText: 'ይህን መስክ ማስተካከል የሚችለው ማን ነው?',
                     labelStyle: GoogleFonts.notoSansEthiopic()),
@@ -284,7 +284,7 @@ class _ProfileTemplateBuilderScreenState
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: profileTab,
+                value: profileTab,
                 decoration: InputDecoration(
                     labelText: 'በየትኛው የመገለጫ ትር ላይ ይታይ?',
                     labelStyle: GoogleFonts.notoSansEthiopic()),
@@ -298,7 +298,7 @@ class _ProfileTemplateBuilderScreenState
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: fieldType,
+                value: fieldType,
                 decoration: InputDecoration(
                     labelText: 'የመስክ ዓይነት (Field Type)',
                     labelStyle: GoogleFonts.notoSansEthiopic()),
