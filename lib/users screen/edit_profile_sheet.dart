@@ -440,7 +440,201 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   );
                 }
 
-                // 2. Default to Text-based (includes TEXT, TEXTAREA, and fallbacks)
+                // 2. Date Picker
+                if (fieldType == 'DATE' ||
+                    fieldType == 'DATE & TIME' ||
+                    fieldType == 'DATETIME') {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: TextFormField(
+                      key: ValueKey('date_$fieldId'),
+                      readOnly: true,
+                      controller: TextEditingController(
+                        text: _selectedCustomFieldValues[fieldId] ?? '',
+                      ),
+                      decoration: InputDecoration(
+                        labelText: field['name'],
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Iconsax.calendar),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Iconsax.close_circle),
+                          onPressed: () {
+                            setState(() {
+                              _selectedCustomFieldValues[fieldId] = null;
+                            });
+                          },
+                        ),
+                      ),
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedCustomFieldValues[fieldId] !=
+                                  null
+                              ? DateTime.tryParse(
+                                      _selectedCustomFieldValues[fieldId]!) ??
+                                  DateTime.now()
+                              : DateTime.now(),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _selectedCustomFieldValues[fieldId] =
+                                picked.toIso8601String().substring(0, 10);
+                          });
+                        }
+                      },
+                    ),
+                  );
+                }
+
+                // 3. Time Picker
+                if (fieldType == 'TIME') {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: TextFormField(
+                      key: ValueKey('time_$fieldId'),
+                      readOnly: true,
+                      controller: TextEditingController(
+                        text: _selectedCustomFieldValues[fieldId] ?? '',
+                      ),
+                      decoration: InputDecoration(
+                        labelText: field['name'],
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Iconsax.clock),
+                      ),
+                      onTap: () async {
+                        final TimeOfDay? picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _selectedCustomFieldValues[fieldId] =
+                                '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                          });
+                        }
+                      },
+                    ),
+                  );
+                }
+
+                // 4. Number Field
+                if (fieldType == 'NUMBER' ||
+                    fieldType == 'PRICE' ||
+                    fieldType == 'CURRENCY') {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: TextFormField(
+                      key: ValueKey('number_$fieldId'),
+                      initialValue: _selectedCustomFieldValues[fieldId],
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: field['name'],
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Iconsax.money),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomFieldValues[fieldId] = value;
+                        });
+                      },
+                    ),
+                  );
+                }
+
+                // 5. Email Field
+                if (fieldType == 'EMAIL') {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: TextFormField(
+                      key: ValueKey('email_$fieldId'),
+                      initialValue: _selectedCustomFieldValues[fieldId],
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: field['name'],
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Iconsax.sms),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomFieldValues[fieldId] = value;
+                        });
+                      },
+                    ),
+                  );
+                }
+
+                // 6. Phone Field
+                if (fieldType == 'PHONE') {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: TextFormField(
+                      key: ValueKey('phone_$fieldId'),
+                      initialValue: _selectedCustomFieldValues[fieldId],
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: field['name'],
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Iconsax.call),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomFieldValues[fieldId] = value;
+                        });
+                      },
+                    ),
+                  );
+                }
+
+                // 7. URL Field
+                if (fieldType == 'URL') {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: TextFormField(
+                      key: ValueKey('url_$fieldId'),
+                      initialValue: _selectedCustomFieldValues[fieldId],
+                      keyboardType: TextInputType.url,
+                      decoration: InputDecoration(
+                        labelText: field['name'],
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Iconsax.link),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomFieldValues[fieldId] = value;
+                        });
+                      },
+                    ),
+                  );
+                }
+
+                // 8. Toggle/Yes-No
+                if (fieldType == 'YES/NO TOGGLE' ||
+                    fieldType == 'TOGGLE' ||
+                    fieldType == 'BOOLEAN') {
+                  final currentValue = _selectedCustomFieldValues[fieldId];
+                  final boolValue = currentValue == 'true' ||
+                      currentValue == '1' ||
+                      currentValue == 'yes';
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: SwitchListTile(
+                      title: Text(field['name']),
+                      value: boolValue,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCustomFieldValues[fieldId] =
+                              value ? 'true' : 'false';
+                        });
+                      },
+                      secondary: const Icon(Iconsax.toggle_on_circle),
+                    ),
+                  );
+                }
+
+                // 9. Default to Text-based (includes TEXT, TEXTAREA, and fallbacks)
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16.0),
                   child: TextFormField(
