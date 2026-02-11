@@ -247,7 +247,10 @@ class _ProfileTemplateBuilderScreenState
     String managedBy = field['managed_by'] ?? 'ADMIN';
     String profileTab = field['profile_tab'] ?? 'PERSONAL';
     // Ensure fieldType is valid and exists in _fieldTypeTranslations
-    String rawFieldType = field['type']?.toString().toUpperCase() ?? 'TEXT';
+    String? rawType = field['type']?.toString();
+    String rawFieldType = (rawType == null || rawType.trim().isEmpty)
+        ? 'TEXT'
+        : rawType.toUpperCase();
     String fieldType = _fieldTypeTranslations.containsKey(rawFieldType)
         ? rawFieldType
         : 'TEXT';
