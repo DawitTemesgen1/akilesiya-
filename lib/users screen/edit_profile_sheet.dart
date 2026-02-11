@@ -126,7 +126,6 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
             if (fieldValue == null) continue;
 
             try {
-            try {
               dynamic fieldDef;
               for (var f in _localCustomFields) {
                 if (f['name'] == fieldName) {
