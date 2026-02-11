@@ -27,13 +27,15 @@ class TemplateService {
 
   static Future<Map<String, dynamic>> createCustomField(
       String name, String managedBy, String profileTab, String fieldType) {
-    return _handleResponse(ApiService.post('/template/fields', {
+    final body = {
       'name': name,
       'managed_by': managedBy,
       'profile_tab': profileTab,
       'field_type': fieldType,
       'type': fieldType,
-    }));
+    };
+    debugPrint('DEBUG: TemplateService.createCustomField body: $body');
+    return _handleResponse(ApiService.post('/template/fields', body));
   }
 
   static Future<Map<String, dynamic>> deleteCustomField(int id) {
@@ -42,13 +44,15 @@ class TemplateService {
 
   static Future<Map<String, dynamic>> updateCustomField(int id, String name,
       String managedBy, String profileTab, String fieldType) {
-    return _handleResponse(ApiService.put('/template/fields/$id', {
+    final body = {
       'name': name,
       'managed_by': managedBy,
       'profile_tab': profileTab,
       'field_type': fieldType,
       'type': fieldType,
-    }));
+    };
+    debugPrint('DEBUG: TemplateService.updateCustomField body: $body');
+    return _handleResponse(ApiService.put('/template/fields/$id', body));
   }
 
   // === Option Functions ===
