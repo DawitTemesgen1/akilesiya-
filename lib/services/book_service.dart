@@ -3,48 +3,13 @@
 import 'dart:convert';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:amde_haymanot_abalat_guday/models/comment.dart';
 
 //==============================================================================
 // --- DATA MODELS (SINGLE SOURCE OF TRUTH) ---
 //==============================================================================
 
 enum BookAvailability { siteLibrary, online, unavailable }
-
-class Comment {
-  final String id;
-  final String userId;
-  final String userName;
-  final String text;
-  final DateTime timestamp;
-  final String? profileImageUrl;
-
-  Comment({
-    required this.id,
-    required this.userId,
-    required this.userName,
-    required this.text,
-    required this.timestamp,
-    this.profileImageUrl,
-  });
-
-  factory Comment.fromJson(Map<String, dynamic> json) {
-    String? fullImageUrl = json['profileImageUrl'];
-    if (fullImageUrl != null &&
-        fullImageUrl.isNotEmpty &&
-        !fullImageUrl.startsWith('http')) {
-      final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
-      fullImageUrl = '$baseUrl/uploads/$fullImageUrl';
-    }
-    return Comment(
-      id: json['id'].toString(),
-      userId: json['user_id'].toString(), // Correctly parse user_id
-      userName: json['userName'] ?? 'Unknown User',
-      text: json['text'] ?? '',
-      timestamp: DateTime.parse(json['timestamp']),
-      profileImageUrl: fullImageUrl,
-    );
-  }
-}
 
 class Book {
   final String id;
@@ -200,9 +165,12 @@ class BookService {
   }
 
   static Future<Comment> addComment(
-      {required String bookId, required String text}) async {
-    final result = await _handleRequest(
-        ApiService.post('books/$bookId/comments', {'text': text}));
+      {required String bookId, required String text, int? parentId}) async {
+    final result =
+        await _handleRequest(ApiService.post('books/$bookId/comments', {
+      'text': text,
+      if (parentId != null) 'parentId': parentId,
+    }));
     if (result['success']) {
       return Comment.fromJson(result['data']);
     } else {
@@ -211,14 +179,14 @@ class BookService {
   }
 
   static Future<Map<String, dynamic>> updateComment({
-    required String commentId,
+    required int commentId,
     required String text,
   }) {
     return _handleRequest(
         ApiService.put('books/comments/$commentId', {'text': text}));
   }
 
-  static Future<Map<String, dynamic>> deleteComment(String commentId) {
+  static Future<Map<String, dynamic>> deleteComment(int commentId) {
     return _handleRequest(ApiService.delete('books/comments/$commentId'));
   }
 

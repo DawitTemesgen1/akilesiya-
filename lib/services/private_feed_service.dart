@@ -138,8 +138,23 @@ class PrivateFeedService {
   }
 
   static Future<Map<String, dynamic>> createPostComment(
-      String postId, String text) {
+      String postId, String text,
+      {int? parentId}) {
     return _processResponse(
-        ApiService.post('private-feed/posts/$postId/comments', {'text': text}));
+        ApiService.post('private-feed/posts/$postId/comments', {
+      'text': text,
+      if (parentId != null) 'parentId': parentId,
+    }));
+  }
+
+  static Future<Map<String, dynamic>> updatePostComment(
+      int commentId, String text) {
+    return _processResponse(
+        ApiService.put('private-feed/comments/$commentId', {'text': text}));
+  }
+
+  static Future<Map<String, dynamic>> deletePostComment(int commentId) {
+    return _processResponse(
+        ApiService.delete('private-feed/comments/$commentId'));
   }
 }

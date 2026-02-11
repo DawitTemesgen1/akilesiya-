@@ -39,11 +39,33 @@ class LearningService {
     }
   }
 
-  static Future<Map<String, dynamic>> addComment(
-      String contentId, String text) async {
+  static Future<Map<String, dynamic>> addComment(String contentId, String text,
+      {int? parentId}) async {
+    try {
+      final response = await ApiService.post('learning/$contentId/comments', {
+        'text': text,
+        if (parentId != null) 'parentId': parentId,
+      });
+      return _processResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Network Error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateComment(
+      int commentId, String text) async {
     try {
       final response =
-          await ApiService.post('learning/$contentId/comments', {'text': text});
+          await ApiService.put('learning/comments/$commentId', {'text': text});
+      return _processResponse(response);
+    } catch (e) {
+      return {'success': false, 'message': 'Network Error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteComment(int commentId) async {
+    try {
+      final response = await ApiService.delete('learning/comments/$commentId');
       return _processResponse(response);
     } catch (e) {
       return {'success': false, 'message': 'Network Error: $e'};
