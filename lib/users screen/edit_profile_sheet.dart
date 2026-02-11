@@ -189,22 +189,12 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
       final fields = await AuthService.getTenantCustomFields(tenantId);
       if (!mounted) return;
 
-      developer.log("DEBUG: Received ${fields.length} total custom fields",
-          name: 'EditProfileSheet');
-
       final userFields = fields.where((f) {
         final managedBy = f['managed_by']?.toString().toUpperCase();
         final passes =
             managedBy == 'USER' || managedBy == 'BOTH' || managedBy == null;
-        developer.log(
-            "Field: ${f['name']}, managed_by: $managedBy, passes: $passes",
-            name: 'EditProfileSheet');
         return passes;
       }).toList();
-
-      developer.log(
-          "DEBUG: Filtered to ${userFields.length} user-editable fields",
-          name: 'EditProfileSheet');
 
       setState(() {
         _localCustomFields = userFields;

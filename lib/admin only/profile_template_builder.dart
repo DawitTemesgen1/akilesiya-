@@ -98,8 +98,6 @@ class _ProfileTemplateBuilderScreenState
     List<String> draftOptions = [];
     bool isSubmitting = false;
 
-    debugPrint('DEBUG: Initial fieldType for new field: $fieldType');
-
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -205,8 +203,6 @@ class _ProfileTemplateBuilderScreenState
                       if (nameController.text.trim().isEmpty) return;
                       setDialogState(() => isSubmitting = true);
                       try {
-                        debugPrint(
-                            'DEBUG: Creating field with type: $fieldType');
                         final result = await TemplateService.createCustomField(
                             nameController.text.trim(),
                             managedBy,
@@ -261,9 +257,6 @@ class _ProfileTemplateBuilderScreenState
     List<dynamic> existingOptions = List.from(field['options'] ?? []);
     List<String> draftOptions = [];
     bool isSubmitting = false;
-
-    debugPrint(
-        'DEBUG: Edit dialog - field[type]="${field['type']}", rawFieldType="$rawFieldType", final fieldType="$fieldType"');
 
     showDialog(
       context: context,
@@ -411,8 +404,6 @@ class _ProfileTemplateBuilderScreenState
                       if (nameController.text.trim().isEmpty) return;
                       setDialogState(() => isSubmitting = true);
                       try {
-                        debugPrint(
-                            'DEBUG: Updating field with type: $fieldType');
                         final result = await TemplateService.updateCustomField(
                             int.tryParse(field['id'].toString()) ?? 0,
                             nameController.text.trim(),
@@ -421,8 +412,6 @@ class _ProfileTemplateBuilderScreenState
                             fieldType);
 
                         if (result['success'] == true) {
-                          debugPrint(
-                              'DEBUG: Updated field response: ${result['data']}');
                           final fieldId =
                               int.tryParse(field['id'].toString()) ?? 0;
                           if (draftOptions.isNotEmpty) {
@@ -542,7 +531,6 @@ class _ProfileTemplateBuilderScreenState
               itemCount: fields.length,
               itemBuilder: (context, index) {
                 final field = fields[index];
-                debugPrint('DEBUG: field data: $field');
                 final options = field['options'] as List<dynamic>? ?? [];
                 return Card(
                   margin: const EdgeInsets.symmetric(
