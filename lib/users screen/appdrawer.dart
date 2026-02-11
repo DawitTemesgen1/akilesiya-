@@ -258,6 +258,11 @@ class AppDrawer extends StatelessWidget {
                                   onTap: () => _pushScreen(
                                       context, const UserManagementScreen())),
                               _buildDrawerItem(context,
+                                  icon: Iconsax.user_octagon,
+                                  title: 'የአባላት አስተዳደር ኮክፒት',
+                                  onTap: () => _pushScreen(context,
+                                      const MemberManagementCockpit())),
+                              _buildDrawerItem(context,
                                   icon: Iconsax.lock,
                                   title: AppLocalizations.of(context)
                                           ?.drawerPermissionsAndScreens ??
@@ -378,14 +383,13 @@ class AppDrawer extends StatelessWidget {
 
                             // Superior Leadership
                             if ((isSuperiorAdmin ||
-                                    allowedScreens.any((s) => [
-                                          'ADMIN_HUB',
-                                          'MEMBER_ACCOUNT_ADJUSTMENT',
-                                          'MANAGE_FAMILY_LINKS',
-                                          'PERMISSIONS_AND_SCREENS',
-                                          'AUDIT_REPORT'
-                                        ].contains(s))) &&
-                                !isSystemAdmin) ...[
+                                allowedScreens.any((s) => [
+                                      'ADMIN_HUB',
+                                      'MEMBER_ACCOUNT_ADJUSTMENT',
+                                      'MANAGE_FAMILY_LINKS',
+                                      'PERMISSIONS_AND_SCREENS',
+                                      'AUDIT_REPORT'
+                                    ].contains(s)))) ...[
                               _buildSectionHeader(
                                 context,
                                 AppLocalizations.of(context)
