@@ -2,6 +2,7 @@
 
 import 'package:amde_haymanot_abalat_guday/admin%20only/change.dart';
 import 'package:amde_haymanot_abalat_guday/admin%20only/manage_custom_structure.dart';
+import 'package:amde_haymanot_abalat_guday/admin%20only/member_management_cockpit.dart';
 import 'package:amde_haymanot_abalat_guday/admin%20only/profile_template_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // Recommended for Amharic text
@@ -26,6 +27,15 @@ class AdminHubScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          _buildAdminCard(
+            context,
+            icon: Iconsax.user_octagon,
+            title: 'የአባላት አስተዳደር ኮክፒት',
+            subtitle: 'አጠቃላይ የአባላት መረጃን ያስተዳድሩ፣ ያጽድቁ እና የአገልግሎት ሁኔታን ይቆጣጠሩ።',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const MemberManagementCockpit())),
+          ),
+          const SizedBox(height: 16),
           _buildAdminCard(
             context,
             icon: Iconsax.rulerpen,
