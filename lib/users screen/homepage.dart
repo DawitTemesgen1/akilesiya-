@@ -321,8 +321,16 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
         backgroundColor: surfaceColor,
         child: CustomScrollView(
           slivers: [
-            _buildSliverAppBar(context, userName, primaryColor, surfaceColor,
-                textColor, subtleText, isDark, themeProvider.toggleTheme),
+            _buildSliverAppBar(
+                context,
+                userName,
+                primaryColor,
+                surfaceColor,
+                textColor,
+                subtleText,
+                isDark,
+                bgColor,
+                themeProvider.toggleTheme),
             if (_isLoading)
               SliverFillRemaining(
                 child: Center(
@@ -363,7 +371,7 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
                     childCount: _posts.length,
                   ),
                 ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ]
           ],
         ),
@@ -461,30 +469,45 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
       Color textColor,
       Color subtleText,
       bool isDark,
+      Color bgColor,
       VoidCallback onToggleTheme) {
     return SliverAppBar(
-      expandedHeight: 140.0,
+      expandedHeight: 160.0,
       floating: false,
       pinned: true,
-      backgroundColor: Colors.transparent, // Transparent to show gradient
+      backgroundColor: bgColor,
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(Icons.sort, color: textColor, size: 28),
-        onPressed: () => Scaffold.of(outerContext).openDrawer(),
+      leading: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: surfaceColor.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: IconButton(
+          icon: Icon(Iconsax.menu_1, color: textColor, size: 24),
+          onPressed: () => Scaffold.of(outerContext).openDrawer(),
+        ),
       ),
       actions: [
-        IconButton(
-          icon: Icon(
-            isDark ? Iconsax.sun_1 : Iconsax.moon,
-            color: textColor,
-            size: 24,
+        Container(
+          margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+          decoration: BoxDecoration(
+            color: surfaceColor.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
           ),
-          onPressed: onToggleTheme,
-          tooltip: 'Toggle Theme',
+          child: IconButton(
+            icon: Icon(
+              isDark ? Iconsax.sun_1 : Iconsax.moon,
+              color: textColor,
+              size: 24,
+            ),
+            onPressed: onToggleTheme,
+            tooltip: 'Toggle Theme',
+          ),
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 20),
         title: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,17 +516,19 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
             Text(
               "እንኳን ደህና መጡ፣",
               style: GoogleFonts.notoSansEthiopic(
-                fontSize: 12,
+                fontSize: 14,
                 color: subtleText,
-                fontWeight: FontWeight.normal,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            const SizedBox(height: 4),
             Text(
               userName,
               style: GoogleFonts.notoSansEthiopic(
-                fontSize: 16, // Smaller font for collapsed state ideally
+                fontSize: 22,
                 color: textColor,
                 fontWeight: FontWeight.bold,
+                height: 1.1,
               ),
             ),
           ],
@@ -511,24 +536,72 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
               colors: [
-                primaryColor.withValues(alpha: 0.1),
-                Colors.transparent,
+                primaryColor.withValues(alpha: 0.15),
+                bgColor.withValues(alpha: 0.5),
+                bgColor,
               ],
             ),
           ),
-          child: Align(
-            alignment: Alignment.topRight,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 50, right: 16),
-              child: CircleAvatar(
-                radius: 24,
-                backgroundColor: surfaceColor,
-                child: Icon(Iconsax.notification, color: primaryColor),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -50,
+                right: -50,
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                ),
               ),
-            ),
+              Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 100, right: 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: surfaceColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: bgColor,
+                      child: Stack(
+                        children: [
+                          Icon(Iconsax.notification,
+                              color: primaryColor, size: 24),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -601,9 +674,9 @@ class _FeaturedPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      margin: const EdgeInsets.symmetric(horizontal: 5.0),
+      margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         image: post.imageUrl != null
             ? DecorationImage(
                 image: CachedNetworkImageProvider(post.imageUrl!),
@@ -613,39 +686,44 @@ class _FeaturedPostCard extends StatelessWidget {
         color: post.imageUrl == null ? const Color(0xFF2A2A3D) : null,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.5),
-              blurRadius: 10,
-              offset: const Offset(0, 5))
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8))
         ],
       ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
               Colors.transparent,
-              Colors.black.withValues(alpha: 0.8),
+              Colors.black.withValues(alpha: 0.2),
+              Colors.black.withValues(alpha: 0.9),
             ],
+            stops: const [0.5, 0.7, 1.0],
           ),
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.end,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (post.type == PostType.event)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                margin: const EdgeInsets.only(bottom: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                    color: premiumGold, borderRadius: BorderRadius.circular(8)),
+                    color: premiumGold,
+                    borderRadius: BorderRadius.circular(30)),
                 child: Text(
                   "FEATURED EVENT",
                   style: GoogleFonts.poppins(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                       color: premiumDark),
                 ),
               ),
@@ -653,16 +731,33 @@ class _FeaturedPostCard extends StatelessWidget {
               post.title,
               style: GoogleFonts.notoSansEthiopic(
                 color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                height: 1.2,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    offset: const Offset(0, 2),
+                    blurRadius: 4,
+                  ),
+                ],
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
-            Text(
-              DateFormat.yMMMd().format(post.date),
-              style: GoogleFonts.poppins(color: Colors.white70, fontSize: 12),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Iconsax.calendar_1, color: premiumGold, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  DateFormat('MMMM d, y').format(post.date),
+                  style: GoogleFonts.poppins(
+                      color: Colors.white70,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500),
+                ),
+              ],
             ),
           ],
         ),
@@ -687,86 +782,120 @@ class PostCard extends StatelessWidget {
     final surfaceColor = themeProvider.getSurfaceColor(context);
     final textColor = themeProvider.getOnSurfaceColor(context);
     final subtleText = isDark ? Colors.white54 : const Color(0xFF64748B);
-    final dividerColor = isDark ? Colors.white10 : Colors.black12;
     final primaryColor = themeProvider.getPrimaryColor(context);
 
+    final cardDecoration = BoxDecoration(
+      color: surfaceColor,
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [
+        BoxShadow(
+          color: isDark
+              ? Colors.black.withValues(alpha: 0.2)
+              : Colors.grey.withValues(alpha: 0.1),
+          blurRadius: 15,
+          spreadRadius: 0,
+          offset: const Offset(0, 4),
+        )
+      ],
+      border: isDark
+          ? Border.all(color: Colors.white.withValues(alpha: 0.05))
+          : null,
+    );
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: dividerColor),
-          boxShadow: isDark
-              ? []
-              : [
-                  BoxShadow(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5))
-                ]),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: cardDecoration,
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: dividerColor,
-                  backgroundImage: post.authorAvatar != null
-                      ? CachedNetworkImageProvider(post.authorAvatar!)
-                      : null,
-                  child: post.authorAvatar == null
-                      ? Icon(Iconsax.user, color: subtleText)
-                      : null,
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: primaryColor.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: isDark ? Colors.black38 : Colors.grey[200],
+                    backgroundImage: post.authorAvatar != null
+                        ? CachedNetworkImageProvider(post.authorAvatar!)
+                        : null,
+                    child: post.authorAvatar == null
+                        ? Icon(Iconsax.user, color: subtleText)
+                        : null,
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(post.author,
                           style: GoogleFonts.notoSansEthiopic(
-                              color: textColor, fontWeight: FontWeight.bold)),
-                      Text(DateFormat.yMMMd().format(post.date),
-                          style: GoogleFonts.poppins(
-                              color: subtleText, fontSize: 12)),
+                              color: textColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Iconsax.clock, size: 12, color: subtleText),
+                          const SizedBox(width: 4),
+                          Text(DateFormat.yMMMd().format(post.date),
+                              style: GoogleFonts.poppins(
+                                  color: subtleText, fontSize: 12)),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                Icon(Iconsax.verify, color: primaryColor, size: 20),
+                Icon(Iconsax.more, color: subtleText),
               ],
             ),
           ),
           // Content
-          if (post.imageUrl != null)
-            PostImage(imageUrl: post.imageUrl!, postId: post.id),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(post.title,
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
                         color: textColor)),
                 const SizedBox(height: 8),
                 Text(post.description,
                     style: GoogleFonts.notoSansEthiopic(
-                        color: subtleText, height: 1.5),
+                        color: subtleText, fontSize: 14, height: 1.6),
                     maxLines: 4,
                     overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          if (post.imageUrl != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: PostImage(imageUrl: post.imageUrl!, postId: post.id),
+            ),
+
           // Interactions
-          Divider(color: dividerColor),
-          PostFooter(
-              post: post, onInteraction: onInteraction, onComment: onComment),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: PostFooter(
+                post: post, onInteraction: onInteraction, onComment: onComment),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -1073,29 +1202,50 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       builder: (_, controller) => Container(
         decoration: BoxDecoration(
             color: const Color(0xFF1E1E2E), // Premium Dark
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
             boxShadow: [
               BoxShadow(
-                  color: premiumGold.withValues(alpha: 0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, -5))
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 30,
+                  offset: const Offset(0, -10))
             ]),
         child: Column(children: [
           Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(children: [
                 Container(
-                    width: 40,
-                    height: 5,
+                    width: 50,
+                    height: 6,
                     decoration: BoxDecoration(
-                        color: Colors.white24,
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10))),
-                const SizedBox(height: 16),
-                Text("አስተያየቶች (${_comments.length})",
-                    style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white)),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("አስተያየቶች",
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: premiumGold,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "${_comments.length}",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          color: premiumDark,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ])),
           Expanded(
             child: _isLoading
