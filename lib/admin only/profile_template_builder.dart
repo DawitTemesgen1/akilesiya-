@@ -98,6 +98,8 @@ class _ProfileTemplateBuilderScreenState
     List<String> draftOptions = [];
     bool isSubmitting = false;
 
+    debugPrint('DEBUG: Initial fieldType for new field: $fieldType');
+
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -203,6 +205,8 @@ class _ProfileTemplateBuilderScreenState
                       if (nameController.text.trim().isEmpty) return;
                       setDialogState(() => isSubmitting = true);
                       try {
+                        debugPrint(
+                            'DEBUG: Creating field with type: $fieldType');
                         final result = await TemplateService.createCustomField(
                             nameController.text.trim(),
                             managedBy,
@@ -404,6 +408,8 @@ class _ProfileTemplateBuilderScreenState
                       if (nameController.text.trim().isEmpty) return;
                       setDialogState(() => isSubmitting = true);
                       try {
+                        debugPrint(
+                            'DEBUG: Updating field with type: $fieldType');
                         final result = await TemplateService.updateCustomField(
                             int.tryParse(field['id'].toString()) ?? 0,
                             nameController.text.trim(),
