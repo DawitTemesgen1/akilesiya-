@@ -246,14 +246,12 @@ class _ProfileTemplateBuilderScreenState
     final optionController = TextEditingController();
     String managedBy = field['managed_by'] ?? 'ADMIN';
     String profileTab = field['profile_tab'] ?? 'PERSONAL';
-    // Ensure fieldType is valid and exists in _fieldTypeTranslations
-    String? rawType = field['type']?.toString();
-    String rawFieldType = (rawType == null || rawType.trim().isEmpty)
-        ? 'TEXT'
-        : rawType.toUpperCase();
-    String fieldType = _fieldTypeTranslations.containsKey(rawFieldType)
-        ? rawFieldType
-        : 'TEXT';
+    // Standardize initialization - handle null/empty/various keys
+    String rawType =
+        (field['field_type'] ?? field['type'] ?? 'TEXT').toString();
+    String fieldType = rawType.trim().isEmpty ? 'TEXT' : rawType.toUpperCase();
+    if (!_fieldTypeTranslations.containsKey(fieldType)) fieldType = 'TEXT';
+
     List<dynamic> existingOptions = List.from(field['options'] ?? []);
     List<String> draftOptions = [];
     bool isSubmitting = false;
