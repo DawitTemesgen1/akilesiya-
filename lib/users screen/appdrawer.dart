@@ -3,6 +3,7 @@ import 'package:amde_haymanot_abalat_guday/admin%20only/admin_hub.dart';
 
 import 'package:amde_haymanot_abalat_guday/admin%20only/grade_attendance_audit.dart';
 import 'package:amde_haymanot_abalat_guday/admin%20only/manage_family.dart';
+import 'package:amde_haymanot_abalat_guday/admin%20only/member_management_cockpit.dart';
 import 'package:amde_haymanot_abalat_guday/admin%20only/profile_template_builder.dart';
 import 'package:amde_haymanot_abalat_guday/admin%20only/student_list.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
@@ -398,6 +399,12 @@ class AppDrawer extends StatelessWidget {
                                     title: 'Admin Hub',
                                     onTap: () => _pushScreen(
                                         context, const AdminHubScreen())),
+                              if (isSuperiorAdmin)
+                                _buildDrawerItem(context,
+                                    icon: Iconsax.user_octagon,
+                                    title: 'የአባላት አስተዳደር ኮክፒት',
+                                    onTap: () => _pushScreen(context,
+                                        const MemberManagementCockpit())),
                               if (isSuperiorAdmin ||
                                   allowedScreens
                                       .contains('MEMBER_ACCOUNT_ADJUSTMENT'))
