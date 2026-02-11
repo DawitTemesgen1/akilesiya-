@@ -126,10 +126,14 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
             if (fieldValue == null) continue;
 
             try {
-              final fieldDef = _localCustomFields.firstWhere(
-                (f) => f['name'] == fieldName,
-                orElse: () => null,
-              );
+            try {
+              dynamic fieldDef;
+              for (var f in _localCustomFields) {
+                if (f['name'] == fieldName) {
+                  fieldDef = f;
+                  break;
+                }
+              }
               if (fieldDef == null) continue;
 
               final fieldId = fieldDef['id'].toString();
