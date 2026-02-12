@@ -2,11 +2,15 @@
 
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/admin_services.dart';
+import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:animate_do/animate_do.dart';
 
 // --- Amharic Localization Strings for Member Development Hub ---
 abstract class AmharicStringsDevelopmentHub {
@@ -139,75 +143,124 @@ class _MemberDevelopmentHubScreenState extends State<MemberDevelopmentHubScreen>
   void _showSnackbar(String message, {required bool isError}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message,
-          style: GoogleFonts.notoSansEthiopic()), // Use Amharic font
-      backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
+      content: Text(message, style: GoogleFonts.notoSansEthiopic()),
+      backgroundColor:
+          isError ? ThemeProvider.dangerColor : ThemeProvider.successColor,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ));
+  }
+
+  String _getAbsoluteUrl(String path) {
+    if (path.isEmpty) return "";
+    if (path.startsWith('http')) return path;
+
+    try {
+      final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
+      final cleanBase = baseUrl.endsWith('/')
+          ? baseUrl.substring(0, baseUrl.length - 1)
+          : baseUrl;
+      final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+
+      return '$cleanBase/$cleanPath';
+    } catch (_) {
+      return path;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final bgColor = themeProvider.getBackgroundColor(context);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+    final primaryColor = themeProvider.getPrimaryColor(context);
+    final textColor = themeProvider.getOnSurfaceColor(context);
+    final subtleTextColor = themeProvider.getSubtleTextColor(context);
+
     return Scaffold(
-      backgroundColor: kAdminPrimary,
+      backgroundColor: bgColor,
       appBar: AppBar(
         title: Text(AmharicStringsDevelopmentHub.screenTitle,
             style: GoogleFonts.notoSansEthiopic(
-                fontWeight: FontWeight.bold)), // Translated
-        backgroundColor: kAdminPrimary,
+                fontWeight: FontWeight.bold, color: textColor)),
+        backgroundColor: bgColor,
         elevation: 0,
+        iconTheme: IconThemeData(color: primaryColor),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: kAdminAccent,
-          labelColor: kAdminAccent,
-          unselectedLabelColor: Colors.white70,
+          indicatorColor: primaryColor,
+          labelColor: primaryColor,
+          unselectedLabelColor: subtleTextColor,
           tabs: [
             Tab(
                 icon: const Icon(Iconsax.user),
-                text: AmharicStringsDevelopmentHub.tabMembers), // Translated
-            // Only show the Permissions tab if the user is a superior admin
+                text: AmharicStringsDevelopmentHub.tabMembers),
             if (_isSuperiorAdmin)
               Tab(
                   icon: const Icon(Iconsax.user_tick),
-                  text: AmharicStringsDevelopmentHub
-                      .tabPermissions), // Translated
+                  text: AmharicStringsDevelopmentHub.tabPermissions),
           ],
         ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: kAdminAccent))
+          ? _buildLoadingShimmer(surfaceColor, subtleTextColor)
           : TabBarView(
               controller: _tabController,
               children: [
-                _buildSelectMemberTab(),
-                // Conditionally build the permissions tab
-                if (_isSuperiorAdmin) _buildPermissionsTab(),
+                _buildSelectMemberTab(
+                    primaryColor, surfaceColor, textColor, subtleTextColor),
+                if (_isSuperiorAdmin)
+                  _buildPermissionsTab(
+                      primaryColor, surfaceColor, textColor, subtleTextColor),
               ],
             ),
     );
   }
 
+  Widget _buildLoadingShimmer(Color surfaceColor, Color subtleTextColor) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 6,
+      itemBuilder: (context, index) => Shimmer.fromColors(
+        baseColor: surfaceColor,
+        highlightColor: surfaceColor.withValues(alpha: 0.5),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          height: 80,
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+
   // --- TAB BUILDERS ---
 
-  Widget _buildSelectMemberTab() {
+  Widget _buildSelectMemberTab(Color primaryColor, Color surfaceColor,
+      Color textColor, Color subtleTextColor) {
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: TextField(
-            controller: _searchController,
-            style: GoogleFonts.notoSansEthiopic(
-                color: Colors.white), // Use Amharic font
-            decoration: InputDecoration(
-              hintText: AmharicStringsDevelopmentHub.searchHint, // Translated
-              hintStyle: GoogleFonts.notoSansEthiopic(
-                  color: Colors.white70), // Use Amharic font
-              prefixIcon:
-                  const Icon(Iconsax.search_normal_1, color: Colors.white70),
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.1),
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none),
+          child: Container(
+            decoration: BoxDecoration(
+              color: surfaceColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: textColor.withValues(alpha: 0.05)),
+            ),
+            child: TextField(
+              controller: _searchController,
+              style: GoogleFonts.notoSansEthiopic(color: textColor),
+              decoration: InputDecoration(
+                hintText: AmharicStringsDevelopmentHub.searchHint,
+                hintStyle: GoogleFonts.notoSansEthiopic(color: subtleTextColor),
+                prefixIcon: Icon(Iconsax.search_normal_1, color: primaryColor),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
             ),
           ),
         ),
@@ -219,48 +272,62 @@ class _MemberDevelopmentHubScreenState extends State<MemberDevelopmentHubScreen>
               itemCount: _filteredUsers.length,
               itemBuilder: (context, index) {
                 final user = _filteredUsers[index];
-                return Card(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    leading: Hero(
-                      tag: 'user_avatar_${user.id}',
-                      child: const CircleAvatar(
-                        backgroundColor: kAdminAccent,
-                        child: Icon(Iconsax.user, color: kAdminPrimary),
-                      ),
+                return FadeInUp(
+                  duration: const Duration(milliseconds: 400),
+                  delay: Duration(milliseconds: 50 * index),
+                  child: Card(
+                    color: surfaceColor,
+                    elevation: 0,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side:
+                          BorderSide(color: textColor.withValues(alpha: 0.05)),
                     ),
-                    title: Hero(
-                      tag: 'user_name_${user.id}',
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Text(
-                          user.name,
-                          style: GoogleFonts.notoSansEthiopic(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    child: ListTile(
+                      leading: Hero(
+                        tag: 'user_avatar_${user.id}',
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: primaryColor.withValues(alpha: 0.2)),
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: surfaceColor,
+                            backgroundImage: (user.avatarUrl != null &&
+                                    user.avatarUrl!.isNotEmpty)
+                                ? NetworkImage(_getAbsoluteUrl(user.avatarUrl!))
+                                : null,
+                            child: (user.avatarUrl == null ||
+                                    user.avatarUrl!.isEmpty)
+                                ? Icon(Iconsax.user, color: primaryColor)
+                                : null,
                           ),
                         ),
                       ),
-                    ),
-                    subtitle: Text(
-                      user.email,
-                      style: GoogleFonts.notoSansEthiopic(
-                        color: Colors.white70,
+                      title: Text(
+                        user.name,
+                        style: GoogleFonts.notoSansEthiopic(
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
                       ),
+                      subtitle: Text(
+                        user.email,
+                        style: GoogleFonts.notoSansEthiopic(
+                            color: subtleTextColor, fontSize: 13),
+                      ),
+                      trailing: Icon(Iconsax.arrow_right_3,
+                          color: primaryColor, size: 18),
+                      onTap: () {
+                        context.push('/admin/member-development/notes', extra: {
+                          'id': user.id,
+                          'full_name': user.name,
+                        });
+                      },
                     ),
-                    trailing: const Icon(
-                      Iconsax.arrow_right_3,
-                      color: Colors.white70,
-                    ),
-                    onTap: () {
-                      context.push('/admin/member-development/notes', extra: {
-                        'id': user.id,
-                        'full_name': user.name,
-                      });
-                    },
                   ),
                 );
               },
@@ -271,7 +338,8 @@ class _MemberDevelopmentHubScreenState extends State<MemberDevelopmentHubScreen>
     );
   }
 
-  Widget _buildPermissionsTab() {
+  Widget _buildPermissionsTab(Color primaryColor, Color surfaceColor,
+      Color textColor, Color subtleTextColor) {
     const String role = 'development_admin';
     final admins =
         _allUsers.where((user) => user.roles.contains(role)).toList();
@@ -281,70 +349,72 @@ class _MemberDevelopmentHubScreenState extends State<MemberDevelopmentHubScreen>
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(AmharicStringsDevelopmentHub.developmentAdmins, // Translated
+          Text(AmharicStringsDevelopmentHub.developmentAdmins,
               style: GoogleFonts.notoSansEthiopic(
-                  fontSize: 22,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold)),
+                  fontSize: 22, color: textColor, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(
-            AmharicStringsDevelopmentHub.adminDescription, // Translated
-            style: GoogleFonts.notoSansEthiopic(
-                color: Colors.white70), // Use Amharic font
+            AmharicStringsDevelopmentHub.adminDescription,
+            style: GoogleFonts.notoSansEthiopic(color: subtleTextColor),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           if (admins.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 48.0),
               child: Center(
-                  child: Text(
-                      AmharicStringsDevelopmentHub
-                          .noAdminsAssigned, // Translated
+                  child: Text(AmharicStringsDevelopmentHub.noAdminsAssigned,
                       style: GoogleFonts.notoSansEthiopic(
-                          color: Colors.white70))), // Use Amharic font
+                          color: subtleTextColor))),
             )
           else
             ...admins.map((admin) => Card(
-                  color: kAdminCard,
-                  margin: const EdgeInsets.only(bottom: 8),
+                  color: surfaceColor,
+                  elevation: 0,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: textColor.withValues(alpha: 0.05)),
+                  ),
                   child: ListTile(
                     leading: CircleAvatar(
+                        backgroundColor: primaryColor.withValues(alpha: 0.1),
+                        foregroundColor: primaryColor,
                         child: Text(admin.name.isNotEmpty ? admin.name[0] : '?',
-                            style: GoogleFonts
-                                .notoSansEthiopic())), // Use Amharic font
+                            style: GoogleFonts.notoSansEthiopic(
+                                fontWeight: FontWeight.bold))),
                     title: Text(admin.name,
                         style: GoogleFonts.notoSansEthiopic(
-                            color: Colors.white)), // Use Amharic font
+                            color: textColor, fontWeight: FontWeight.bold)),
                     subtitle: Text(
-                        admin.roles.join(', ').replaceAll('development_admin',
-                            'የዕድገት አስተዳዳሪ'), // Translate role in join
+                        admin.roles
+                            .join(', ')
+                            .replaceAll('development_admin', 'የዕድገት አስተዳዳሪ'),
                         style: GoogleFonts.notoSansEthiopic(
-                            color: Colors.white70,
-                            fontSize: 12)), // Use Amharic font
+                            color: subtleTextColor, fontSize: 12)),
                     trailing: IconButton(
-                      icon: const Icon(Icons.remove_circle_outline,
-                          color: Colors.redAccent),
+                      icon: const Icon(Iconsax.minus_cirlce,
+                          color: ThemeProvider.dangerColor),
                       onPressed: () => _updateRole(admin, role, 'remove'),
-                      tooltip: AmharicStringsDevelopmentHub
-                          .removeRoleTooltip, // Translated
+                      tooltip: AmharicStringsDevelopmentHub.removeRoleTooltip,
                     ),
                   ),
                 )),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: kAdminAccent.withValues(alpha: 0.2),
-              foregroundColor: kAdminAccent,
+              backgroundColor: primaryColor.withValues(alpha: 0.1),
+              foregroundColor: primaryColor,
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+                  borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            onPressed: () => _showAddAdminDialog(role),
-            icon: const Icon(Icons.add),
-            label: Text(
-                AmharicStringsDevelopmentHub.addDevelopmentAdmin, // Translated
-                style: GoogleFonts.notoSansEthiopic(
-                    fontWeight: FontWeight.bold)), // Use Amharic font
+            onPressed: () => _showAddAdminDialog(
+                role, primaryColor, surfaceColor, textColor, subtleTextColor),
+            icon: const Icon(Iconsax.add, size: 20),
+            label: Text(AmharicStringsDevelopmentHub.addDevelopmentAdmin,
+                style:
+                    GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -352,22 +422,21 @@ class _MemberDevelopmentHubScreenState extends State<MemberDevelopmentHubScreen>
   }
 
   // --- ROLE MANAGEMENT LOGIC ---
-  Future<void> _showAddAdminDialog(String role) async {
+  Future<void> _showAddAdminDialog(String role, Color primaryColor,
+      Color surfaceColor, Color textColor, Color subtleTextColor) async {
     // Show a loading indicator while fetching candidates
     showDialog(
         context: context,
-        builder: (_) => Center(
-            child: CircularProgressIndicator(
-                color: kAdminAccent,
-                valueColor:
-                    AlwaysStoppedAnimation(kAdminAccent)))); // Use kAdminAccent
+        builder: (_) =>
+            Center(child: CircularProgressIndicator(color: primaryColor)));
 
     // This fetches users who are NOT already development admins
     final result = await AdminService.getDevelopmentAdminCandidates();
 
+    if (!mounted) return;
     Navigator.pop(context); // Dismiss loading indicator
 
-    if (!mounted || !result['success']) {
+    if (!result['success']) {
       _showSnackbar(
           result['message'] ??
               AmharicStringsDevelopmentHub.fetchCandidatesFailed,
@@ -389,26 +458,40 @@ class _MemberDevelopmentHubScreenState extends State<MemberDevelopmentHubScreen>
     final AdminUser? selectedUser = await showDialog<AdminUser>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: kAdminCard,
-        title: Text(
-            AmharicStringsDevelopmentHub.addDevelopmentAdmin, // Translated
+        backgroundColor: surfaceColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(AmharicStringsDevelopmentHub.addDevelopmentAdmin,
             style: GoogleFonts.notoSansEthiopic(
-                color: Colors.white)), // Use Amharic font
+                color: textColor, fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: double.maxFinite,
           child: eligibleCandidates.isEmpty
-              ? Text(AmharicStringsDevelopmentHub.noEligibleUsers, // Translated
-                  style: GoogleFonts.notoSansEthiopic(
-                      color: Colors.white70)) // Use Amharic font
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  child: Text(
+                      AmharicStringsDevelopmentHub
+                          .noEligibleUsers, // Translated
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.notoSansEthiopic(
+                          color: subtleTextColor)), // Use Amharic font
+                )
               : ListView.builder(
                   shrinkWrap: true,
                   itemCount: eligibleCandidates.length,
                   itemBuilder: (context, index) {
                     final user = eligibleCandidates[index];
                     return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                      leading: CircleAvatar(
+                        backgroundColor: primaryColor.withValues(alpha: 0.1),
+                        child: Text(user.name[0],
+                            style: TextStyle(color: primaryColor)),
+                      ),
                       title: Text(user.name,
                           style: GoogleFonts.notoSansEthiopic(
-                              color: Colors.white)), // Use Amharic font
+                              color: textColor,
+                              fontWeight: FontWeight.w500)), // Use Amharic font
                       onTap: () => Navigator.of(context).pop(user),
                     );
                   },
@@ -419,7 +502,8 @@ class _MemberDevelopmentHubScreenState extends State<MemberDevelopmentHubScreen>
             onPressed: () => Navigator.of(context).pop(),
             child: Text('ይቅር',
                 style: GoogleFonts.notoSansEthiopic(
-                    color: kAdminAccent)), // Translated
+                    color: primaryColor,
+                    fontWeight: FontWeight.bold)), // Translated
           ),
         ],
       ),
