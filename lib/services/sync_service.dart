@@ -35,7 +35,7 @@ class SyncService {
             result == ConnectivityResult.mobile ||
             result == ConnectivityResult.wifi ||
             result == ConnectivityResult.ethernet);
-        
+
         if (isConnected && !_isSyncing) {
           debugPrint('🌐 Connectivity restored, starting sync...');
           syncPendingOperations();
@@ -77,7 +77,11 @@ class SyncService {
     final isConnected = await isOnline();
     if (!isConnected) {
       debugPrint('📴 No internet connection, cannot sync');
-      return SyncResult(isSyncing: false, synced: 0, failed: 0, error: 'No internet connection');
+      return SyncResult(
+          isSyncing: false,
+          synced: 0,
+          failed: 0,
+          error: 'No internet connection');
     }
 
     _isSyncing = true;
@@ -159,7 +163,7 @@ class SyncService {
     try {
       final response = await ApiService.post('/attendance/save', {
         'records': data['records'],
-        'daily_topic': data['daily_topic'],
+        'dailyTopic': data['dailyTopic'],
       });
       return response.statusCode == 200;
     } catch (e) {
@@ -212,4 +216,3 @@ class SyncResult {
   bool get hasError => error != null;
   bool get isSuccess => !hasError && failed == 0;
 }
-

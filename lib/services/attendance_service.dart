@@ -62,7 +62,8 @@ class AttendanceService {
       final response = await ApiService.get(
           '/attendance?date=$date&session=$session&attendanceType=$attendanceType');
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final result = json.decode(response.body);
+        return result['data'] as Map<String, dynamic>;
       } else {
         throw Exception('Failed to load records from server');
       }
@@ -176,7 +177,7 @@ class AttendanceService {
         try {
           final response = await ApiService.post('/attendance/save', {
             'records': records,
-            'daily_topic': dailyTopic,
+            'dailyTopic': dailyTopic,
           });
           if (response.statusCode == 200) {
             debugPrint('✅ Attendance saved online successfully');
@@ -213,7 +214,7 @@ class AttendanceService {
         type: OfflineOperationType.attendance,
         data: {
           'records': records,
-          'daily_topic': dailyTopic,
+          'dailyTopic': dailyTopic,
         },
         createdAt: DateTime.now(),
       );
