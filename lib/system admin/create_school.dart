@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart'; // Import for EthiopianDate
-// Import for EthiopianDatePickerDialog
+import 'dart:ui';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:amde_haymanot_abalat_guday/services/system_admin_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class CreateSchoolScreen extends StatefulWidget {
   const CreateSchoolScreen({super.key});
@@ -28,7 +31,7 @@ class _CreateSchoolScreenState extends State<CreateSchoolScreen> {
   final _mottoController = TextEditingController();
   final _foundingYearController = TextEditingController();
 
-  EthiopianDate? _establishedDate; // Use EthiopianDate for state
+  EthiopianDate? _establishedDate;
   bool _isSubmitting = false;
 
   // Logo Upload
@@ -56,7 +59,7 @@ class _CreateSchoolScreenState extends State<CreateSchoolScreen> {
             _isUploadingLogo = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ሎጎ በተሳካ ሁኔታ ተጭኗል')),
+            const SnackBar(content: Text('Logo uploaded successfully')),
           );
         } else {
           throw Exception(jsonResp['message'] ?? 'Upload failed');
@@ -64,7 +67,7 @@ class _CreateSchoolScreenState extends State<CreateSchoolScreen> {
       } catch (e) {
         setState(() => _isUploadingLogo = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ሎጎ መጫን አልተቻለም: $e')),
+          SnackBar(content: Text('Failed to upload logo: $e')),
         );
       }
     }
@@ -75,7 +78,8 @@ class _CreateSchoolScreenState extends State<CreateSchoolScreen> {
 
     if (_isUploadingLogo) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('እባክዎ ሎጎው እስኪጫን ይጠብቁ...')),
+        const SnackBar(
+            content: Text('Please wait while the logo is uploading...')),
       );
       return;
     }
@@ -103,20 +107,23 @@ class _CreateSchoolScreenState extends State<CreateSchoolScreen> {
     if (mounted) {
       if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('ትምህርት ቤቱ በተሳካ ሁኔታ ተፈጥሯል!',
-                  style: GoogleFonts.notoSansEthiopic())),
+          const SnackBar(
+            content: Text('School created successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'])),
+          SnackBar(
+            content: Text(result['message']),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
 
-  // --- MODIFIED TO USE ETHIOPIAN DATE PICKER ---
   Future<void> _selectEstablishedDate() async {
     final EthiopianDate? picked = await showDialog<EthiopianDate>(
       context: context,
@@ -131,259 +138,382 @@ class _CreateSchoolScreenState extends State<CreateSchoolScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode(context);
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('አዲስ ትምህርት ቤት ፍጠር', style: GoogleFonts.notoSansEthiopic()),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Logo Section
-              Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: _logoImage != null
-                          ? FileImage(_logoImage!)
-                          : (_logoUrl != null
-                              ? NetworkImage(_logoUrl!)
-                              : const AssetImage(
-                                      'assets/icon/launcher_logo.png')
-                                  as ImageProvider),
-                      backgroundColor: Colors.grey[200],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // Glassmorphic App Bar
+          SliverAppBar(
+            expandedHeight: 120.0,
+            floating: false,
+            pinned: true,
+            stretch: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
+              title: ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Text(
+                    'Create School',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: InkWell(
-                        onTap: _pickImage,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [
+                            primaryColor.withValues(alpha: 0.2),
+                            Colors.black.withValues(alpha: 0.1)
+                          ]
+                        : [
+                            primaryColor.withValues(alpha: 0.1),
+                            Colors.white.withValues(alpha: 0.5)
+                          ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              if (_isSubmitting)
+                const Center(
+                    child: Padding(
+                        padding: EdgeInsets.only(right: 20),
+                        child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))))
+              else
+                IconButton(
+                  icon: Icon(Iconsax.add_circle, color: primaryColor),
+                  onPressed: _submitForm,
+                ),
+              const SizedBox(width: 8),
+            ],
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Logo Section
+                    FadeInDown(
+                      duration: const Duration(milliseconds: 500),
+                      child: Center(
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: primaryColor.withValues(alpha: 0.1),
+                                border: Border.all(
+                                    color: primaryColor.withValues(alpha: 0.1),
+                                    width: 2),
+                                image: _logoImage != null
+                                    ? DecorationImage(
+                                        image: FileImage(_logoImage!),
+                                        fit: BoxFit.cover)
+                                    : (_logoUrl != null && _logoUrl!.isNotEmpty
+                                        ? DecorationImage(
+                                            image: NetworkImage(_logoUrl!),
+                                            fit: BoxFit.cover)
+                                        : null),
+                              ),
+                              child: _logoUrl == null && _logoImage == null
+                                  ? Icon(Iconsax.teacher,
+                                      size: 40, color: primaryColor)
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.1),
+                                          blurRadius: 10)
+                                    ],
+                                  ),
+                                  child: _isUploadingLogo
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white))
+                                      : const Icon(Iconsax.camera,
+                                          color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Center(
+                        child: Padding(
+                            padding: EdgeInsets.only(top: 8),
+                            child: Text('School Logo (Optional)',
+                                style: TextStyle(
+                                    color: Colors.grey, fontSize: 12)))),
+                    const SizedBox(height: 32),
+
+                    // Basic Info Section
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 600),
+                      child:
+                          _buildSectionTitle('Basic Information', Iconsax.user),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 650),
+                      child: _buildTextField(_nameController, 'School Name *',
+                          Iconsax.teacher, isDark, primaryColor,
+                          validator: (v) =>
+                              v?.isEmpty ?? true ? 'Name required' : null),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 700),
+                      child: _buildTextField(_mottoController, 'Motto',
+                          Iconsax.quote_down, isDark, primaryColor),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 750),
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: _buildTextField(
+                                  _foundingYearController,
+                                  'Est. Year',
+                                  Iconsax.calendar_1,
+                                  isDark,
+                                  primaryColor,
+                                  keyboardType: TextInputType.number)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                              child: _buildTextField(
+                                  _pastorController,
+                                  'Pastor',
+                                  Iconsax.user_tag,
+                                  isDark,
+                                  primaryColor)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Contact Info Section
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 850),
+                      child: _buildSectionTitle(
+                          'Contact & Location', Iconsax.location),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 900),
+                      child: _buildTextField(_emailController, 'Email',
+                          Iconsax.direct, isDark, primaryColor,
+                          keyboardType: TextInputType.emailAddress),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 950),
+                      child: _buildTextField(_phoneController, 'Phone',
+                          Iconsax.call, isDark, primaryColor,
+                          keyboardType: TextInputType.phone),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1000),
+                      child: _buildTextField(_addressController, 'Address',
+                          Iconsax.map, isDark, primaryColor,
+                          maxLines: 2),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Additional Info Section
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1050),
+                      child: _buildSectionTitle(
+                          'Services & Description', Iconsax.more_square),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1100),
+                      child: _buildTextField(
+                          _serviceTimesController,
+                          'Service Times',
+                          Iconsax.timer_1,
+                          isDark,
+                          primaryColor,
+                          maxLines: 2),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1150),
+                      child: _buildTextField(
+                          _descriptionController,
+                          'Description',
+                          Iconsax.document_text,
+                          isDark,
+                          primaryColor,
+                          maxLines: 4),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1200),
+                      child: _buildDateTile('Established Date',
+                          Iconsax.calendar, isDark, primaryColor),
+                    ),
+                    const SizedBox(height: 48),
+
+                    // Create Button
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1300),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting ? null : _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
                           ),
-                          child: _isUploadingLogo
+                          child: _isSubmitting
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.camera_alt,
-                                  color: Colors.white, size: 20),
+                                      color: Colors.white, strokeWidth: 2))
+                              : Text('Create School',
+                                  style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
-              const Center(
-                  child: Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text('የትምህርት ቤት ሎጎ (አማራጭ)'),
-              )),
-              const SizedBox(height: 24),
-
-              // Basic Information Section
-              Text(
-                'መሰረታዊ መረጃ',
-                style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'የትምህርት ቤቱ ስም *',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText: 'የትምህርት ቤቱን ስም ያስገቡ',
-                  hintStyle: GoogleFonts.notoSansEthiopic(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'እባክዎ የትምህርት ቤቱን ስም ያስገቡ';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _mottoController,
-                decoration: InputDecoration(
-                  labelText: 'መሪ ቃል (Motto)',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText: 'የትምህርት ቤቱን መሪ ቃል ያስገቡ',
-                  hintStyle: GoogleFonts.notoSansEthiopic(),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _foundingYearController,
-                decoration: InputDecoration(
-                  labelText: 'የተመሰረተበት ዓመተ ምህረት',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText: 'ምሳሌ፡ 2000',
-                  hintStyle: GoogleFonts.notoSansEthiopic(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _pastorController,
-                decoration: InputDecoration(
-                  labelText: 'የፓስተር ስም',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText: 'የፓስተሩን ስም ያስገቡ',
-                  hintStyle: GoogleFonts.notoSansEthiopic(),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Contact Information Section
-              Text(
-                'የዕውቂያ መረጃ',
-                style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'የኢሜል አድራሻ',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText: 'school@example.com',
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: 'ስልክ ቁጥር',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText: '+251-XXX-XXXXXX',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _addressController,
-                decoration: InputDecoration(
-                  labelText: 'አካላዊ አድራሻ',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText: 'የትምህርት ቤቱን አድራሻ ያስገቡ',
-                  hintStyle: GoogleFonts.notoSansEthiopic(),
-                ),
-                maxLines: 2,
-              ),
-
-              const SizedBox(height: 24),
-
-              // Additional Information Section
-              Text(
-                'ተጨማሪ መረጃ',
-                style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _serviceTimesController,
-                decoration: InputDecoration(
-                  labelText: 'የአገልግሎት ሰዓታት',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText:
-                      'እሑድ፡ 8:30 ጥዋት - የልጆች አገልግሎት፣ 10:00 ጥዋት - የወጣቶች አገልግሎት',
-                  hintStyle: GoogleFonts.notoSansEthiopic(),
-                ),
-                maxLines: 3,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'መግለጫ',
-                  labelStyle: GoogleFonts.notoSansEthiopic(),
-                  border: const OutlineInputBorder(),
-                  hintText: 'ስለ ትምህርት ቤቱ አጭር መግለጫ...',
-                  hintStyle: GoogleFonts.notoSansEthiopic(),
-                ),
-                maxLines: 4,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Established Date
-              ListTile(
-                title: Text('የተቋቋመበት ቀን (ሙሉ ቀን)',
-                    style: GoogleFonts.notoSansEthiopic()),
-                subtitle: Text(
-                  _establishedDate != null
-                      ? _establishedDate.toString()
-                      : 'ቀን ይምረጡ (አማራጭ)',
-                  style: GoogleFonts.notoSansEthiopic(),
-                ),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: _selectEstablishedDate,
-              ),
-
-              const SizedBox(height: 32),
-
-              // Submit Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitForm,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'ትምህርት ቤት ፍጠር',
-                          style: GoogleFonts.notoSansEthiopic(fontSize: 16),
-                        ),
-                ),
-              ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+        const SizedBox(width: 10),
+        Text(title,
+            style:
+                GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label,
+      IconData icon, bool isDark, Color primaryColor,
+      {String? Function(String?)? validator,
+      TextInputType? keyboardType,
+      int maxLines = 1}) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      style: GoogleFonts.poppins(fontSize: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+        prefixIcon:
+            Icon(icon, color: primaryColor.withValues(alpha: 0.5), size: 18),
+        filled: true,
+        fillColor: isDark
+            ? Colors.grey[900]!.withValues(alpha: 0.5)
+            : Colors.grey[100],
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: primaryColor, width: 1)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+    );
+  }
+
+  Widget _buildDateTile(
+      String label, IconData icon, bool isDark, Color primaryColor) {
+    return GestureDetector(
+      onTap: _selectEstablishedDate,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.grey[900]!.withValues(alpha: 0.5)
+              : Colors.grey[100],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: primaryColor.withValues(alpha: 0.5), size: 18),
+            const SizedBox(width: 12),
+            Text(label,
+                style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14)),
+            const Spacer(),
+            Text(
+              _establishedDate != null
+                  ? _establishedDate.toString()
+                  : 'Select Date',
+              style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ],
         ),
       ),
     );

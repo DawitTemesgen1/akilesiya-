@@ -1,11 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'dart:ui';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:amde_haymanot_abalat_guday/services/system_admin_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class EditSchoolScreen extends StatefulWidget {
   final Map<String, dynamic> school;
@@ -55,7 +60,6 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
     _descriptionController.text = school['description'] ?? '';
     _isActive = school['is_active'] == 1 || school['is_active'] == true;
 
-    // New Fields
     _mottoController.text = school['motto'] ?? '';
     _foundingYearController.text = school['founding_year'] != null
         ? school['founding_year'].toString()
@@ -90,7 +94,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
             _isUploadingLogo = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ሎጎ በተሳካ ሁኔታ ተጭኗል')),
+            const SnackBar(content: Text('Logo uploaded successfully')),
           );
         } else {
           throw Exception(jsonResp['message'] ?? 'Upload failed');
@@ -98,7 +102,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
       } catch (e) {
         setState(() => _isUploadingLogo = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ሎጎ መጫን አልተቻለም: $e')),
+          SnackBar(content: Text('Failed to upload logo: $e')),
         );
       }
     }
@@ -108,7 +112,8 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_isUploadingLogo) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('እባክዎ ሎጎው እስኪጫን ይጠብቁ...')),
+        const SnackBar(
+            content: Text('Please wait while the logo is uploading...')),
       );
       return;
     }
@@ -125,7 +130,6 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
       'description': _descriptionController.text.trim(),
       'is_active': _isActive,
       'established_date': _establishedDate?.toIso8601String().split('T')[0],
-      // New
       'motto': _mottoController.text.trim(),
       'founding_year': _foundingYearController.text.trim(),
       'logo_url': _logoUrl,
@@ -139,11 +143,11 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
     if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ትምህርት ቤቱ በተሳካ ሁኔታ ተዘምኗል!'), // ተተርጉሟል
+          content: Text('School updated successfully!'),
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.of(context).pop(true); // ወደ ኋላ ይመለሳል
+      Navigator.of(context).pop(true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -176,257 +180,407 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode(context);
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ትምህርት ቤት ያርትዑ'),
-        actions: [
-          IconButton(
-            icon: _isSubmitting
-                ? const CircularProgressIndicator()
-                : const Icon(Icons.save),
-            onPressed: _isSubmitting ? null : _submitForm,
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Logo Section
-              Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: _logoImage != null
-                          ? FileImage(_logoImage!)
-                          : (_logoUrl != null
-                              ? NetworkImage(_logoUrl!)
-                              : const AssetImage(
-                                      'assets/icon/launcher_logo.png')
-                                  as ImageProvider),
-                      backgroundColor: Colors.grey[200],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // Glassmorphic App Bar
+          SliverAppBar(
+            expandedHeight: 120.0,
+            floating: false,
+            pinned: true,
+            stretch: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
+              title: ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Text(
+                    'Edit School',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: InkWell(
-                        onTap: _pickImage,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
-                            shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [
+                            primaryColor.withValues(alpha: 0.2),
+                            Colors.black.withValues(alpha: 0.1)
+                          ]
+                        : [
+                            primaryColor.withValues(alpha: 0.1),
+                            Colors.white.withValues(alpha: 0.5)
+                          ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              if (_isSubmitting)
+                const Center(
+                    child: Padding(
+                        padding: EdgeInsets.only(right: 20),
+                        child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))))
+              else
+                IconButton(
+                  icon: Icon(Iconsax.tick_circle, color: primaryColor),
+                  onPressed: _submitForm,
+                ),
+              const SizedBox(width: 8),
+            ],
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Logo Section
+                    FadeInDown(
+                      duration: const Duration(milliseconds: 500),
+                      child: Center(
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: primaryColor.withValues(alpha: 0.1),
+                                border: Border.all(
+                                    color: primaryColor.withValues(alpha: 0.1),
+                                    width: 2),
+                                image: _logoImage != null
+                                    ? DecorationImage(
+                                        image: FileImage(_logoImage!),
+                                        fit: BoxFit.cover)
+                                    : (_logoUrl != null && _logoUrl!.isNotEmpty
+                                        ? DecorationImage(
+                                            image: NetworkImage(_logoUrl!),
+                                            fit: BoxFit.cover)
+                                        : null),
+                              ),
+                              child: _logoUrl == null && _logoImage == null
+                                  ? Icon(Iconsax.teacher,
+                                      size: 40, color: primaryColor)
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: primaryColor,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: Colors.black
+                                              .withValues(alpha: 0.1),
+                                          blurRadius: 10)
+                                    ],
+                                  ),
+                                  child: _isUploadingLogo
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white))
+                                      : const Icon(Iconsax.camera,
+                                          color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Basic Info Section
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 600),
+                      child:
+                          _buildSectionTitle('Basic Information', Iconsax.user),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 650),
+                      child: _buildTextField(_nameController, 'School Name *',
+                          Iconsax.teacher, isDark, primaryColor,
+                          validator: (v) =>
+                              v?.isEmpty ?? true ? 'Name required' : null),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 700),
+                      child: _buildTextField(_mottoController, 'Motto',
+                          Iconsax.quote_down, isDark, primaryColor),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 750),
+                      child: Row(
+                        children: [
+                          Expanded(
+                              child: _buildTextField(
+                                  _foundingYearController,
+                                  'Est. Year',
+                                  Iconsax.calendar_1,
+                                  isDark,
+                                  primaryColor,
+                                  keyboardType: TextInputType.number)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                              child: _buildTextField(
+                                  _pastorController,
+                                  'Pastor',
+                                  Iconsax.user_tag,
+                                  isDark,
+                                  primaryColor)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Status Switch
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 800),
+                      child: _buildStatusSwitch(isDark, primaryColor),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Contact Info Section
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 850),
+                      child: _buildSectionTitle(
+                          'Contact & Location', Iconsax.location),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 900),
+                      child: _buildTextField(_emailController, 'Email',
+                          Iconsax.direct, isDark, primaryColor,
+                          keyboardType: TextInputType.emailAddress),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 950),
+                      child: _buildTextField(_phoneController, 'Phone',
+                          Iconsax.call, isDark, primaryColor,
+                          keyboardType: TextInputType.phone),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1000),
+                      child: _buildTextField(_addressController, 'Address',
+                          Iconsax.map, isDark, primaryColor,
+                          maxLines: 2),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Additional Info Section
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1050),
+                      child: _buildSectionTitle(
+                          'Services & Description', Iconsax.more_square),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1100),
+                      child: _buildTextField(
+                          _serviceTimesController,
+                          'Service Times',
+                          Iconsax.timer_1,
+                          isDark,
+                          primaryColor,
+                          maxLines: 2),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1150),
+                      child: _buildTextField(
+                          _descriptionController,
+                          'Description',
+                          Iconsax.document_text,
+                          isDark,
+                          primaryColor,
+                          maxLines: 4),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1200),
+                      child: _buildDateTile('Established Date',
+                          Iconsax.calendar, isDark, primaryColor),
+                    ),
+                    const SizedBox(height: 48),
+
+                    // Update Button
+                    FadeInUp(
+                      duration: const Duration(milliseconds: 1300),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isSubmitting ? null : _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                            elevation: 0,
                           ),
-                          child: _isUploadingLogo
+                          child: _isSubmitting
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.camera_alt,
-                                  color: Colors.white, size: 20),
+                                      color: Colors.white, strokeWidth: 2))
+                              : Text('Update School',
+                                  style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
                         ),
                       ),
                     ),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // የመሰረታዊ መረጃ ክፍል
-              const Text(
-                'መሰረታዊ መረጃ', // ተተርጉሟል
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'የትምህርት ቤቱ ስም *', // ተተርጉሟል
-                  border: OutlineInputBorder(),
-                  hintText: 'የትምህርት ቤቱን ስም ያስገቡ', // ተተርጉሟል
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'እባክዎ የትምህርት ቤቱን ስም ያስገቡ'; // ተተርጉሟል
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _mottoController,
-                decoration: const InputDecoration(
-                  labelText: 'መሪ ቃል (Motto)',
-                  border: OutlineInputBorder(),
-                  hintText: 'የትምህርት ቤቱን መሪ ቃል ያስገቡ',
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _foundingYearController,
-                decoration: const InputDecoration(
-                  labelText: 'የተመሰረተበት ዓመተ ምህረት',
-                  border: OutlineInputBorder(),
-                  hintText: 'ምሳሌ፡ 2000',
-                ),
-                keyboardType: TextInputType.number,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _pastorController,
-                decoration: const InputDecoration(
-                  labelText: 'የፓስተር ስም', // ተተርጉሟል
-                  border: OutlineInputBorder(),
-                  hintText: 'የፓስተሩን ስም ያስገቡ', // ተተርጉሟል
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // የሁኔታ መቀየሪያ
-              SwitchListTile(
-                title: const Text('የትምህርት ቤቱ ሁኔታ'), // ተተርጉሟል
-                subtitle: Text(_isActive ? 'ንቁ' : 'ንቁ ያልሆነ'), // ተተርጉሟል
-                value: _isActive,
-                onChanged: (value) {
-                  setState(() => _isActive = value);
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // የመገኛ መረጃ ክፍል
-              const Text(
-                'የመገኛ መረጃ', // ተተርጉሟል
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'የኢሜይል አድራሻ', // ተተርጉሟል
-                  border: OutlineInputBorder(),
-                  hintText: 'school@example.com',
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'ስልክ ቁጥር', // ተተርጉሟል
-                  border: OutlineInputBorder(),
-                  hintText: '+251-XXX-XXXXXX',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(
-                  labelText: 'አካላዊ አድራሻ', // ተተርጉሟል
-                  border: OutlineInputBorder(),
-                  hintText: 'የትምህርት ቤቱን አድራሻ ያስገቡ', // ተተርጉሟል
-                ),
-                maxLines: 2,
-              ),
-
-              const SizedBox(height: 16),
-
-              // ተጨማሪ መረጃ ክፍል
-              const Text(
-                'ተጨማሪ መረጃ', // ተተርጉሟል
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _serviceTimesController,
-                decoration: const InputDecoration(
-                  labelText: 'የአገልግሎት ሰዓታት', // ተተርጉሟል
-                  border: OutlineInputBorder(),
-                  hintText:
-                      'እሁድ: 2:30 - የህጻናት አገልግሎት, 4:00 - የወጣቶች አገልግሎት', // ተተርጉሟል
-                ),
-                maxLines: 3,
-              ),
-
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'መግለጫ', // ተተርጉሟል
-                  border: OutlineInputBorder(),
-                  hintText: 'ስለ ትምህርት ቤቱ አጭር መግለጫ...', // ተተርጉሟል
-                ),
-                maxLines: 4,
-              ),
-
-              const SizedBox(height: 16),
-
-              // የተቋቋመበት ቀን
-              ListTile(
-                title: const Text('የተቋቋመበት ቀን'), // ተተርጉሟል
-                subtitle: Text(
-                  _establishedDate != null
-                      ? '${_establishedDate!.year}-${_establishedDate!.month.toString().padLeft(2, '0')}-${_establishedDate!.day.toString().padLeft(2, '0')}'
-                      : 'ቀን ይምረጡ', // ተተርጉሟል
-                ),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: _selectEstablishedDate,
-              ),
-
-              const SizedBox(height: 32),
-
-              // የማስገቢያ አዝራር
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitForm,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Theme.of(context).colorScheme.secondary,
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          'ትምህርት ቤቱን ያዘምኑ', // ተተርጉሟል
-                          style: TextStyle(fontSize: 16),
-                        ),
-                ),
-              ),
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+        const SizedBox(width: 10),
+        Text(title,
+            style:
+                GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label,
+      IconData icon, bool isDark, Color primaryColor,
+      {String? Function(String?)? validator,
+      TextInputType? keyboardType,
+      int maxLines = 1}) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      style: GoogleFonts.poppins(fontSize: 14),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+        prefixIcon:
+            Icon(icon, color: primaryColor.withValues(alpha: 0.5), size: 18),
+        filled: true,
+        fillColor: isDark
+            ? Colors.grey[900]!.withValues(alpha: 0.5)
+            : Colors.grey[100],
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: primaryColor, width: 1)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+    );
+  }
+
+  Widget _buildStatusSwitch(bool isDark, Color primaryColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.grey[900]!.withValues(alpha: 0.5)
+            : Colors.grey[100],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text('School Status',
+            style:
+                GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
+        subtitle: Text(_isActive ? 'Active and visible' : 'Inactive and hidden',
+            style: GoogleFonts.poppins(
+                fontSize: 12, color: _isActive ? Colors.green : Colors.red)),
+        activeColor: primaryColor,
+        value: _isActive,
+        onChanged: (v) => setState(() => _isActive = v),
+      ),
+    );
+  }
+
+  Widget _buildDateTile(
+      String label, IconData icon, bool isDark, Color primaryColor) {
+    return GestureDetector(
+      onTap: _selectEstablishedDate,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.grey[900]!.withValues(alpha: 0.5)
+              : Colors.grey[100],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: primaryColor.withValues(alpha: 0.5), size: 18),
+            const SizedBox(width: 12),
+            Text(label,
+                style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14)),
+            const Spacer(),
+            Text(
+              _establishedDate != null
+                  ? '${_establishedDate!.year}-${_establishedDate!.month.toString().padLeft(2, '0')}-${_establishedDate!.day.toString().padLeft(2, '0')}'
+                  : 'Select Date',
+              style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ],
         ),
       ),
     );

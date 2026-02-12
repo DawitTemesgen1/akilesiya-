@@ -1,6 +1,12 @@
+import 'dart:ui';
 import 'package:amde_haymanot_abalat_guday/system%20admin/user_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:amde_haymanot_abalat_guday/services/system_admin_service.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -85,483 +91,634 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     _loadUsers();
   }
 
-  Widget _buildUserCard(Map<String, dynamic> user) {
-    final String tooltip =
-        '${user['full_name'] ?? 'Unknown User'}\n${user['email']}\nRole: ${user['role']}';
-    return Tooltip(
-      message: tooltip,
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: ListTile(
-          leading: CircleAvatar(
-            backgroundColor: Theme.of(context).primaryColor,
-            child: ClipOval(
-              child: (user['profile_image_url'] != null)
-                  ? Image.network(
-                      user['profile_image_url'],
-                      width: 40,
-                      height: 40,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stack) => Text(
-                        (user['full_name'] ?? 'U')[0].toUpperCase(),
-                      ),
-                    )
-                  : Text(
-                      (user['full_name'] ?? 'U')[0].toUpperCase(),
-                    ),
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode(context);
+    final primaryColor = Theme.of(context).primaryColor;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // Glassmorphic App Bar
+          SliverAppBar(
+            expandedHeight: 180.0,
+            floating: false,
+            pinned: true,
+            stretch: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+              onPressed: () => Navigator.of(context).pop(),
+              color: isDark ? Colors.white : Colors.black87,
             ),
-          ),
-          title: Text(
-            user['full_name'] ?? 'Unknown User',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                user['email'],
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                overflow: TextOverflow.ellipsis,
+            flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
+              title: ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Text(
+                    'User Management',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 4),
-              Row(
+              background: Stack(
+                fit: StackFit.expand,
                 children: [
-                  const Icon(Icons.school, size: 14, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      user['school_name'] ?? 'No School',
-                      style: const TextStyle(fontSize: 13),
-                      overflow: TextOverflow.ellipsis,
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: isDark
+                            ? [
+                                primaryColor.withValues(alpha: 0.3),
+                                Colors.black
+                              ]
+                            : [
+                                primaryColor.withValues(alpha: 0.1),
+                                Colors.white
+                              ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 60,
+                    left: 20,
+                    right: 20,
+                    child: FadeInUp(
+                      duration: const Duration(milliseconds: 600),
+                      child: _buildSearchBar(isDark, primaryColor),
                     ),
                   ),
                 ],
               ),
-              if (user['spiritual_class'] != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2.0),
-                  child: Text(
-                    'Class: ${user['spiritual_class']}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              const SizedBox(height: 4),
-              Text(
-                'Role: ${user['role']}',
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+
+          // Filters Section
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: FadeInUp(
+                duration: const Duration(milliseconds: 700),
+                child: _buildFilters(isDark, primaryColor),
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: user['is_active'] == 1
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      user['is_active'] == 1 ? 'Active' : 'Inactive',
-                      style: TextStyle(
-                        color:
-                            user['is_active'] == 1 ? Colors.green : Colors.red,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          // Users List
+          _isLoading && _users.isEmpty
+              ? const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()))
+              : _users.isEmpty
+                  ? SliverFillRemaining(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Iconsax.user_search,
+                                size: 64,
+                                color: Colors.grey.withValues(alpha: 0.5)),
+                            const SizedBox(height: 16),
+                            Text('No users found',
+                                style: GoogleFonts.poppins(
+                                    fontSize: 16, color: Colors.grey)),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
-                  if (user['role'].toString().contains('superior_admin'))
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'Superior Admin',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    )
+                  : SliverPadding(
+                      padding: const EdgeInsets.only(bottom: 20)
+                          .copyWith(left: 20, right: 20, top: 10),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            if (index == _users.length) {
+                              _loadMore();
+                              return const Padding(
+                                padding: EdgeInsets.all(20),
+                                child:
+                                    Center(child: CircularProgressIndicator()),
+                              );
+                            }
+                            return FadeInUp(
+                              duration: Duration(
+                                  milliseconds: 400 + (index % 10 * 50)),
+                              child: _buildUserCard(
+                                  _users[index], isDark, primaryColor),
+                            );
+                          },
+                          childCount: _users.length + (_hasMore ? 1 : 0),
                         ),
                       ),
                     ),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(bool isDark, Color primaryColor) {
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withOpacity(0.1)
+            : Colors.black.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: _onSearch,
+        style: GoogleFonts.poppins(
+            fontSize: 14, color: isDark ? Colors.white : Colors.black87),
+        decoration: InputDecoration(
+          prefixIcon:
+              Icon(Iconsax.search_normal, color: primaryColor, size: 20),
+          hintText: 'Search by name or email...',
+          hintStyle: GoogleFonts.poppins(color: Colors.grey, fontSize: 13),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilters(bool isDark, Color primaryColor) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: _schoolFilter.isEmpty ? null : _schoolFilter,
+                hint: Text('All Schools',
+                    style: GoogleFonts.poppins(fontSize: 12)),
+                style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isDark ? Colors.white : Colors.black87),
+                items: [
+                  const DropdownMenuItem(value: '', child: Text('All Schools')),
+                  ..._schools.map((s) => DropdownMenuItem(
+                      value: s['id'].toString(),
+                      child: Text(s['name'] ?? '',
+                          overflow: TextOverflow.ellipsis))),
+                ],
+                onChanged: (v) {
+                  setState(() => _schoolFilter = v ?? '');
+                  _loadUsers();
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          flex: 1,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: _roleFilter.isEmpty ? null : _roleFilter,
+                hint: Text('Role', style: GoogleFonts.poppins(fontSize: 12)),
+                style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isDark ? Colors.white : Colors.black87),
+                items: const [
+                  DropdownMenuItem(value: '', child: Text('All')),
+                  DropdownMenuItem(value: 'user', child: Text('Regular')),
+                  DropdownMenuItem(
+                      value: 'superior_admin', child: Text('Superior')),
+                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                  DropdownMenuItem(
+                      value: 'system_admin', child: Text('System')),
+                ],
+                onChanged: (v) {
+                  setState(() => _roleFilter = v ?? '');
+                  _loadUsers();
+                },
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserCard(
+      Map<String, dynamic> user, bool isDark, Color primaryColor) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[900]!.withOpacity(0.5) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _showUserActions(user),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  // Profile Image
+                  Hero(
+                    tag: 'user-${user['id']}',
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: primaryColor.withOpacity(0.1),
+                        image: user['profile_image_url'] != null
+                            ? DecorationImage(
+                                image: NetworkImage(user['profile_image_url']),
+                                fit: BoxFit.cover)
+                            : null,
+                      ),
+                      child: user['profile_image_url'] == null
+                          ? Center(
+                              child: Text(
+                                  (user['full_name'] ?? 'U')[0].toUpperCase(),
+                                  style: GoogleFonts.poppins(
+                                      color: primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18)))
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+
+                  // User Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user['full_name'] ?? 'Unknown User',
+                          style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                        Text(
+                          user['email'],
+                          style: GoogleFonts.poppins(
+                              color: Colors.grey, fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Iconsax.building,
+                                size: 12, color: primaryColor.withOpacity(0.6)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                user['school_name'] ?? 'No School',
+                                style: GoogleFonts.poppins(
+                                    fontSize: 11, color: Colors.grey[600]),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Role & Status
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _buildRoleBadge(user['role'], isDark),
+                      const SizedBox(height: 8),
+                      _buildStatusIndicator(user['is_active'] == 1),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Iconsax.arrow_right_3,
+                      size: 16, color: Colors.grey.withOpacity(0.5)),
                 ],
               ),
-            ],
+            ),
           ),
-          trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-          onTap: () => _showUserActions(user),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRoleBadge(String role, bool isDark) {
+    Color color;
+    String label = role.toUpperCase();
+
+    if (role.contains('system')) {
+      color = Colors.purple;
+    } else if (role.contains('superior')) {
+      color = Colors.blue;
+    } else if (role.contains('admin')) {
+      color = Colors.orange;
+    } else {
+      color = Colors.green;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.poppins(
+            fontSize: 9, fontWeight: FontWeight.bold, color: color),
+      ),
+    );
+  }
+
+  Widget _buildStatusIndicator(bool isActive) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isActive ? Colors.green : Colors.red,
+        boxShadow: [
+          BoxShadow(
+            color: (isActive ? Colors.green : Colors.red).withOpacity(0.3),
+            blurRadius: 4,
+            spreadRadius: 1,
+          ),
+        ],
       ),
     );
   }
 
   void _showUserActions(Map<String, dynamic> user) {
+    final isDark =
+        Provider.of<ThemeProvider>(context, listen: false).isDarkMode(context);
+
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.visibility),
-              title: const Text('View Details'),
-              onTap: () {
-                Navigator.pop(context);
-                _viewUserDetails(user);
-              },
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2)),
             ),
-            ListTile(
-              leading: Icon(
-                  user['is_active'] == 1 ? Icons.block : Icons.check_circle),
-              title: Text(
-                  user['is_active'] == 1 ? 'Deactivate User' : 'Activate User'),
-              onTap: () {
+            _buildActionItem(Iconsax.eye, 'View Details', () {
+              Navigator.pop(context);
+              _viewUserDetails(user);
+            }, Colors.blue),
+            _buildActionItem(
+              user['is_active'] == 1 ? Iconsax.user_remove : Iconsax.user_tick,
+              user['is_active'] == 1 ? 'Deactivate User' : 'Activate User',
+              () {
                 Navigator.pop(context);
                 _toggleUserStatus(user);
               },
+              user['is_active'] == 1 ? Colors.red : Colors.green,
             ),
-            // In _showUserActions function, update the promote option:
             if (!user['role'].contains('superior_admin') &&
                 !user['role'].contains('system_admin'))
-              ListTile(
-                leading: const Icon(Icons.admin_panel_settings),
-                title: const Text('Promote to Superior Admin'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _promoteToSuperiorAdmin(user);
-                },
-              ),
+              _buildActionItem(Iconsax.setting_4, 'Promote to Superior Admin',
+                  () {
+                Navigator.pop(context);
+                _promoteToSuperiorAdmin(user);
+              }, Colors.purple),
             if (user['role'].contains('superior_admin'))
-              ListTile(
-                leading: const Icon(Icons.person_off),
-                title: const Text('Demote from Superior Admin'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _demoteFromSuperiorAdmin(user);
-                },
-              ),
+              _buildActionItem(Iconsax.user_minus, 'Demote from Superior Admin',
+                  () {
+                Navigator.pop(context);
+                _demoteFromSuperiorAdmin(user);
+              }, Colors.orange),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-// In user_management.dart, update these functions:
-// Add this function to your _UserManagementScreenState class
+  Widget _buildActionItem(
+      IconData icon, String label, VoidCallback onTap, Color color) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10)),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      title: Text(label,
+          style:
+              GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+
   void _promoteToSuperiorAdmin(Map<String, dynamic> user) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Promote to Superior Admin'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-                'Are you sure you want to promote ${user['full_name']} to Superior Admin?'),
-            const SizedBox(height: 16),
-            const Text(
-              'This user will gain administrative privileges for their school and will be able to:',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            const Padding(
-              padding: EdgeInsets.only(left: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('• Manage users in their school'),
-                  Text('• View and edit school settings'),
-                  Text('• Access administrative features'),
-                ],
+      builder: (context) => FadeInScale(
+        child: AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Promote User',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Promote ${user['full_name']} to Superior Admin?',
+                  style: GoogleFonts.poppins(fontSize: 14)),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: Colors.purple.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12)),
+                child: Text(
+                  'This user will gain administrative privileges for their school.',
+                  style: GoogleFonts.poppins(
+                      fontSize: 12, color: Colors.purple[700]),
+                ),
               ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel',
+                    style: GoogleFonts.poppins(color: Colors.grey))),
+            ElevatedButton(
+              onPressed: () => _confirmPromotion(user),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
+              child: const Text('Promote'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => _confirmPromotion(user),
-            child: const Text('Promote User'),
-          ),
-        ],
       ),
     );
   }
 
   void _confirmPromotion(Map<String, dynamic> user) async {
-    Navigator.pop(context); // Close the dialog
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(width: 20),
-              Text('Promoting ${user['full_name']}...'),
-            ],
-          ),
-        ),
-      ),
-    );
+    Navigator.pop(context);
+    _showLoadingDialog('Promoting ${user['full_name']}...');
 
     try {
       final result = await SystemAdminService.promoteToSuperiorAdmin(
-        user['tenant_id'], // School ID
-        user['id'], // User ID
-      );
-
+          user['tenant_id'], user['id']);
       if (!mounted) return;
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
 
       if (result['success'] == true) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  'Successfully promoted ${user['full_name']} to Superior Admin!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-
-        // Refresh the user list to show updated role
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('User promoted successfully!'),
+            backgroundColor: Colors.green));
         _loadUsers();
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to promote user: ${result['message']}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed: ${result['message']}'),
+            backgroundColor: Colors.red));
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error promoting user: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
       }
     }
   }
 
   void _demoteFromSuperiorAdmin(Map<String, dynamic> user) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Demote from Superior Admin'),
-        content: Text(
-            'Are you sure you want to remove Superior Admin privileges from ${user['full_name']}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => _confirmDemotion(user),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.black,
-            ),
-            child: const Text('Demote User'),
-          ),
-        ],
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Demotion coming soon!'),
+        backgroundColor: Colors.orange));
   }
 
-  void _confirmDemotion(Map<String, dynamic> user) async {
-    Navigator.pop(context);
-
-    // You would need to create a backend endpoint for demotion
-    // For now, this is a placeholder
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Demotion functionality coming soon!')),
+  void _showLoadingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(width: 20),
+              Text(message, style: GoogleFonts.poppins()),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   void _viewUserDetails(Map<String, dynamic> user) {
     Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => UserDetailsScreen(userId: user['id']),
-      ),
-    );
+        context,
+        MaterialPageRoute(
+            builder: (context) => UserDetailsScreen(userId: user['id'])));
   }
 
   void _toggleUserStatus(Map<String, dynamic> user) async {
-    final newStatus = user['is_active'] != 1;
-    final result =
-        await SystemAdminService.toggleUserStatus(user['id'], newStatus);
-
+    final result = await SystemAdminService.toggleUserStatus(
+        user['id'], user['is_active'] != 1);
     if (!mounted) return;
-
     if (result['success'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'])),
-      );
-      _loadUsers(); // Refresh the list
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(result['message']), backgroundColor: Colors.green));
+      _loadUsers();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['message'])),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(result['message']), backgroundColor: Colors.red));
     }
+  }
+}
+
+class FadeInScale extends StatefulWidget {
+  final Widget child;
+  const FadeInScale({super.key, required this.child});
+  @override
+  State<FadeInScale> createState() => _FadeInScaleState();
+}
+
+class _FadeInScaleState extends State<FadeInScale>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 300));
+    _animation =
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Management'),
-      ),
-      body: Column(
-        children: [
-          // Search and Filter Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search users by name or email...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onChanged: (value) => _onSearch(value),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        initialValue:
-                            _schoolFilter.isEmpty ? null : _schoolFilter,
-                        decoration: InputDecoration(
-                          labelText: 'Filter by School',
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                              value: '', child: Text('All Schools')),
-                          ..._schools.map<DropdownMenuItem<String>>((school) {
-                            return DropdownMenuItem(
-                              value: school['id'].toString(),
-                              child: Text(
-                                school['name'] ?? '',
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }),
-                        ],
-                        onChanged: (value) {
-                          setState(() => _schoolFilter = value ?? '');
-                          _loadUsers();
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        initialValue: _roleFilter.isEmpty ? null : _roleFilter,
-                        decoration: InputDecoration(
-                          labelText: 'Role',
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(value: '', child: Text('All')),
-                          DropdownMenuItem(
-                              value: 'user', child: Text('Regular')),
-                          DropdownMenuItem(
-                              value: 'superior_admin', child: Text('Superior')),
-                          DropdownMenuItem(
-                              value: 'admin', child: Text('Admin')),
-                        ],
-                        onChanged: (value) {
-                          setState(() => _roleFilter = value ?? '');
-                          _loadUsers();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Users List
-          Expanded(
-            child: _isLoading && _users.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : _users.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No users found',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                      )
-                    : NotificationListener<ScrollNotification>(
-                        onNotification: (ScrollNotification scrollInfo) {
-                          if (scrollInfo.metrics.pixels ==
-                              scrollInfo.metrics.maxScrollExtent) {
-                            _loadMore();
-                          }
-                          return false;
-                        },
-                        child: ListView.builder(
-                          itemCount: _users.length + (_hasMore ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == _users.length) {
-                              return const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child:
-                                    Center(child: CircularProgressIndicator()),
-                              );
-                            }
-                            return _buildUserCard(_users[index]);
-                          },
-                        ),
-                      ),
-          ),
-        ],
-      ),
-    );
+    return ScaleTransition(
+        scale: _animation,
+        child: FadeTransition(opacity: _animation, child: widget.child));
   }
 }

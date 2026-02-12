@@ -9,6 +9,8 @@ import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
+import 'package:shimmer/shimmer.dart';
+import 'dart:ui';
 
 // --- Amharic Localization Strings for Development Screen ---
 abstract class AmharicStringsDevelopment {
@@ -207,36 +209,41 @@ class _AdminMemberDevelopmentScreenState
   // --- MAIN BUILD METHOD ---
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final bgColor = themeProvider.getBackgroundColor(context);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+    final primaryColor = themeProvider.getPrimaryColor(context);
+    final textColor = themeProvider.getOnSurfaceColor(context);
+    final subtleTextColor = themeProvider.getSubtleTextColor(context);
+
     final filteredItems = _selectedFilter == 'All'
         ? _items
         : _items.where((item) => item.category == _selectedFilter).toList();
 
     return Scaffold(
-      backgroundColor: kAdminSurface,
+      backgroundColor: bgColor,
       body: CustomScrollView(
         slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(child: _buildSummaryMetrics()),
-          SliverToBoxAdapter(child: _buildFilterChips()),
+          _buildSliverAppBar(primaryColor, surfaceColor, textColor),
+          SliverToBoxAdapter(
+              child: _buildSummaryMetrics(
+                  surfaceColor, textColor, subtleTextColor)),
+          SliverToBoxAdapter(
+              child: _buildFilterChips(surfaceColor, textColor, primaryColor)),
           if (_isLoading)
-            SliverFillRemaining(
-                child: Center(
-                    child: CircularProgressIndicator(color: accentColor)))
+            _buildLoadingShimmer(surfaceColor)
           else
-            _buildDevelopmentList(filteredItems),
+            _buildDevelopmentList(filteredItems, surfaceColor, textColor,
+                subtleTextColor, primaryColor),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        // The hero tag was a likely source of the multiple heroes issue in other screens,
-        // but adding a tag here is correct if this FAB is part of a Hero transition.
-        heroTag:
-            'member-dev-fab-${widget.user['id']}', // Use user ID for uniqueness
-
+        heroTag: 'member-dev-fab-${widget.user['id']}',
         onPressed: () => _showAddOrEditItemModal(),
-        backgroundColor: accentColor,
-        icon: Icon(Iconsax.add, color: Colors.white),
+        backgroundColor: primaryColor,
+        icon: const Icon(Iconsax.add, color: Colors.white),
         label: Text(
-          AmharicStringsDevelopment.addNote, // Translated
+          AmharicStringsDevelopment.addNote,
           style: GoogleFonts.notoSansEthiopic(
               fontWeight: FontWeight.bold, color: Colors.white),
         ),
@@ -245,17 +252,17 @@ class _AdminMemberDevelopmentScreenState
   }
 
   // --- WIDGET BUILDERS ---
-  Widget _buildSliverAppBar() {
+  Widget _buildSliverAppBar(
+      Color primaryColor, Color surfaceColor, Color textColor) {
     return SliverAppBar(
       expandedHeight: 220.0,
       pinned: true,
       backgroundColor: primaryColor,
-      elevation: 2,
-      // Responsive: FlexibleSpaceBar is inherently responsive
+      elevation: 0,
+      leading: BackButton(color: Colors.white),
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
         titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        // Title on the app bar collapses nicely
         title: Text(
           widget.user['full_name'] ?? AmharicStringsDevelopment.memberProfile,
           style: GoogleFonts.notoSansEthiopic(
@@ -264,150 +271,173 @@ class _AdminMemberDevelopmentScreenState
             fontSize: 16,
           ),
         ),
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [primaryColor, primaryColor.withValues(alpha: 0.8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                bottom: -50,
-                right: -50,
-                child: Icon(Iconsax.user_octagon,
-                    size: 200, color: accentColor.withValues(alpha: 0.1)),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [primaryColor, primaryColor.withValues(alpha: 0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AmharicStringsDevelopment
-                          .developmentPlanFor, // Translated
-                      style: GoogleFonts.notoSansEthiopic(color: accentColor),
+            ),
+            Positioned(
+              bottom: -20,
+              right: -20,
+              child: Icon(
+                Iconsax.user_octagon,
+                size: 180,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AmharicStringsDevelopment.developmentPlanFor,
+                    style: GoogleFonts.notoSansEthiopic(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 14,
                     ),
-                    Hero(
-                      tag: 'user_name_${widget.user['id']}',
-                      child: Material(
-                        color: Colors.transparent,
-                        child: Text(
-                          widget.user['full_name'] ?? 'N/A',
-                          style: GoogleFonts.notoSansEthiopic(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  ),
+                  const SizedBox(height: 4),
+                  Hero(
+                    tag: 'user_name_${widget.user['id']}',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        widget.user['full_name'] ?? 'N/A',
+                        style: GoogleFonts.notoSansEthiopic(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSummaryMetrics() {
+  Widget _buildSummaryMetrics(
+      Color surfaceColor, Color textColor, Color subtleTextColor) {
     final activeCount = _items.where((i) => !i.isCompleted).length.toString();
     final skillsCount =
         _items.where((i) => i.category == 'Skills').length.toString();
     final completedCount = _items.where((i) => i.isCompleted).length.toString();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      color: kAdminCard,
-      // Responsive: Use layout builder for complex cross-platform layouts if needed, but Row is fine for 3 items.
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           Expanded(
-            child: _buildMetricItem(
-                Iconsax.activity,
-                AmharicStringsDevelopment.activeIssues, // Translated
-                activeCount,
-                Colors.orange),
+            child: _buildMetricItem(Iconsax.activity,
+                AmharicStringsDevelopment.activeIssues, activeCount,
+                color: Colors.orange, textColor: textColor),
           ),
           Expanded(
             child: _buildMetricItem(
-                Iconsax.star_1,
-                AmharicStringsDevelopment.skills, // Translated
-                skillsCount,
-                kSkillColor),
+                Iconsax.star_1, AmharicStringsDevelopment.skills, skillsCount,
+                color: kSkillColor, textColor: textColor),
           ),
           Expanded(
-            child: _buildMetricItem(
-                Iconsax.task_square,
-                AmharicStringsDevelopment.completed, // Translated
-                completedCount,
-                kHabitColor),
+            child: _buildMetricItem(Iconsax.task_square,
+                AmharicStringsDevelopment.completed, completedCount,
+                color: kHabitColor, textColor: textColor),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMetricItem(
-      IconData icon, String label, String value, Color color) {
+  Widget _buildMetricItem(IconData icon, String label, String value,
+      {required Color color, required Color textColor}) {
     return Column(
       children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: color.withValues(alpha: 0.1),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
           child: Icon(icon, color: color, size: 24),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Text(
           value,
-          style: TextStyle(
-              fontSize: 20, fontWeight: FontWeight.bold, color: onSurfaceColor),
+          style: GoogleFonts.notoSansEthiopic(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
         ),
         Text(
-          label, // Translated label
+          label,
+          textAlign: TextAlign.center,
           style: GoogleFonts.notoSansEthiopic(
-              fontSize: 12, color: Colors.grey[600]),
+            fontSize: 12,
+            color: textColor.withValues(alpha: 0.6),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildFilterChips(
+      Color surfaceColor, Color textColor, Color primaryColor) {
     final filters = ['All', 'Discipline', 'Skills', 'Background', 'Habits'];
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 0, 16),
       child: SizedBox(
-        height: 40,
-        // Responsive: Horizontal ListView allows scrolling on small screens
+        height: 42,
         child: ListView(
           scrollDirection: Axis.horizontal,
           children: filters.map((filter) {
             bool isSelected = _selectedFilter == filter;
             return Padding(
-              padding: const EdgeInsets.only(right: 8.0),
-              child: ChoiceChip(
-                label: Text(_categoryTranslations[filter] ??
-                    filter), // Translated label
-                selected: isSelected,
-                onSelected: (selected) {
-                  if (selected) setState(() => _selectedFilter = filter);
-                },
-                backgroundColor: surfaceColor,
-                selectedColor: accentColor,
-                labelStyle: GoogleFonts.notoSansEthiopic(
-                    color: isSelected ? Colors.white : onSurfaceColor,
-                    fontWeight: FontWeight.bold),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                      color: isSelected ? accentColor : Colors.grey.shade300),
+              padding: const EdgeInsets.only(right: 12.0),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                child: ChoiceChip(
+                  label: Text(_categoryTranslations[filter] ?? filter),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    if (selected) setState(() => _selectedFilter = filter);
+                  },
+                  backgroundColor: surfaceColor,
+                  selectedColor: primaryColor,
+                  labelStyle: GoogleFonts.notoSansEthiopic(
+                    color: isSelected ? Colors.white : textColor,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 13,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: isSelected
+                          ? primaryColor
+                          : textColor.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  elevation: isSelected ? 4 : 0,
+                  pressElevation: 8,
                 ),
               ),
             );
@@ -417,20 +447,46 @@ class _AdminMemberDevelopmentScreenState
     );
   }
 
-  Widget _buildDevelopmentList(List<DevelopmentItem> items) {
+  Widget _buildLoadingShimmer(Color surfaceColor) {
+    return SliverPadding(
+      padding: const EdgeInsets.all(16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => Shimmer.fromColors(
+            baseColor: surfaceColor,
+            highlightColor: surfaceColor.withValues(alpha: 0.5),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              height: 140,
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+          ),
+          childCount: 4,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDevelopmentList(List<DevelopmentItem> items, Color surfaceColor,
+      Color textColor, Color subtleTextColor, Color primaryColor) {
     if (items.isEmpty) {
       return SliverFillRemaining(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Iconsax.folder_open, size: 60, color: Colors.grey),
+              Icon(Iconsax.folder_open, size: 64, color: subtleTextColor),
               const SizedBox(height: 16),
               Text(
-                AmharicStringsDevelopment.noItemsFound, // Translated
+                AmharicStringsDevelopment.noItemsFound,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 18, color: Colors.grey[600]),
+                  fontSize: 18,
+                  color: subtleTextColor,
+                ),
               ),
             ],
           ),
@@ -438,15 +494,15 @@ class _AdminMemberDevelopmentScreenState
       );
     }
     return SliverPadding(
-      // Ensure enough padding for the FAB
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             return FadeInUp(
-              from: 20,
-              delay: Duration(milliseconds: index * 50),
-              child: _buildTrackingItemCard(items[index]),
+              duration: const Duration(milliseconds: 500),
+              delay: Duration(milliseconds: 100 * index),
+              child: _buildTrackingItemCard(items[index], surfaceColor,
+                  textColor, subtleTextColor, primaryColor),
             );
           },
           childCount: items.length,
@@ -455,149 +511,165 @@ class _AdminMemberDevelopmentScreenState
     );
   }
 
-  Widget _buildTrackingItemCard(DevelopmentItem item) {
+  Widget _buildTrackingItemCard(DevelopmentItem item, Color surfaceColor,
+      Color textColor, Color subtleTextColor, Color primaryColor) {
     final color = _getCategoryColor(item.category);
-    final lightColor = color.withValues(alpha: 0.1);
     final bool isCompleted = item.isCompleted;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: kAdminCard,
-        borderRadius: BorderRadius.circular(12),
-        // Use color theme for border
-        border: Border(left: BorderSide(color: color, width: 5)),
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: textColor.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                      color: lightColor,
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Text(
-                    _categoryTranslations[item.category] ??
-                        item.category, // Translated category
-                    style: GoogleFonts.notoSansEthiopic(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12),
-                  ),
-                ),
-                // Ethiopian Date format for clean display
-                Text(
-                  EthiopianDate.fromGregorian(item.date).toString(),
-                  style: GoogleFonts.notoSansEthiopic(
-                      color: Colors.grey[600], fontSize: 12),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildInfoRow(
-                Iconsax.warning_2,
-                '${AmharicStringsDevelopment.issue} / ${AmharicStringsDevelopment.issue}', // Translated
-                item.issue),
-            const Divider(height: 24, thickness: 0.5),
-            _buildInfoRow(
-                Iconsax.clipboard_text,
-                '${AmharicStringsDevelopment.plan} / ${AmharicStringsDevelopment.plan}', // Translated
-                item.plan),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton.icon(
-                  onPressed: () => _showAddOrEditItemModal(item: item),
-                  icon: Icon(Iconsax.edit, size: 16, color: accentColor),
-                  label: Text(
-                      '${AmharicStringsDevelopment.edit} / ${AmharicStringsDevelopment.edit}', // Translated
-                      style: GoogleFonts.notoSansEthiopic(color: accentColor)),
-                ),
-                GestureDetector(
-                  onTap: () => _toggleStatus(item),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? kHabitColor.withValues(alpha: 0.1)
-                          : Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isCompleted
-                              ? Iconsax.tick_square
-                              : Iconsax.close_square,
-                          color:
-                              isCompleted ? kHabitColor : Colors.grey.shade600,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isCompleted
-                              ? AmharicStringsDevelopment
-                                  .completedStatus // Translated
-                              : AmharicStringsDevelopment
-                                  .markAsDone, // Translated
-                          style: GoogleFonts.notoSansEthiopic(
-                            color: isCompleted
-                                ? kHabitColor
-                                : Colors.grey.shade800,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 6, color: color),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Text(
+                              _categoryTranslations[item.category] ??
+                                  item.category,
+                              style: GoogleFonts.notoSansEthiopic(
+                                  color: color,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                          Text(
+                            EthiopianDate.fromGregorian(item.date).toString(),
+                            style: GoogleFonts.notoSansEthiopic(
+                                color: subtleTextColor, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildInfoRow(
+                          Iconsax.warning_2,
+                          AmharicStringsDevelopment.issue,
+                          item.issue,
+                          textColor),
+                      const SizedBox(height: 12),
+                      _buildInfoRow(Iconsax.clipboard_text,
+                          AmharicStringsDevelopment.plan, item.plan, textColor),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () =>
+                                _showAddOrEditItemModal(item: item),
+                            icon: const Icon(Iconsax.edit,
+                                size: 16, color: Colors.blue),
+                            label: Text(
+                              AmharicStringsDevelopment.edit,
+                              style: GoogleFonts.notoSansEthiopic(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => _toggleStatus(item),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isCompleted
+                                    ? kHabitColor.withValues(alpha: 0.1)
+                                    : textColor.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isCompleted
+                                        ? Iconsax.tick_circle5
+                                        : Iconsax.close_circle,
+                                    color: isCompleted
+                                        ? kHabitColor
+                                        : subtleTextColor,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    isCompleted
+                                        ? AmharicStringsDevelopment
+                                            .completedStatus
+                                        : AmharicStringsDevelopment.markAsDone,
+                                    style: GoogleFonts.notoSansEthiopic(
+                                      color:
+                                          isCompleted ? kHabitColor : textColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
                   ),
                 ),
-              ],
-            )
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String title, String content) {
+  Widget _buildInfoRow(
+      IconData icon, String title, String content, Color textColor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Colors.grey.shade500, size: 18),
+        Icon(icon, color: textColor.withValues(alpha: 0.3), size: 18),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title, // Translated header
+                title,
                 style: GoogleFonts.notoSansEthiopic(
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade600,
-                  fontSize: 12,
+                  color: textColor.withValues(alpha: 0.5),
+                  fontSize: 11,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 content,
                 style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 14, color: onSurfaceColor, height: 1.5),
+                    fontSize: 14, color: textColor, height: 1.4),
               ),
             ],
           ),
@@ -606,11 +678,15 @@ class _AdminMemberDevelopmentScreenState
     );
   }
 
-  // --- ADD/EDIT MODAL (Translated and Cleaned) ---
+  // --- ADD/EDIT MODAL ---
   void _showAddOrEditItemModal({DevelopmentItem? item}) {
-    final formKey = GlobalKey<FormState>();
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final surfaceColor = themeProvider.getSurfaceColor(context);
+    final textColor = themeProvider.getOnSurfaceColor(context);
+    final primaryColor = themeProvider.getPrimaryColor(context);
     final isEditing = item != null;
 
+    final formKey = GlobalKey<FormState>();
     String? category = isEditing ? item.category : null;
     final issueController =
         TextEditingController(text: isEditing ? item.issue : '');
@@ -623,296 +699,177 @@ class _AdminMemberDevelopmentScreenState
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setModalState) {
-          Future<void> handleSave() async {
-            if (!formKey.currentState!.validate()) return;
-
-            final data = {
-              'category': category,
-              'issue': issueController.text,
-              'plan': planController.text,
-              'date': DateFormat('yyyy-MM-dd').format(selectedDate),
-            };
-
-            final result = isEditing
-                ? await DevelopmentService.updateDevelopmentNote(
-                    noteId: item.id.toString(), data: data)
-                : await DevelopmentService.createDevelopmentNote(
-                    userId: widget.user['id'].toString(), data: data);
-
-            if (mounted) {
-              if (result['success']) {
-                _showSnackbar(
-                    isEditing
-                        ? AmharicStringsDevelopment.noteUpdatedSuccess
-                        : AmharicStringsDevelopment.noteAddedSuccess,
-                    isError: false);
-                Navigator.pop(context);
-                _fetchDevelopmentNotes();
-              } else {
-                _showSnackbar(
-                    result['message'] ?? 'ስህተት ተከስቷል።', // Translated error
-                    isError: true);
-              }
-            }
-          }
-
-          Future<void> handleDelete() async {
-            final confirmed = await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text(
-                    AmharicStringsDevelopment.confirmDeletion, // Translated
-                    style: GoogleFonts.notoSansEthiopic()),
-                content: Text(
-                    AmharicStringsDevelopment.deleteConfirmation, // Translated
-                    style: GoogleFonts.notoSansEthiopic()),
-                actions: [
-                  TextButton(
-                      child:
-                          Text(AmharicStringsDevelopment.cancel, // Translated
-                              style: GoogleFonts.notoSansEthiopic()),
-                      onPressed: () => Navigator.of(ctx).pop(false)),
-                  TextButton(
-                      child: Text(
-                          AmharicStringsDevelopment.delete, // Translated
-                          style:
-                              GoogleFonts.notoSansEthiopic(color: Colors.red)),
-                      onPressed: () => Navigator.of(ctx).pop(true)),
-                ],
-              ),
-            );
-
-            if (confirmed == true && item != null) {
-              final result = await DevelopmentService.deleteDevelopmentNote(
-                  item.id.toString());
-              if (mounted) {
-                if (result['success']) {
-                  _showSnackbar(
-                      AmharicStringsDevelopment
-                          .noteDeletedSuccess, // Translated
-                      isError: false);
-                  Navigator.of(context).pop(); // Close the modal
-                  _fetchDevelopmentNotes();
-                } else {
-                  _showSnackbar(
-                      result['message'] ??
-                          AmharicStringsDevelopment
-                              .failedToDelete, // Translated
-                      isError: true);
-                }
-              }
-            }
-          }
-
-          return Padding(
-            // Responsive: Padding for keyboard
+        builder: (context, setModalState) {
+          return Container(
             padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: Container(
-              padding: const EdgeInsets.only(
-                  top: 12, left: 24, right: 24, bottom: 24),
-              decoration: BoxDecoration(
-                color: surfaceColor,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24)),
-              ),
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            decoration: BoxDecoration(
+              color: surfaceColor,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(30)),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
               child: Form(
                 key: formKey,
-                // Responsive: SingleChildScrollView to ensure fields are visible
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                          child: Container(
-                              width: 50,
-                              height: 5,
-                              decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(10)))),
-                      const SizedBox(height: 24),
-                      Text(
-                        isEditing
-                            ? AmharicStringsDevelopment.editNote
-                            : AmharicStringsDevelopment
-                                .addNewNote, // Translated
-                        style: GoogleFonts.notoSansEthiopic(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: onSurfaceColor),
-                      ),
-                      const SizedBox(height: 24),
-                      DropdownButtonFormField<String>(
-                        initialValue: category,
-                        hint: Text(
-                            AmharicStringsDevelopment
-                                .selectCategory, // Translated
-                            style: GoogleFonts.notoSansEthiopic()),
-                        items: ['Discipline', 'Skills', 'Background', 'Habits']
-                            .map((cat) => DropdownMenuItem(
-                                value: cat,
-                                child: Text(
-                                    _categoryTranslations[cat] ??
-                                        cat, // Translated options
-                                    style: GoogleFonts.notoSansEthiopic())))
-                            .toList(),
-                        onChanged: (value) =>
-                            setModalState(() => category = value),
-                        validator: (value) => value == null
-                            ? AmharicStringsDevelopment
-                                .pleaseSelectCategory // Translated validation
-                            : null,
-                        decoration: InputDecoration(
-                            border: const OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(12))),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide:
-                                  BorderSide(color: accentColor, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.shade300, width: 1),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12)),
-                        style:
-                            GoogleFonts.notoSansEthiopic(color: onSurfaceColor),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: issueController,
-                        decoration: InputDecoration(
-                            labelText:
-                                '${AmharicStringsDevelopment.issue} / ${AmharicStringsDevelopment.issue}', // Translated label
-                            labelStyle: GoogleFonts.notoSansEthiopic(),
-                            border: const OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(12))),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide:
-                                  BorderSide(color: accentColor, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.shade300, width: 1),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12)),
-                        maxLines: 3,
-                        validator: (value) => (value?.isEmpty ?? true)
-                            ? AmharicStringsDevelopment
-                                .pleaseDescribeIssue // Translated validation
-                            : null,
-                        style: GoogleFonts.notoSansEthiopic(
-                            color: kAdminOnSurface),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: planController,
-                        decoration: InputDecoration(
-                            labelText:
-                                '${AmharicStringsDevelopment.plan} / ${AmharicStringsDevelopment.plan}', // Translated label
-                            labelStyle: GoogleFonts.notoSansEthiopic(),
-                            border: const OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(12))),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                  color: kAdminPrimary, width: 2),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: Colors.grey.shade300, width: 1),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12)),
-                        maxLines: 3,
-                        validator: (value) => (value?.isEmpty ?? true)
-                            ? AmharicStringsDevelopment
-                                .pleaseDescribePlan // Translated validation
-                            : null,
-                        style: GoogleFonts.notoSansEthiopic(
-                            color: kAdminOnSurface),
-                      ),
-                      const SizedBox(height: 16),
-                      // Ethiopian Date Picker Integration (Translated)
-                      ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        title: Text(
-                            '${AmharicStringsDevelopment.date}: ${EthiopianDate.fromGregorian(selectedDate)}', // Translated
-                            style: GoogleFonts.notoSansEthiopic(
-                                color: kAdminOnSurface)),
-                        trailing:
-                            const Icon(Iconsax.calendar, color: kAdminPrimary),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side:
-                              BorderSide(color: Colors.grey.shade300, width: 1),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: textColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        onTap: () async {
-                          final pickedDate = await showDialog<EthiopianDate>(
-                            context: context,
-                            builder: (context) => EthiopianDatePickerDialog(
-                              initialDate:
-                                  EthiopianDate.fromGregorian(selectedDate),
-                            ),
-                          );
-                          if (pickedDate != null) {
-                            setModalState(
-                                () => selectedDate = pickedDate.toGregorian());
-                          }
-                        },
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          if (isEditing)
-                            IconButton(
-                              icon: const Icon(Iconsax.trash,
-                                  color: kDisciplineColor),
-                              onPressed: handleDelete,
-                              tooltip: AmharicStringsDevelopment
-                                  .delete, // Translated tooltip
-                            ),
-                          const Spacer(),
-                          ElevatedButton.icon(
-                            onPressed: handleSave,
-                            icon: const Icon(Iconsax.save_2,
-                                color: kAdminPrimary),
-                            label: Text(
-                              isEditing
-                                  ? AmharicStringsDevelopment.updateNote
-                                  : AmharicStringsDevelopment
-                                      .saveNote, // Translated
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      isEditing
+                          ? AmharicStringsDevelopment.editNote
+                          : AmharicStringsDevelopment.addNewNote,
+                      style: GoogleFonts.notoSansEthiopic(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    DropdownButtonFormField<String>(
+                      value: category,
+                      dropdownColor: surfaceColor,
+                      style: GoogleFonts.notoSansEthiopic(color: textColor),
+                      decoration: _buildInputDecoration(
+                          AmharicStringsDevelopment.selectCategory,
+                          Iconsax.category,
+                          textColor,
+                          primaryColor),
+                      items: ['Discipline', 'Skills', 'Background', 'Habits']
+                          .map((cat) => DropdownMenuItem(
+                                value: cat,
+                                child: Text(_categoryTranslations[cat] ?? cat),
+                              ))
+                          .toList(),
+                      onChanged: (value) =>
+                          setModalState(() => category = value),
+                      validator: (value) => value == null
+                          ? AmharicStringsDevelopment.pleaseSelectCategory
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: issueController,
+                      style: GoogleFonts.notoSansEthiopic(color: textColor),
+                      maxLines: 3,
+                      decoration: _buildInputDecoration(
+                          AmharicStringsDevelopment.issue,
+                          Iconsax.warning_2,
+                          textColor,
+                          primaryColor),
+                      validator: (value) => (value?.isEmpty ?? true)
+                          ? AmharicStringsDevelopment.pleaseDescribeIssue
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: planController,
+                      style: GoogleFonts.notoSansEthiopic(color: textColor),
+                      maxLines: 3,
+                      decoration: _buildInputDecoration(
+                          AmharicStringsDevelopment.plan,
+                          Iconsax.clipboard_text,
+                          textColor,
+                          primaryColor),
+                      validator: (value) => (value?.isEmpty ?? true)
+                          ? AmharicStringsDevelopment.pleaseDescribePlan
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () async {
+                        final pickedDate = await showDialog<EthiopianDate>(
+                          context: context,
+                          builder: (context) => EthiopianDatePickerDialog(
+                            initialDate:
+                                EthiopianDate.fromGregorian(selectedDate),
+                          ),
+                        );
+                        if (pickedDate != null) {
+                          setModalState(
+                              () => selectedDate = pickedDate.toGregorian());
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                              color: textColor.withValues(alpha: 0.1)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Iconsax.calendar,
+                                color: primaryColor, size: 20),
+                            const SizedBox(width: 12),
+                            Text(
+                              EthiopianDate.fromGregorian(selectedDate)
+                                  .toString(),
                               style: GoogleFonts.notoSansEthiopic(
-                                  fontWeight: FontWeight.bold,
-                                  color: kAdminPrimary),
+                                  color: textColor),
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kAdminAccent,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              minimumSize:
-                                  const Size(150, 48), // Responsive size
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 12),
+                            const Spacer(),
+                            Icon(Iconsax.arrow_right_3,
+                                color: textColor.withValues(alpha: 0.3),
+                                size: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        if (isEditing)
+                          IconButton(
+                            onPressed: () => _handleDelete(item),
+                            icon: const Icon(Iconsax.trash, color: Colors.red),
+                            tooltip: AmharicStringsDevelopment.delete,
+                          ),
+                        const Spacer(),
+                        ElevatedButton(
+                          onPressed: () => _handleSave(
+                            formKey: formKey,
+                            isEditing: isEditing,
+                            item: item,
+                            category: category,
+                            issueController: issueController,
+                            planController: planController,
+                            selectedDate: selectedDate,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 32, vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
                             ),
                           ),
-                        ],
-                      )
-                    ],
-                  ),
+                          child: Text(
+                            isEditing
+                                ? AmharicStringsDevelopment.updateNote
+                                : AmharicStringsDevelopment.saveNote,
+                            style: GoogleFonts.notoSansEthiopic(
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -920,5 +877,109 @@ class _AdminMemberDevelopmentScreenState
         },
       ),
     );
+  }
+
+  InputDecoration _buildInputDecoration(
+      String label, IconData icon, Color textColor, Color primaryColor) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle:
+          GoogleFonts.notoSansEthiopic(color: textColor.withValues(alpha: 0.5)),
+      prefixIcon: Icon(icon, color: primaryColor, size: 20),
+      filled: true,
+      fillColor: textColor.withValues(alpha: 0.03),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: textColor.withValues(alpha: 0.05)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: primaryColor, width: 2),
+      ),
+    );
+  }
+
+  Future<void> _handleSave({
+    required GlobalKey<FormState> formKey,
+    required bool isEditing,
+    DevelopmentItem? item,
+    required String? category,
+    required TextEditingController issueController,
+    required TextEditingController planController,
+    required DateTime selectedDate,
+  }) async {
+    if (!formKey.currentState!.validate()) return;
+
+    final data = {
+      'category': category,
+      'issue': issueController.text,
+      'plan': planController.text,
+      'date': DateFormat('yyyy-MM-dd').format(selectedDate),
+    };
+
+    final result = isEditing
+        ? await DevelopmentService.updateDevelopmentNote(
+            noteId: item!.id.toString(), data: data)
+        : await DevelopmentService.createDevelopmentNote(
+            userId: widget.user['id'].toString(), data: data);
+
+    if (mounted) {
+      if (result['success']) {
+        _showSnackbar(
+            isEditing
+                ? AmharicStringsDevelopment.noteUpdatedSuccess
+                : AmharicStringsDevelopment.noteAddedSuccess,
+            isError: false);
+        Navigator.pop(context);
+        _fetchDevelopmentNotes();
+      } else {
+        _showSnackbar(result['message'] ?? 'Error occurred', isError: true);
+      }
+    }
+  }
+
+  Future<void> _handleDelete(DevelopmentItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AmharicStringsDevelopment.confirmDeletion,
+            style: GoogleFonts.notoSansEthiopic()),
+        content: Text(AmharicStringsDevelopment.deleteConfirmation,
+            style: GoogleFonts.notoSansEthiopic()),
+        actions: [
+          TextButton(
+            child: Text(AmharicStringsDevelopment.cancel,
+                style: GoogleFonts.notoSansEthiopic()),
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          TextButton(
+            child: Text(AmharicStringsDevelopment.delete,
+                style: GoogleFonts.notoSansEthiopic(color: Colors.red)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final result =
+          await DevelopmentService.deleteDevelopmentNote(item.id.toString());
+      if (mounted) {
+        if (result['success']) {
+          _showSnackbar(AmharicStringsDevelopment.noteDeletedSuccess,
+              isError: false);
+          Navigator.pop(context);
+          _fetchDevelopmentNotes();
+        } else {
+          _showSnackbar(
+              result['message'] ?? AmharicStringsDevelopment.failedToDelete,
+              isError: true);
+        }
+      }
+    }
   }
 }
