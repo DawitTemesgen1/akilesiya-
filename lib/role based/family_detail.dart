@@ -253,8 +253,12 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
     int late = filteredHistory
         .where((r) => r['status']?.toString().toLowerCase() == 'late')
         .length;
+    int permission = filteredHistory
+        .where((r) => r['status']?.toString().toLowerCase() == 'permission')
+        .length;
     int total = filteredHistory.length;
-    double percentage = total > 0 ? ((present + late) / total * 100) : 0.0;
+    double percentage =
+        total > 0 ? ((present + late + permission) / total * 100) : 0.0;
 
     return {
       'totalSessions': total,
