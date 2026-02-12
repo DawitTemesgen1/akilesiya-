@@ -1,16 +1,14 @@
 // lib/screens/family/family_member_detail_screen.dart
 
 import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
-
 import 'package:amde_haymanot_abalat_guday/services/family_service.dart';
-import 'package:amde_haymanot_abalat_guday/services/attendance_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 // --- UI Theme Constants are now handled by ThemeProvider ---
 
@@ -139,22 +137,8 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
     if (mounted && result['success']) {
       final data = Map<String, dynamic>.from(result['data']);
 
-      // CRITICAL FIX: Fetch detailed attendance history separately to get topics
-      // Tries to find the correct user ID from the response, falling back to the widget ID
-      try {
-        final String targetId = data['user_id']?.toString() ??
-            data['student_id']?.toString() ??
-            data['id']?.toString() ??
-            widget.studentId;
-
-        final detailedHistory =
-            await AttendanceService.getAttendanceHistoryForUser(targetId);
-
-        data['attendanceHistory'] = detailedHistory;
-      } catch (e) {
-        debugPrint("Error fetching detailed attendance history: $e");
-        // Fallback to existing history in data if fetch fails
-      }
+      // NOTE: attendanceHistory is already included in the initial detail fetch
+      // and now correctly includes 'topic' data from the backend.
 
       List<RecommendedBook> parsedBooks = [];
       String? initialGradeYear;

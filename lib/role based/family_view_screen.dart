@@ -27,6 +27,7 @@ class LinkedStudent {
   final double attendancePercentage;
   final String? serviceStatus;
   final String? serviceSector;
+  final String? lastTopic;
 
   LinkedStudent({
     required this.id,
@@ -37,6 +38,7 @@ class LinkedStudent {
     required this.attendancePercentage,
     this.serviceStatus,
     this.serviceSector,
+    this.lastTopic,
   });
 
   // ======================= THE FIX =======================
@@ -56,35 +58,21 @@ class LinkedStudent {
       imageUrl = '$cleanBase/$cleanPath';
     }
 
-    // Status fallback logic
-    final List<String?> statusFields = [
-      json['service_status']?.toString(),
-      json['status']?.toString(),
-      json['account_status']?.toString(),
-      json['user_status']?.toString(),
-    ];
-
-    String statusRaw = 'inactive';
-    for (var field in statusFields) {
-      if (field != null && field.trim().isNotEmpty) {
-        statusRaw = field.trim();
-        break;
-      }
-    }
+    // Use service_status directly
+    final String statusRaw = (json['service_status'] ?? '').toString();
 
     return LinkedStudent(
       id: json['id'].toString(),
-      fullName: json['full_name'] ?? 'No Name',
+      fullName: json['full_name'] as String? ?? 'N/A',
       profileImageUrl: imageUrl,
-      spiritualClass: json['spiritual_class'],
+      spiritualClass: json['spiritual_class'] as String? ?? 'N/A',
       // Use double.tryParse to handle both "88.5" and 88.5 safely.
-      overallGrade:
-          double.tryParse(json['overallGrade']?.toString() ?? '0.0') ?? 0.0,
+      overallGrade: double.tryParse(json['overallGrade'].toString()) ?? 0.0,
       attendancePercentage:
-          double.tryParse(json['attendancePercentage']?.toString() ?? '0.0') ??
-              0.0,
+          double.tryParse(json['attendancePercentage'].toString()) ?? 0.0,
       serviceStatus: statusRaw,
-      serviceSector: json['service_sector']?.toString(),
+      serviceSector: (json['service_sector'] ?? '').toString(),
+      lastTopic: json['lastTopic']?.toString(),
     );
   }
   // =======================================================
@@ -300,6 +288,48 @@ class _StudentDashboardCard extends StatelessWidget {
                 child: Column(
                   children: [
                     _buildGradeIndicator(student.overallGrade, context),
+                    if (student.lastTopic != null &&
+                        student.lastTopic!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Provider.of<ThemeProvider>(context)
+                              .getPrimaryColor(context)
+                              .withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Provider.of<ThemeProvider>(context)
+                                .getPrimaryColor(context)
+                                .withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Iconsax.book_1,
+                                size: 18,
+                                color: Provider.of<ThemeProvider>(context)
+                                    .getPrimaryColor(context)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                student.lastTopic!,
+                                style: GoogleFonts.notoSansEthiopic(
+                                  fontSize: 13,
+                                  color: Provider.of<ThemeProvider>(context)
+                                      .getOnSurfaceColor(context),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
