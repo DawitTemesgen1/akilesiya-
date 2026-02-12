@@ -116,10 +116,16 @@ class _FamilyViewScreenState extends State<FamilyViewScreen>
   }
 
   Future<void> _handleRefresh() async {
-    setState(() {
-      _linkedStudentsFuture = _fetchLinkedStudents();
-    });
-    await _linkedStudentsFuture;
+    try {
+      setState(() {
+        _linkedStudentsFuture = _fetchLinkedStudents();
+      });
+      await _linkedStudentsFuture;
+    } catch (e) {
+      debugPrint('Refresh Error: $e');
+      // If we are already showing error UI, no need to do anything extra here
+      // as the FutureBuilder will handle the error display.
+    }
   }
 
   @override
