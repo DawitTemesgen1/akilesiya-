@@ -199,15 +199,11 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
       final fields = await AuthService.getTenantCustomFields(tenantId);
       if (!mounted) return;
 
-      final userFields = fields.where((f) {
-        final managedBy = f['managed_by']?.toString().toUpperCase();
-        final passes =
-            managedBy == 'USER' || managedBy == 'BOTH' || managedBy == null;
-        return passes;
-      }).toList();
+      final allFields =
+          fields; // Include all fields, ADMIN managed will be read-only
 
       setState(() {
-        _localCustomFields = userFields;
+        _localCustomFields = allFields;
         _isLoadingFields = false;
       });
     } catch (e) {
@@ -269,7 +265,6 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileConfig = context.watch<ProfileConfigProvider>();
-    final userCustomFields = _localCustomFields;
 
     if (!_isInitialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -331,6 +326,10 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                     onChanged: (val) => setState(() => _gender = val)),
               ),
             if (profileConfig.isWidgetVisible('dob')) _buildDatePicker(),
+
+            // Personal Tab Custom Fields
+            ..._buildCategorizedCustomFields('PERSONAL'),
+
             _buildSectionHeader(
                 AppLocalizations.of(context)!.profileSpiritualAcademic),
             if (profileConfig.isWidgetVisible('confession_father_name'))
@@ -353,6 +352,10 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
             if (profileConfig.isWidgetVisible('kifil'))
               _buildTextFormField(_kifilController,
                   AppLocalizations.of(context)!.profileKifil, Iconsax.people),
+
+            // Spiritual Custom Fields
+            ..._buildCategorizedCustomFields('SPIRITUAL'),
+
             _buildSectionHeader(
                 AppLocalizations.of(context)!.profileGuardianInfo),
             if (profileConfig.isWidgetVisible('parent_name'))
@@ -366,490 +369,20 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   AppLocalizations.of(context)!.profileGuardianPhone,
                   Iconsax.call_calling,
                   keyboardType: TextInputType.phone),
+
+            // Family & Learning (Education) Tab Custom Fields
+            ..._buildCategorizedCustomFields('FAMILY'),
+            ..._buildCategorizedCustomFields('EDUCATION'),
+
+            // Uncategorized Custom Fields
+            ..._buildCategorizedCustomFields(null),
+
             if (_isLoadingFields)
               const Center(
                   child: Padding(
                       padding: EdgeInsets.all(8.0),
                       child: CircularProgressIndicator())),
-            if (userCustomFields.isNotEmpty) ...[
-              _buildSectionHeader(
-                  AppLocalizations.of(context)!.profileAdditionalInfo),
-              ...userCustomFields.map((field) {
-                final fieldId = field['id'].toString();
-                final fieldType = (field['field_type'] ?? field['type'])
-                        ?.toString()
-                        .toUpperCase() ??
-                    'TEXT';
-                final options = field['options'] as List<dynamic>? ?? [];
 
-                final isTextArea = fieldType == 'TEXTAREA';
-                final isChoiceBased = [
-                  'DROPDOWN',
-                  'RADIO',
-                  'CHECKBOX',
-                  'MULTISELECT',
-                  'VOTE',
-                  'TOGGLE'
-                ].contains(fieldType);
-
-                // 1. Choice-based fields
-                if (isChoiceBased && options.isNotEmpty) {
-                  final label = field['name'] ?? '';
-                  final currentValue = _selectedCustomFieldValues[fieldId];
-
-                  // A. MULTISELECT or CHECKBOX (Group Selection)
-                  if (fieldType == 'MULTISELECT' || fieldType == 'CHECKBOX') {
-                    final List<String> selectedList = currentValue is List
-                        ? List<String>.from(currentValue)
-                        : (currentValue != null
-                            ? [currentValue.toString()]
-                            : []);
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(label,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8.0,
-                          children: options.map((opt) {
-                            final oid = opt['id'].toString();
-                            final isSelected = selectedList.contains(oid);
-                            return FilterChip(
-                              label: Text(opt['option_value']),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                setState(() {
-                                  if (selected) {
-                                    selectedList.add(oid);
-                                  } else {
-                                    selectedList.remove(oid);
-                                  }
-                                  _selectedCustomFieldValues[fieldId] =
-                                      selectedList.isEmpty
-                                          ? null
-                                          : selectedList;
-                                });
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    );
-                  }
-
-                  // B. RADIO Buttons
-                  if (fieldType == 'RADIO') {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(label,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                        ...options.map((opt) {
-                          final oid = opt['id'].toString();
-                          return RadioListTile<String>(
-                            title: Text(opt['option_value']),
-                            value: oid,
-                            groupValue: currentValue?.toString(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedCustomFieldValues[fieldId] = value;
-                              });
-                            },
-                            contentPadding: EdgeInsets.zero,
-                          );
-                        }),
-                        const SizedBox(height: 16),
-                      ],
-                    );
-                  }
-
-                  // C. VOTE / RATING (Star-like or Chip choice)
-                  if (fieldType == 'VOTE') {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(label,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: options.map((opt) {
-                              final oid = opt['id'].toString();
-                              final isSelected =
-                                  currentValue?.toString() == oid;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: ChoiceChip(
-                                  label: Text(opt['option_value']),
-                                  selected: isSelected,
-                                  onSelected: (selected) {
-                                    setState(() {
-                                      _selectedCustomFieldValues[fieldId] =
-                                          selected ? oid : null;
-                                    });
-                                  },
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    );
-                  }
-
-                  // D. Fallback to Dropdown (for DROPDOWN and others)
-                  var val = currentValue is List
-                      ? (currentValue.isEmpty
-                          ? null
-                          : currentValue.first.toString())
-                      : currentValue?.toString();
-                  // Validate value exists in options
-                  if (val != null) {
-                    final match =
-                        options.any((opt) => opt['id'].toString() == val);
-                    if (!match) val = null;
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: DropdownButtonFormField<String>(
-                      key: ValueKey('dropdown_$fieldId'),
-                      initialValue: val,
-                      decoration: InputDecoration(
-                          labelText: label,
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Iconsax.document_filter)),
-                      items: [
-                        DropdownMenuItem(
-                            value: null,
-                            child: Text(
-                                AppLocalizations.of(context)!.profileNotSet)),
-                        ...options.map((opt) => DropdownMenuItem(
-                            value: opt['id'].toString(),
-                            child: Text(opt['option_value'])))
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCustomFieldValues[fieldId] = value;
-                        });
-                      },
-                    ),
-                  );
-                }
-
-                // 2. Date Picker
-                if (fieldType == 'DATE') {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: TextFormField(
-                      key: ValueKey('date_$fieldId'),
-                      readOnly: true,
-                      controller: TextEditingController(
-                        text: _selectedCustomFieldValues[fieldId] ?? '',
-                      ),
-                      decoration: InputDecoration(
-                        labelText: field['name'],
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Iconsax.calendar),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Iconsax.close_circle),
-                          onPressed: () {
-                            setState(() {
-                              _selectedCustomFieldValues[fieldId] = null;
-                            });
-                          },
-                        ),
-                      ),
-                      onTap: () async {
-                        final DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedCustomFieldValues[fieldId] !=
-                                  null
-                              ? DateTime.tryParse(
-                                      _selectedCustomFieldValues[fieldId]!) ??
-                                  DateTime.now()
-                              : DateTime.now(),
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _selectedCustomFieldValues[fieldId] =
-                                picked.toIso8601String().substring(0, 10);
-                          });
-                        }
-                      },
-                    ),
-                  );
-                }
-
-                // 2.5 Date & Time Picker
-                if (fieldType == 'DATE & TIME' || fieldType == 'DATETIME') {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: TextFormField(
-                      key: ValueKey('datetime_$fieldId'),
-                      readOnly: true,
-                      controller: TextEditingController(
-                        text: _selectedCustomFieldValues[fieldId] ?? '',
-                      ),
-                      decoration: InputDecoration(
-                        labelText: field['name'],
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Iconsax.calendar_1),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Iconsax.close_circle),
-                          onPressed: () {
-                            setState(() {
-                              _selectedCustomFieldValues[fieldId] = null;
-                            });
-                          },
-                        ),
-                      ),
-                      onTap: () async {
-                        final DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime(2100),
-                        );
-                        if (pickedDate != null && mounted) {
-                          final TimeOfDay? pickedTime = await showTimePicker(
-                            context: context,
-                            initialTime: TimeOfDay.now(),
-                          );
-                          if (pickedTime != null) {
-                            final fullDateTime = DateTime(
-                              pickedDate.year,
-                              pickedDate.month,
-                              pickedDate.day,
-                              pickedTime.hour,
-                              pickedTime.minute,
-                            );
-                            setState(() {
-                              _selectedCustomFieldValues[fieldId] =
-                                  fullDateTime.toIso8601String();
-                            });
-                          }
-                        }
-                      },
-                    ),
-                  );
-                }
-
-                // 3. Time Picker
-                if (fieldType == 'TIME') {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: TextFormField(
-                      key: ValueKey('time_$fieldId'),
-                      readOnly: true,
-                      controller: TextEditingController(
-                        text: _selectedCustomFieldValues[fieldId] ?? '',
-                      ),
-                      decoration: InputDecoration(
-                        labelText: field['name'],
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Iconsax.clock),
-                      ),
-                      onTap: () async {
-                        final TimeOfDay? picked = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
-                        );
-                        if (picked != null) {
-                          setState(() {
-                            _selectedCustomFieldValues[fieldId] =
-                                '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-                          });
-                        }
-                      },
-                    ),
-                  );
-                }
-
-                // 4. Number Field
-                if (fieldType == 'NUMBER' ||
-                    fieldType == 'PRICE' ||
-                    fieldType == 'CURRENCY') {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: TextFormField(
-                      key: ValueKey('number_$fieldId'),
-                      initialValue: _selectedCustomFieldValues[fieldId],
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: field['name'],
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Iconsax.money),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCustomFieldValues[fieldId] = value;
-                        });
-                      },
-                    ),
-                  );
-                }
-
-                // 5. Email Field
-                if (fieldType == 'EMAIL') {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: TextFormField(
-                      key: ValueKey('email_$fieldId'),
-                      initialValue: _selectedCustomFieldValues[fieldId],
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: field['name'],
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Iconsax.sms),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCustomFieldValues[fieldId] = value;
-                        });
-                      },
-                    ),
-                  );
-                }
-
-                // 6. Phone Field
-                if (fieldType == 'PHONE') {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: TextFormField(
-                      key: ValueKey('phone_$fieldId'),
-                      initialValue: _selectedCustomFieldValues[fieldId],
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: field['name'],
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Iconsax.call),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCustomFieldValues[fieldId] = value;
-                        });
-                      },
-                    ),
-                  );
-                }
-
-                // 7. URL Field
-                if (fieldType == 'URL') {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: TextFormField(
-                      key: ValueKey('url_$fieldId'),
-                      initialValue: _selectedCustomFieldValues[fieldId],
-                      keyboardType: TextInputType.url,
-                      decoration: InputDecoration(
-                        labelText: field['name'],
-                        border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Iconsax.link),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCustomFieldValues[fieldId] = value;
-                        });
-                      },
-                    ),
-                  );
-                }
-
-                // 8. Toggle/Yes-No
-                if (fieldType == 'YES/NO TOGGLE' ||
-                    fieldType == 'TOGGLE' ||
-                    fieldType == 'BOOLEAN') {
-                  final currentValue = _selectedCustomFieldValues[fieldId];
-                  final boolValue = currentValue == 'true' ||
-                      currentValue == '1' ||
-                      currentValue == 'yes';
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: SwitchListTile(
-                      title: Text(field['name']),
-                      value: boolValue,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCustomFieldValues[fieldId] =
-                              value ? 'true' : 'false';
-                        });
-                      },
-                      secondary: const Icon(Iconsax.toggle_on_circle),
-                    ),
-                  );
-                }
-
-                // 10. File / Image / Location (Placeholders)
-                if (fieldType == 'FILE' ||
-                    fieldType == 'IMAGE' ||
-                    fieldType == 'LOCATION') {
-                  IconData icon = Iconsax.document_upload;
-                  if (fieldType == 'IMAGE') icon = Iconsax.gallery;
-                  if (fieldType == 'LOCATION') icon = Iconsax.location;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: TextFormField(
-                      key: ValueKey('placeholder_$fieldId'),
-                      initialValue: _selectedCustomFieldValues[fieldId],
-                      decoration: InputDecoration(
-                        labelText: '${field['name']} ($fieldType)',
-                        hintText: 'Enter $fieldType value...',
-                        border: const OutlineInputBorder(),
-                        prefixIcon: Icon(icon),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Iconsax.info_circle),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text(
-                                    "$fieldType upload feature coming soon!")));
-                          },
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCustomFieldValues[fieldId] = value;
-                        });
-                      },
-                    ),
-                  );
-                }
-
-                // 9. Default to Text-based (includes TEXT, TEXTAREA, and fallbacks)
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: TextFormField(
-                    key: ValueKey('text_$fieldId'),
-                    initialValue:
-                        _selectedCustomFieldValues[fieldId]?.toString(),
-                    maxLines: isTextArea ? 3 : 1,
-                    decoration: InputDecoration(
-                        labelText: field['name'],
-                        border: const OutlineInputBorder(),
-                        prefixIcon: Icon(isTextArea
-                            ? Iconsax.document_text
-                            : Iconsax.edit_2)),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCustomFieldValues[fieldId] = value;
-                      });
-                    },
-                  ),
-                );
-              }),
-            ],
             const SizedBox(height: 24),
             ElevatedButton.icon(
               icon: _isSaving
@@ -857,9 +390,14 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   : const Icon(Iconsax.save_2, color: Colors.black),
               onPressed: _isSaving ? null : _submitForm,
               label: _isSaving
-                  ? CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                          Theme.of(context).colorScheme.primary))
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).colorScheme.primary)),
+                    )
                   : Text(AppLocalizations.of(context)!.profileSaveChanges,
                       style: const TextStyle(color: Colors.black)),
               style: ElevatedButton.styleFrom(
@@ -868,6 +406,327 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16)),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildCategorizedCustomFields(String? tabName) {
+    final fields = _localCustomFields.where((f) {
+      final fTab = f['profile_tab']?.toString().toUpperCase();
+      if (tabName == null) {
+        return fTab == null ||
+            !['PERSONAL', 'SPIRITUAL', 'EDUCATION', 'FAMILY'].contains(fTab);
+      }
+      return fTab == tabName;
+    }).toList();
+
+    if (fields.isEmpty) return [];
+
+    return fields.map((field) {
+      final fieldId = field['id'].toString();
+      final fieldType =
+          (field['field_type'] ?? field['type'])?.toString().toUpperCase() ??
+              'TEXT';
+      final options = field['options'] as List<dynamic>? ?? [];
+      final isManagedByAdmin =
+          field['managed_by']?.toString().toUpperCase() == 'ADMIN';
+
+      final isTextArea = fieldType == 'TEXTAREA';
+      final isChoiceBased = [
+        'DROPDOWN',
+        'RADIO',
+        'CHECKBOX',
+        'MULTISELECT',
+        'VOTE',
+        'TOGGLE'
+      ].contains(fieldType);
+
+      // 1. Choice-based fields
+      if (isChoiceBased && options.isNotEmpty) {
+        final label = field['name'] ?? '';
+        final currentValue = _selectedCustomFieldValues[fieldId];
+
+        // Read-only view for Admin-managed fields
+        if (isManagedByAdmin) {
+          String display = "Not Set";
+          if (currentValue != null) {
+            if (currentValue is List) {
+              final selectedNames = options
+                  .where((o) => currentValue.contains(o['id'].toString()))
+                  .map((o) => o['option_value'].toString())
+                  .join(", ");
+              display = selectedNames.isNotEmpty ? selectedNames : "Not Set";
+            } else {
+              final opt = options.firstWhere(
+                  (o) => o['id'].toString() == currentValue.toString(),
+                  orElse: () => null);
+              display = opt?['option_value'] ?? currentValue.toString();
+            }
+          }
+          return _buildReadOnlyField(label, display, Iconsax.security_user);
+        }
+
+        // A. MULTISELECT or CHECKBOX (Group Selection)
+        if (fieldType == 'MULTISELECT' || fieldType == 'CHECKBOX') {
+          final List<String> selectedList = currentValue is List
+              ? List<String>.from(currentValue)
+              : (currentValue != null ? [currentValue.toString()] : []);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8.0,
+                children: options.map((opt) {
+                  final oid = opt['id'].toString();
+                  final isSelected = selectedList.contains(oid);
+                  return FilterChip(
+                    label: Text(opt['option_value']),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          selectedList.add(oid);
+                        } else {
+                          selectedList.remove(oid);
+                        }
+                        _selectedCustomFieldValues[fieldId] =
+                            selectedList.isEmpty ? null : selectedList;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
+          );
+        }
+
+        // B. RADIO Buttons
+        if (fieldType == 'RADIO') {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+              RadioGroup<Object>(
+                groupValue: currentValue,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCustomFieldValues[fieldId] = value;
+                  });
+                },
+                child: Column(
+                  children: options.map((opt) {
+                    final oid = opt['id'].toString();
+                    return RadioListTile<String>(
+                      title: Text(opt['option_value']),
+                      value: oid,
+                      contentPadding: EdgeInsets.zero,
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          );
+        }
+
+        // C. VOTE / RATING
+        if (fieldType == 'VOTE') {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: options.map((opt) {
+                    final oid = opt['id'].toString();
+                    final isSelected = currentValue?.toString() == oid;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(opt['option_value']),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedCustomFieldValues[fieldId] =
+                                selected ? oid : null;
+                          });
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          );
+        }
+
+        // D. Fallback to Dropdown
+        var val = currentValue is List
+            ? (currentValue.isEmpty ? null : currentValue.first.toString())
+            : currentValue?.toString();
+        if (val != null) {
+          final match = options.any((opt) => opt['id'].toString() == val);
+          if (!match) val = null;
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: DropdownButtonFormField<String>(
+            key: ValueKey('dropdown_$fieldId'),
+            initialValue: val,
+            decoration: InputDecoration(
+                labelText: label,
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Iconsax.document_filter)),
+            items: [
+              DropdownMenuItem(
+                  value: null,
+                  child: Text(AppLocalizations.of(context)!.profileNotSet)),
+              ...options.map((opt) => DropdownMenuItem(
+                  value: opt['id'].toString(),
+                  child: Text(opt['option_value'])))
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedCustomFieldValues[fieldId] = value;
+              });
+            },
+          ),
+        );
+      }
+
+      // 2. Date Picker
+      if (fieldType == 'DATE') {
+        if (isManagedByAdmin) {
+          return _buildReadOnlyField(
+              field['name'],
+              _selectedCustomFieldValues[fieldId]?.toString() ?? "Not Set",
+              Iconsax.calendar);
+        }
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: TextFormField(
+            key: ValueKey('date_$fieldId'),
+            readOnly: true,
+            controller: TextEditingController(
+              text: _selectedCustomFieldValues[fieldId] ?? '',
+            ),
+            decoration: InputDecoration(
+              labelText: field['name'],
+              border: const OutlineInputBorder(),
+              prefixIcon: const Icon(Iconsax.calendar),
+              suffixIcon: IconButton(
+                icon: const Icon(Iconsax.close_circle),
+                onPressed: () {
+                  setState(() {
+                    _selectedCustomFieldValues[fieldId] = null;
+                  });
+                },
+              ),
+            ),
+            onTap: () async {
+              final initialDate = _selectedCustomFieldValues[fieldId] != null
+                  ? EthiopianDate.fromGregorian(
+                      DateTime.tryParse(_selectedCustomFieldValues[fieldId]!) ??
+                          DateTime.now())
+                  : EthiopianDate.now();
+
+              final EthiopianDate? picked = await showDialog<EthiopianDate>(
+                context: context,
+                builder: (context) => EthiopianDatePickerDialog(
+                  initialDate: initialDate,
+                ),
+              );
+              if (picked != null) {
+                setState(() {
+                  _selectedCustomFieldValues[fieldId] =
+                      picked.toGregorian().toIso8601String().substring(0, 10);
+                });
+              }
+            },
+          ),
+        );
+      }
+
+      // 3. Toggle/Boolean
+      if (fieldType == 'YES/NO TOGGLE' ||
+          fieldType == 'TOGGLE' ||
+          fieldType == 'BOOLEAN') {
+        final currentValue = _selectedCustomFieldValues[fieldId];
+        final boolValue = currentValue == 'true' ||
+            currentValue == '1' ||
+            currentValue == 'yes';
+
+        if (isManagedByAdmin) {
+          return _buildReadOnlyField(field['name'], boolValue ? "Yes" : "No",
+              Iconsax.toggle_on_circle);
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: SwitchListTile(
+            title: Text(field['name']),
+            value: boolValue,
+            onChanged: (value) {
+              setState(() {
+                _selectedCustomFieldValues[fieldId] = value ? 'true' : 'false';
+              });
+            },
+            secondary: const Icon(Iconsax.toggle_on_circle),
+          ),
+        );
+      }
+
+      // Default to Text-based
+      if (isManagedByAdmin) {
+        return _buildReadOnlyField(
+            field['name'],
+            _selectedCustomFieldValues[fieldId]?.toString() ?? "Not Set",
+            Iconsax.security_user);
+      }
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: TextFormField(
+          key: ValueKey('text_$fieldId'),
+          initialValue: _selectedCustomFieldValues[fieldId]?.toString(),
+          maxLines: isTextArea ? 3 : 1,
+          decoration: InputDecoration(
+              labelText: field['name'],
+              border: const OutlineInputBorder(),
+              prefixIcon:
+                  Icon(isTextArea ? Iconsax.document_text : Iconsax.edit_2)),
+          onChanged: (value) {
+            setState(() {
+              _selectedCustomFieldValues[fieldId] = value;
+            });
+          },
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildReadOnlyField(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        initialValue: value.isEmpty ? 'ያልተሞላ' : value,
+        readOnly: true,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Colors.grey),
+          helperText: "በአስተዳዳሪ ብቻ የሚሞላ (Read Only)",
+          filled: true,
+          fillColor: Colors.grey.withAlpha((0.05 * 255).round()),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );

@@ -483,88 +483,98 @@ class _LearningContentCardState extends State<_LearningContentCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildImageHeader(),
-          Transform.translate(
-              offset: const Offset(0, -25), child: _buildAuthorInfoBar()),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          // Make the main content area clickable
+          InkWell(
+            onTap: _handleContentTap,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .primaryColor
-                                .withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withValues(alpha: 0.5))),
-                        child: Text(
-                            widget.content.category.isEmpty
-                                ? AppLocalizations.of(context)!
-                                    .learningCategoryGeneral
-                                    .toUpperCase()
-                                : widget.content.category.toUpperCase(),
-                            style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                              color:
-                                  _getDifficultyColor(widget.content.difficulty)
+                _buildImageHeader(),
+                Transform.translate(
+                    offset: const Offset(0, -25), child: _buildAuthorInfoBar()),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .primaryColor
+                                      .withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: Theme.of(context)
+                                          .primaryColor
+                                          .withValues(alpha: 0.5))),
+                              child: Text(
+                                  widget.content.category.isEmpty
+                                      ? AppLocalizations.of(context)!
+                                          .learningCategoryGeneral
+                                          .toUpperCase()
+                                      : widget.content.category.toUpperCase(),
+                                  style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                  color: _getDifficultyColor(
+                                          widget.content.difficulty)
                                       .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                  color:
-                                      _getDifficultyColor(widget.content.difficulty)
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: _getDifficultyColor(
+                                              widget.content.difficulty)
                                           .withValues(alpha: 0.3))),
-                          child: Text(
-                              _getLocalizedDifficulty(
-                                  context, widget.content.difficulty),
-                              style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  color: _getDifficultyColor(widget.content.difficulty),
-                                  fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis)),
-                    ),
-                  ],
+                              child: Text(
+                                  _getLocalizedDifficulty(
+                                      context, widget.content.difficulty),
+                                  style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      color: _getDifficultyColor(
+                                          widget.content.difficulty),
+                                      fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                          widget.content.title.isEmpty
+                              ? AppLocalizations.of(context)!.learningNoTitle
+                              : widget.content.title,
+                          style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          )),
+                      const SizedBox(height: 8),
+                      Text(widget.content.description,
+                          style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 14,
+                            color: subTextColor,
+                            height: 1.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                const SizedBox(height: 12),
-                Text(
-                    widget.content.title.isEmpty
-                        ? AppLocalizations.of(context)!.learningNoTitle
-                        : widget.content.title,
-                    style: GoogleFonts.notoSansEthiopic(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    )),
-                const SizedBox(height: 8),
-                Text(widget.content.description,
-                    style: GoogleFonts.notoSansEthiopic(
-                      fontSize: 14,
-                      color: subTextColor,
-                      height: 1.5,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -610,12 +620,10 @@ class _LearningContentCardState extends State<_LearningContentCard> {
               child: Row(
                 children: [
                   Icon(Iconsax.message, color: subTextColor, size: 22),
-                  if (widget.content.commentCount > 0) ...[
-                    const SizedBox(width: 8),
-                    Text(widget.content.commentCount.toString(),
-                        style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600, color: subTextColor)),
-                  ]
+                  const SizedBox(width: 8),
+                  Text(widget.content.commentCount.toString(),
+                      style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600, color: subTextColor)),
                 ],
               ),
             )
@@ -789,6 +797,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   String? _error;
   Comment? _replyingTo;
   Comment? _editingComment;
+  // Track expanded comment IDs for replies
+  final Set<int> _expandedComments = {};
 
   @override
   void initState() {
@@ -817,6 +827,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           _comments = data.map((e) => Comment.fromJson(e)).toList();
           _isLoading = false;
         });
+        widget.onCommentAdded(_comments.length);
       } else {
         setState(() {
           _error = result['message'] ?? 'Failed to load comments';
@@ -838,8 +849,16 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     if (_editingComment != null) {
       result = await LearningService.updateComment(_editingComment!.id, text);
     } else {
+      // Logic for nested replies:
+      // If _replyingTo has a parentId, it's a nested reply. Use THAT parentId.
+      // If _replyingTo has no parentId, it's a top-level comment. Use _replyingTo.id.
+      int? effectiveParentId;
+      if (_replyingTo != null) {
+        effectiveParentId = _replyingTo!.parentId ?? _replyingTo!.id;
+      }
+
       result = await LearningService.addComment(widget.content.id, text,
-          parentId: _replyingTo?.id);
+          parentId: effectiveParentId);
     }
 
     if (mounted) {
@@ -869,7 +888,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         } else {
           _commentController.clear();
           _replyingTo = null;
-          _fetchComments(); // Refresh list
+          await _fetchComments(); // Refresh list
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1048,16 +1067,47 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                       padding:
                                           const EdgeInsets.only(left: 32.0),
                                       child: Column(
-                                        children: replies
-                                            .map((reply) => _buildCommentItem(
-                                                reply,
-                                                currentUserId,
-                                                isSystemAdmin,
-                                                isSuperiorAdmin,
-                                                userTenantId,
-                                                l10n,
-                                                isReply: true))
-                                            .toList(),
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (_expandedComments
+                                              .contains(comment.id)) ...[
+                                            ...replies.map((reply) =>
+                                                _buildCommentItem(
+                                                    reply,
+                                                    currentUserId,
+                                                    isSystemAdmin,
+                                                    isSuperiorAdmin,
+                                                    userTenantId,
+                                                    l10n,
+                                                    isReply: true)),
+                                            TextButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  _expandedComments
+                                                      .remove(comment.id);
+                                                });
+                                              },
+                                              child: const Text("Hide replies",
+                                                  style: TextStyle(
+                                                      color: Colors.white54,
+                                                      fontSize: 12)),
+                                            ),
+                                          ] else
+                                            TextButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  _expandedComments
+                                                      .add(comment.id);
+                                                });
+                                              },
+                                              child: Text(
+                                                  "View ${replies.length} replies",
+                                                  style: const TextStyle(
+                                                      color: Colors.white54,
+                                                      fontSize: 12)),
+                                            ),
+                                        ],
                                       ),
                                     ),
                                 ],
@@ -1155,7 +1205,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       String? userTenantId,
       AppLocalizations l10n,
       {bool isReply = false}) {
-    final bool isOwner = comment.userId.toString() == currentUserId.toString();
+    // Ensure strict type comparison for ID string
+    final bool isOwner =
+        comment.userId.toString().trim() == currentUserId.toString().trim();
 
     // Deletion Logic: Owner OR System Admin OR School-Specific Superior Admin
     final bool isAuthorFromMySchool = comment.authorTenantId == userTenantId;
@@ -1223,18 +1275,19 @@ class _CommentsSheetState extends State<_CommentsSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (!isReply)
-                  _ActionButton(
-                    icon: Icons.reply,
-                    label: "መልስ",
-                    onTap: () {
-                      setState(() {
-                        _replyingTo = comment;
-                        _editingComment = null;
-                        _commentController.text = "";
-                      });
-                    },
-                  ),
+                // Allow replying to replies too (nested reply interaction)
+                _ActionButton(
+                  icon: Icons.reply,
+                  label: "መልስ",
+                  onTap: () {
+                    setState(() {
+                      _replyingTo = comment;
+                      _editingComment = null;
+                      // Pre-fill with @mention if preferred, or just set referencing context
+                      // _commentController.text = "@${comment.author} ";
+                    });
+                  },
+                ),
                 if (isOwner) ...[
                   const SizedBox(width: 16),
                   _ActionButton(

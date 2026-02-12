@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 
 import 'package:amde_haymanot_abalat_guday/admin%20only/post_management.dart';
 import 'package:amde_haymanot_abalat_guday/admin%20only/student_list.dart';
@@ -8199,12 +8200,17 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
               ? 'Select Date of Birth'
               : DateFormat.yMMMd().format(_dob!)),
           onTap: () async {
-            final pickedDate = await showDatePicker(
+            final initialDate = _dob != null
+                ? EthiopianDate.fromGregorian(_dob!)
+                : EthiopianDate(year: 2000, month: 1, day: 1);
+            final pickedDateEth = await showDialog<EthiopianDate>(
                 context: context,
-                initialDate: _dob ?? DateTime(2000),
-                firstDate: DateTime(1950),
-                lastDate: DateTime.now());
-            if (pickedDate != null) setState(() => _dob = pickedDate);
+                builder: (context) => EthiopianDatePickerDialog(
+                      initialDate: initialDate,
+                    ));
+            if (pickedDateEth != null) {
+              setState(() => _dob = pickedDateEth.toGregorian());
+            }
           }));
 }
 // lib/providers/content_manager.dart
@@ -11512,14 +11518,22 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
   }
 
   Future<void> _selectEstablishedDate() async {
-    final DateTime? picked = await showDatePicker(
+    final initialDate = _establishedDate != null
+        ? EthiopianDate.fromGregorian(_establishedDate!)
+        : EthiopianDate.now();
+
+    final pickedEth = await showDialog<EthiopianDate>(
       context: context,
-      initialDate: _establishedDate ?? DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      builder: (context) => EthiopianDatePickerDialog(
+        initialDate: initialDate,
+      ),
     );
-    if (picked != null && picked != _establishedDate) {
-      setState(() => _establishedDate = picked);
+
+    if (pickedEth != null) {
+      final picked = pickedEth.toGregorian();
+      if (picked != _establishedDate) {
+        setState(() => _establishedDate = picked);
+      }
     }
   }
 
@@ -18463,14 +18477,16 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
   }
 
   Future<void> _selectFinishDate() async {
-    final picked = await showDatePicker(
+    final initialDate =
+        EthiopianDate.fromGregorian(DateTime.now().add(const Duration(days: 14)));
+    final pickedEth = await showDialog<EthiopianDate>(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 14)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context) => EthiopianDatePickerDialog(
+        initialDate: initialDate,
+      ),
     );
-    if (picked != null) {
-      setState(() => _finishByDate = picked);
+    if (pickedEth != null) {
+      setState(() => _finishByDate = pickedEth.toGregorian());
     }
   }
 
@@ -30662,22 +30678,41 @@ class _AdminPublicPostManagementScreenState
                                       .format(selectedEventDate!),
                             ),
                             onTap: () async {
-                              final DateTime? pickedDate = await showDatePicker(
-                                context: context,
-                                initialDate:
-                                    selectedEventDate ?? DateTime.now(),
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime(2101),
-                              );
-                              if (pickedDate != null && context.mounted) {
-                                final TimeOfDay? pickedTime =
-                                    await showTimePicker(
+                                final initialDate = selectedEventDate != null
+                                    ? EthiopianDate.fromGregorian(
+                                        selectedEventDate!)
+                                    : EthiopianDate.now();
+
+                                final pickedDateEth =
+                                    await showDialog<EthiopianDate>(
                                   context: context,
-                                  initialTime: TimeOfDay.fromDateTime(
-                                      selectedEventDate ?? DateTime.now()),
+                                  builder: (context) =>
+                                      EthiopianDatePickerDialog(
+                                    initialDate: initialDate,
+                                  ),
                                 );
-                                if (pickedTime != null) {
-                                  setDialogState(() {
+
+                                if (pickedDateEth != null && context.mounted) {
+                                  final pickedDate =
+                                      pickedDateEth.toGregorian();
+                                  final TimeOfDay? pickedTime =
+                                      await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay.fromDateTime(
+                                        selectedEventDate ?? DateTime.now()),
+                                  );
+                                  if (pickedTime != null) {
+                                    setDialogState(() {
+                                      selectedEventDate = DateTime(
+                                        pickedDate.year,
+                                        pickedDate.month,
+                                        pickedDate.day,
+                                        pickedTime.hour,
+                                        pickedTime.minute,
+                                      );
+                                    });
+                                  }
+                                }
                                     selectedEventDate = DateTime(
                                       pickedDate.year,
                                       pickedDate.month,

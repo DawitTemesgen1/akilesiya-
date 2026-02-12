@@ -6,6 +6,12 @@ import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:amde_haymanot_abalat_guday/services/public_feed_service.dart';
+import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
+import 'package:amde_haymanot_abalat_guday/models/comment.dart';
+import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+
 import 'package:amde_haymanot_abalat_guday/users%20screen/homepage.dart';
 
 class PostDetailPage extends StatefulWidget {
@@ -50,6 +56,20 @@ class _PostDetailPageState extends State<PostDetailPage>
       _likes += _isLiked ? 1 : -1;
     });
     _animationController.forward().then((_) => _animationController.reverse());
+  }
+
+  void _showCommentsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _CommentsSheet(
+        post: widget.post,
+        onCommentCountChanged: (count) {
+          // You might want to update local state here if you display comment count elsewhere
+        },
+      ),
+    );
   }
 
   @override
@@ -108,8 +128,11 @@ class _PostDetailPageState extends State<PostDetailPage>
                 child: IconButton(
                   icon: Icon(Iconsax.share, color: textColor),
                   onPressed: () {
-                    // TODO: Implement share functionality
                     HapticFeedback.lightImpact();
+                    Share.share(
+                      'Check out this post: ${widget.post.title}\n\n${widget.post.description}\n\nShared via Akilesiya App',
+                      subject: widget.post.title,
+                    );
                   },
                 ),
               ),
@@ -559,13 +582,36 @@ class _PostDetailPageState extends State<PostDetailPage>
             height: 40,
             color: subtleText.withValues(alpha: 0.2),
           ),
-          _buildStatItem(
-            icon: Iconsax.message,
-            count: widget.post.commentCount,
-            label: 'አስተያየቶች',
-            color: primaryColor,
-            textColor: textColor,
-            subtleText: subtleText,
+          Expanded(
+            child: InkWell(
+              onTap: _showCommentsSheet,
+              child: Column(
+                children: [
+                  Icon(
+                    Iconsax.message,
+                    color: const Color(0xFFFFD700), // Changed color to gold
+                    size: 28,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${widget.post.commentCount}', // Use widget.post.commentCount
+                    style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'አስተያየቶች', // Changed label to plural
+                    style: GoogleFonts.notoSansEthiopic(
+                      fontSize: 14,
+                      color: subtleText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -690,7 +736,7 @@ class _PostDetailPageState extends State<PostDetailPage>
               child: InkWell(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  // TODO: Open comments sheet
+                  _showCommentsSheet(); // Wired up to _showCommentsSheet
                 },
                 borderRadius: BorderRadius.circular(24),
                 child: Container(
@@ -770,5 +816,570 @@ class _PostDetailPageState extends State<PostDetailPage>
           'color': const Color(0xFF10B981),
         };
     }
+  }
+}
+
+class _CommentsSheet extends StatefulWidget {
+  final UnifiedPost post;
+  final ValueChanged<int> onCommentCountChanged;
+
+  const _CommentsSheet(
+      {required this.post, required this.onCommentCountChanged});
+
+  @override
+  State<_CommentsSheet> createState() => _CommentsSheetState();
+}
+
+class _CommentsSheetState extends State<_CommentsSheet> {
+  final _commentController = TextEditingController();
+  List<Comment> _comments = [];
+  bool _isLoading = true;
+  bool _isPosting = false;
+  Comment? _replyingTo;
+  Comment? _editingComment;
+
+  final Set<int> _expandedComments = {};
+  int _topLevelLimit = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchComments();
+  }
+
+  Future<void> _fetchComments() async {
+    setState(() => _isLoading = true);
+    final result = widget.post.isPrivate
+        ? await PrivateFeedService.getPostComments(widget.post.id)
+        : await PublicFeedService.getPostComments(widget.post.id);
+
+    if (mounted) {
+      if (result['success']) {
+        setState(() {
+          _comments =
+              (result['data'] as List).map((c) => Comment.fromJson(c)).toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _addComment() async {
+    if (_commentController.text.trim().isEmpty || _isPosting) return;
+    setState(() => _isPosting = true);
+
+    Map<String, dynamic> result;
+    final text = _commentController.text.trim();
+
+    if (_editingComment != null) {
+      result = widget.post.isPrivate
+          ? await PrivateFeedService.updatePostComment(
+              _editingComment!.id, text)
+          : await PublicFeedService.updatePostComment(
+              _editingComment!.id, text);
+    } else {
+      final int? parentId = _replyingTo?.parentId ?? _replyingTo?.id;
+      result = widget.post.isPrivate
+          ? await PrivateFeedService.createPostComment(widget.post.id, text,
+              parentId: parentId)
+          : await PublicFeedService.createPostComment(widget.post.id, text,
+              parentId: parentId);
+    }
+
+    if (mounted) {
+      if (result['success']) {
+        if (_editingComment != null) {
+          setState(() {
+            final index =
+                _comments.indexWhere((c) => c.id == _editingComment!.id);
+            if (index != -1) {
+              _comments[index] = Comment(
+                id: _editingComment!.id,
+                userId: _editingComment!.userId,
+                author: _editingComment!.author,
+                authorAvatar: _editingComment!.authorAvatar,
+                text: text,
+                timestamp: _editingComment!.timestamp,
+                parentId: _editingComment!.parentId,
+              );
+            }
+            _editingComment = null;
+            _commentController.clear();
+          });
+        } else {
+          final newComment = Comment.fromJson(result['data']);
+          setState(() {
+            _comments.insert(0, newComment);
+            _commentController.clear();
+            _replyingTo = null;
+          });
+          widget.onCommentCountChanged(_comments.length);
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(result['message'] ?? 'Failed to post comment'),
+          backgroundColor: Colors.red,
+        ));
+      }
+      setState(() => _isPosting = false);
+    }
+  }
+
+  Future<void> _deleteComment(Comment comment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2E), // Premium Dark
+        title: const Text("Delete Comment?",
+            style: TextStyle(color: Colors.white)),
+        content: const Text("Are you sure you want to delete this comment?",
+            style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel",
+                  style: TextStyle(color: Colors.white54))),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Delete",
+                  style: TextStyle(color: Colors.redAccent))),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final result = widget.post.isPrivate
+          ? await PrivateFeedService.deletePostComment(comment.id)
+          : await PublicFeedService.deletePostComment(comment.id);
+
+      if (mounted) {
+        if (result['success']) {
+          setState(() {
+            _comments.removeWhere((c) => c.id == comment.id);
+          });
+          widget.onCommentCountChanged(_comments.length);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(result['message'] ?? 'Failed to delete comment'),
+            backgroundColor: Colors.red,
+          ));
+        }
+      }
+    }
+  }
+
+  void _cancelEditReply() {
+    setState(() {
+      _replyingTo = null;
+      _editingComment = null;
+      _commentController.clear();
+    });
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final currentUserId =
+        userProvider.userProfile?['user_id']?.toString() ?? '';
+    final isSuperiorAdmin = userProvider.isSuperiorAdmin;
+    final isSystemAdmin = userProvider.isSystemAdmin;
+    final userTenantId = userProvider.tenantId;
+
+    // Group comments: Map of parentId -> list of replies
+    final Map<int, List<Comment>> repliesMap = {};
+    final List<Comment> topLevelComments = [];
+
+    for (var comment in _comments) {
+      if (comment.parentId == null) {
+        topLevelComments.add(comment);
+      } else {
+        repliesMap.putIfAbsent(comment.parentId!, () => []).add(comment);
+      }
+    }
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (_, controller) => Container(
+        decoration: BoxDecoration(
+            color: const Color(0xFF1E1E2E), // Premium Dark
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 30,
+                  offset: const Offset(0, -10))
+            ]),
+        child: Column(children: [
+          Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(children: [
+                Container(
+                    width: 50,
+                    height: 6,
+                    decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10))),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Comments",
+                        style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFD700), // Premium Gold
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "${_comments.length}",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF0F0F1E), // Premium Dark
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close, color: Colors.white70))
+                  ],
+                ),
+              ])),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                        color: Color(0xFFFFD700))) // Premium Gold
+                : _comments.isEmpty
+                    ? const Center(
+                        child: Text("No comments yet. Be the first!",
+                            style: TextStyle(color: Colors.white60)))
+                    : ListView.builder(
+                        controller: controller,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: (topLevelComments.length > _topLevelLimit)
+                            ? _topLevelLimit + 1
+                            : topLevelComments.length,
+                        itemBuilder: (context, index) {
+                          if (index == _topLevelLimit &&
+                              topLevelComments.length > _topLevelLimit) {
+                            return Center(
+                              child: TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _topLevelLimit += 10;
+                                  });
+                                },
+                                child: const Text("View more comments",
+                                    style: TextStyle(
+                                        color:
+                                            Color(0xFFFFD700))), // Premium Gold
+                              ),
+                            );
+                          }
+
+                          final comment = topLevelComments[index];
+                          final replies = repliesMap[comment.id] ?? [];
+                          final bool isExpanded =
+                              _expandedComments.contains(comment.id);
+                          final int repliesToShow =
+                              (replies.length >= 2 && !isExpanded)
+                                  ? 0
+                                  : replies.length;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildCommentItem(comment, currentUserId,
+                                  isSystemAdmin, isSuperiorAdmin, userTenantId),
+                              if (replies.isNotEmpty && repliesToShow == 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 48.0, bottom: 12),
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _expandedComments.add(comment.id);
+                                      });
+                                    },
+                                    child: Text(
+                                      "View all ${replies.length} replies",
+                                      style: const TextStyle(
+                                          color:
+                                              Color(0xFFFFD700), // Premium Gold
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ),
+                              if (repliesToShow > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 32.0),
+                                  child: Column(
+                                    children: [
+                                      ...replies.map((reply) =>
+                                          _buildCommentItem(
+                                              reply,
+                                              currentUserId,
+                                              isSystemAdmin,
+                                              isSuperiorAdmin,
+                                              userTenantId,
+                                              isReply: true)),
+                                      if (isExpanded)
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: TextButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                _expandedComments
+                                                    .remove(comment.id);
+                                              });
+                                            },
+                                            child: const Text("Hide replies",
+                                                style: TextStyle(
+                                                    color: Colors.white54,
+                                                    fontSize: 12)),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          );
+                        }),
+          ),
+          // Reply/Edit Indicator
+          if (_replyingTo != null || _editingComment != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.white.withValues(alpha: 0.05),
+              child: Row(
+                children: [
+                  Icon(
+                    _editingComment != null ? Iconsax.edit : Icons.reply,
+                    size: 16,
+                    color: const Color(0xFFFFD700), // Premium Gold
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _editingComment != null
+                          ? "Editing comment..."
+                          : "Replying to ${_replyingTo!.author}...",
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close,
+                        size: 16, color: Colors.white54),
+                    onPressed: _cancelEditReply,
+                  ),
+                ],
+              ),
+            ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                16, 8, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+            child: Row(children: [
+              Expanded(
+                child: TextField(
+                  controller: _commentController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                      hintText: "Write a comment...",
+                      hintStyle: const TextStyle(color: Colors.white38),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.1),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              CircleAvatar(
+                backgroundColor: const Color(0xFFFFD700), // Premium Gold
+                child: IconButton(
+                    icon: _isPosting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.black))
+                        : const Icon(Iconsax.send_1,
+                            color: Colors.black, size: 20),
+                    onPressed: _addComment),
+              )
+            ]),
+          )
+        ]),
+      ),
+    );
+  }
+
+  Widget _buildCommentItem(Comment comment, dynamic currentUserId,
+      bool isSystemAdmin, bool isSuperiorAdmin, String? userTenantId,
+      {bool isReply = false}) {
+    final bool isOwner = comment.userId.toString() == currentUserId.toString();
+
+    // Deletion Logic: Owner OR System Admin OR School-Specific Superior Admin
+    // For public feed, tenantId might be null/irrelevant, but logic holds.
+    // If post is private, widget.post.isPrivate, we check tenant match.
+    // If public, SystemAdmin can delete.
+    final bool isAuthorFromMySchool = comment.authorTenantId == userTenantId;
+    final bool canDelete = isOwner ||
+        isSystemAdmin ||
+        (widget.post.isPrivate && isSuperiorAdmin && isAuthorFromMySchool) ||
+        (!widget.post.isPrivate && isSystemAdmin); // Simplified
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: isReply ? 0.03 : 0.05),
+          borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: isReply ? 14 : 18,
+                  backgroundColor: Colors.white10,
+                  backgroundImage: (comment.authorAvatar != null)
+                      ? CachedNetworkImageProvider(comment.authorAvatar!)
+                      : null,
+                  child: (comment.authorAvatar == null)
+                      ? Text(
+                          comment.author.isNotEmpty ? comment.author[0] : 'U',
+                          style: TextStyle(
+                              color: Colors.white, fontSize: isReply ? 12 : 14))
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(comment.author,
+                                style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isReply ? 13 : 14,
+                                    color: Colors.white)),
+                          ),
+                          Text(DateFormat.MMMd().format(comment.timestamp),
+                              style: GoogleFonts.poppins(
+                                  fontSize: 10, color: Colors.white54)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(comment.text,
+                          style: GoogleFonts.poppins(
+                              color: Colors.white70,
+                              fontSize: isReply ? 13 : 14)),
+                    ])),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _ActionButton(
+                  icon: Icons.reply,
+                  label: "Reply",
+                  onTap: () {
+                    setState(() {
+                      _replyingTo = comment;
+                      _editingComment = null;
+                      _commentController.text = "";
+                    });
+                  },
+                ),
+                if (isOwner) ...[
+                  const SizedBox(width: 16),
+                  _ActionButton(
+                    icon: Iconsax.edit,
+                    label: "Edit",
+                    onTap: () {
+                      setState(() {
+                        _editingComment = comment;
+                        _replyingTo = null;
+                        _commentController.text = comment.text;
+                      });
+                    },
+                  ),
+                ],
+                if (canDelete) ...[
+                  const SizedBox(width: 16),
+                  _ActionButton(
+                    icon: Iconsax.trash,
+                    label: "Delete",
+                    color: Colors.redAccent.withValues(alpha: 0.7),
+                    onTap: () => _deleteComment(comment),
+                  ),
+                ],
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: color ?? Colors.white54),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  color: color ?? Colors.white54,
+                  fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
   }
 }

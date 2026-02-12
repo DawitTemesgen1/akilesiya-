@@ -64,109 +64,152 @@ class UnifiedPost {
     this.targetGroups = const [],
   });
 
-  factory UnifiedPost.fromPublicPost(Map<String, dynamic> json) {
-    PostType typeFromString(String? typeStr) {
-      switch (typeStr?.toLowerCase()) {
-        case 'event':
-          return PostType.event;
-        case 'announcement':
-          return PostType.announcement;
-        case 'news':
-          return PostType.news;
-        case 'prayer':
-          return PostType.prayer;
-        default:
-          return PostType.news;
-      }
-    }
+  // --- HELPER METHODS FOR SAFE PARSING ---
 
-    String? buildFullUrl(String? pathOrUrl) {
-      if (pathOrUrl == null || pathOrUrl.isEmpty) return null;
-      if (pathOrUrl.startsWith('http')) return pathOrUrl;
-      final baseUrl = ApiService.baseUrl.endsWith('/api')
-          ? ApiService.baseUrl.substring(0, ApiService.baseUrl.length - 4)
-          : ApiService.baseUrl;
-      final cleanPath =
-          pathOrUrl.startsWith('/') ? pathOrUrl.substring(1) : pathOrUrl;
-      return '$baseUrl/$cleanPath';
+  static PostType _parsePostType(String? typeStr) {
+    switch (typeStr?.toLowerCase().trim()) {
+      case 'event':
+        return PostType.event;
+      case 'announcement':
+        return PostType.announcement;
+      case 'news':
+        return PostType.news;
+      case 'prayer':
+        return PostType.prayer;
+      default:
+        return PostType.news;
     }
-
-    return UnifiedPost(
-      id: json['id'].toString(),
-      title: json['title'] ?? 'ርዕስ የለም',
-      description: json['description'] ?? '',
-      imageUrl: buildFullUrl(json['imageUrl']),
-      author: json['author'] ?? 'ያልታወቀ ደራሲ',
-      authorAvatar: buildFullUrl(json['authorAvatar']),
-      date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
-      type: typeFromString(json['type']),
-      likes: (json['likes'] as num?)?.toInt() ?? 0,
-      isLiked: json['isLiked'] == true,
-      commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
-      location: json['location'] ?? '',
-      eventDate: json['eventDate'] != null
-          ? DateTime.tryParse(json['eventDate'])
-          : null,
-      isImportant: json['isImportant'] == 1 || json['isImportant'] == true,
-      isPrivate: false, // Public post
-      targetGroups: json['targetGroups'] != null
-          ? List<String>.from(json['targetGroups'])
-          : [],
-    );
   }
 
-  factory UnifiedPost.fromPrivatePost(Map<String, dynamic> json,
-      {String? tenantName}) {
-    PostType typeFromString(String? typeStr) {
-      switch (typeStr?.toLowerCase()) {
-        case 'event':
-          return PostType.event;
-        case 'announcement':
-          return PostType.announcement;
-        case 'news':
-          return PostType.news;
-        case 'prayer':
-          return PostType.prayer;
-        default:
-          return PostType.news;
+  static String? _buildFullUrl(String? pathOrUrl) {
+    if (pathOrUrl == null || pathOrUrl.isEmpty) return null;
+    if (pathOrUrl.startsWith('http')) return pathOrUrl;
+
+    final baseUrl = ApiService.baseUrl.endsWith('/api')
+        ? ApiService.baseUrl.substring(0, ApiService.baseUrl.length - 4)
+        : ApiService.baseUrl;
+    final cleanPath =
+        pathOrUrl.startsWith('/') ? pathOrUrl.substring(1) : pathOrUrl;
+    return '$baseUrl/$cleanPath';
+  }
+
+  static DateTime _parseDateTime(dynamic dateValue, {DateTime? fallback}) {
+    if (dateValue == null) return fallback ?? DateTime.now();
+
+    try {
+      if (dateValue is DateTime) return dateValue;
+      if (dateValue is String && dateValue.isNotEmpty) {
+        final parsed = DateTime.tryParse(dateValue);
+        if (parsed != null) return parsed;
       }
+    } catch (e) {
+      debugPrint('Error parsing date: $dateValue - $e');
     }
 
-    String? buildFullUrl(String? pathOrUrl) {
-      if (pathOrUrl == null || pathOrUrl.isEmpty) return null;
-      if (pathOrUrl.startsWith('http')) return pathOrUrl;
-      final baseUrl = ApiService.baseUrl.endsWith('/api')
-          ? ApiService.baseUrl.substring(0, ApiService.baseUrl.length - 4)
-          : ApiService.baseUrl;
-      final cleanPath =
-          pathOrUrl.startsWith('/') ? pathOrUrl.substring(1) : pathOrUrl;
-      return '$baseUrl/$cleanPath';
+    return fallback ?? DateTime.now();
+  }
+
+  static int _safeParseInt(dynamic value, {int fallback = 0}) {
+    if (value == null) return fallback;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      final parsed = int.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    return fallback;
+  }
+
+  static bool _parseBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value == 1 || value == '1' || value == 'true') return true;
+    return false;
+  }
+
+  static List<String> _parseTargetGroups(dynamic value) {
+    if (value == null) return [];
+
+    try {
+      if (value is List) {
+        return value.whereType<String>().toList();
+      }
+      if (value is String && value.isNotEmpty) {
+        // Handle comma-separated string
+        return value
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('Error parsing target groups: $value - $e');
     }
 
-    return UnifiedPost(
-      id: json['id']?.toString() ?? UniqueKey().toString(),
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      imageUrl: buildFullUrl(json['imageUrl']),
-      author: json['author'] ?? '',
-      authorAvatar: buildFullUrl(json['authorAvatar']),
-      date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
-      type: typeFromString(json['type']),
-      likes: (json['likes'] as num?)?.toInt() ?? 0,
-      isLiked: json['isLiked'] == true,
-      commentCount: (json['commentCount'] as num?)?.toInt() ?? 0,
-      location: json['location'] ?? '',
-      eventDate: json['eventDate'] != null
-          ? DateTime.tryParse(json['eventDate'])
-          : null,
-      isImportant: json['isImportant'] == 1 || json['isImportant'] == true,
-      isPrivate: true, // Private post
-      tenantId: json['tenantId']?.toString(),
-      tenantName: tenantName,
-      targetGroups: json['targetGroups'] != null
-          ? List<String>.from(json['targetGroups'])
-          : [],
-    );
+    return [];
+  }
+
+  // --- FACTORY METHODS ---
+
+  factory UnifiedPost.fromPublicPost(Map<String, dynamic> json) {
+    try {
+      return UnifiedPost(
+        id: json['id']?.toString() ?? '',
+        title: json['title']?.toString() ?? 'ርዕስ የለም',
+        description: json['description']?.toString() ?? '',
+        imageUrl: _buildFullUrl(json['imageUrl']),
+        author: json['author']?.toString() ?? 'ያልታወቀ ደራሲ',
+        authorAvatar: _buildFullUrl(json['authorAvatar']),
+        date: _parseDateTime(json['date']),
+        type: _parsePostType(json['type']),
+        likes: _safeParseInt(json['likes']),
+        isLiked: _parseBool(json['isLiked']),
+        commentCount: _safeParseInt(json['commentCount']),
+        location: json['location']?.toString() ?? '',
+        eventDate: json['eventDate'] != null
+            ? _parseDateTime(json['eventDate'], fallback: null)
+            : null,
+        isImportant: _parseBool(json['isImportant']),
+        isPrivate: false,
+        targetGroups: _parseTargetGroups(json['targetGroups']),
+      );
+    } catch (e) {
+      debugPrint('Error parsing public post: ${json['id']} - $e');
+      rethrow;
+    }
+  }
+
+  factory UnifiedPost.fromPrivatePost(
+    Map<String, dynamic> json, {
+    String? tenantName,
+  }) {
+    try {
+      return UnifiedPost(
+        id: json['id']?.toString() ?? UniqueKey().toString(),
+        title: json['title']?.toString() ?? 'ርዕስ የለም',
+        description: json['description']?.toString() ?? '',
+        imageUrl: _buildFullUrl(json['imageUrl']),
+        author: json['author']?.toString() ?? 'ያልታወቀ ደራሲ',
+        authorAvatar: _buildFullUrl(json['authorAvatar']),
+        date: _parseDateTime(json['date']),
+        type: _parsePostType(json['type']),
+        likes: _safeParseInt(json['likes']),
+        isLiked: _parseBool(json['isLiked']),
+        commentCount: _safeParseInt(json['commentCount']),
+        location: json['location']?.toString() ?? '',
+        eventDate: json['eventDate'] != null
+            ? _parseDateTime(json['eventDate'], fallback: null)
+            : null,
+        isImportant: _parseBool(json['isImportant']),
+        isPrivate: true,
+        tenantId: json['tenantId']?.toString(),
+        tenantName: tenantName,
+        targetGroups: _parseTargetGroups(json['targetGroups']),
+      );
+    } catch (e) {
+      debugPrint('Error parsing private post: ${json['id']} - $e');
+      rethrow;
+    }
   }
 }
 
@@ -211,47 +254,84 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
       final tenantId = userProvider.userProfile?['tenant_id'];
 
       List<UnifiedPost> allPosts = [];
+      int publicErrors = 0;
+      int privateErrors = 0;
 
       // Fetch public posts
-      final publicResponse = await PublicFeedService.getPublicPosts();
-      if (publicResponse['success']) {
-        final publicData = publicResponse['data'] as List;
-        allPosts.addAll(
-          publicData.map((json) => UnifiedPost.fromPublicPost(json)),
-        );
+      try {
+        final publicResponse = await PublicFeedService.getPublicPosts();
+        if (publicResponse['success']) {
+          final publicData = publicResponse['data'] as List?;
+          if (publicData != null) {
+            for (var json in publicData) {
+              try {
+                if (json is Map<String, dynamic>) {
+                  allPosts.add(UnifiedPost.fromPublicPost(json));
+                }
+              } catch (e) {
+                publicErrors++;
+                debugPrint('Skipping malformed public post: $e');
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Error fetching public posts: $e');
+        // Continue to private posts even if public fails
       }
 
       // Fetch private posts if user has Sunday School
       if (tenantId != null && tenantId.isNotEmpty) {
-        final privateResponse =
-            await PrivateFeedService.getPrivatePosts(tenantId);
-        if (privateResponse['success']) {
-          final responseData = privateResponse['data'];
+        try {
+          final privateResponse =
+              await PrivateFeedService.getPrivatePosts(tenantId);
+          if (privateResponse['success']) {
+            final responseData = privateResponse['data'];
 
-          // Store Sunday School info
-          if (responseData is Map && responseData['tenant'] != null) {
-            _userSundaySchool = SundaySchool.fromJson(responseData['tenant']);
-          }
+            // Store Sunday School info
+            if (responseData is Map && responseData['tenant'] != null) {
+              try {
+                _userSundaySchool =
+                    SundaySchool.fromJson(responseData['tenant']);
+              } catch (e) {
+                debugPrint('Error parsing Sunday School info: $e');
+              }
+            }
 
-          // Add private posts
-          if (responseData is Map && responseData['posts'] != null) {
-            final privateData = responseData['posts'] as List;
-            allPosts.addAll(
-              privateData.map((json) => UnifiedPost.fromPrivatePost(
-                    json,
-                    tenantName: _userSundaySchool?.name,
-                  )),
-            );
-          } else if (responseData is List) {
-            // Case where the response is a direct list of posts
-            allPosts.addAll(
-              responseData.map((json) => UnifiedPost.fromPrivatePost(
-                    json,
-                    tenantName: _userSundaySchool?.name,
-                  )),
-            );
+            // Add private posts
+            List? privateData;
+            if (responseData is Map && responseData['posts'] != null) {
+              privateData = responseData['posts'] as List?;
+            } else if (responseData is List) {
+              privateData = responseData;
+            }
+
+            if (privateData != null) {
+              for (var json in privateData) {
+                try {
+                  if (json is Map<String, dynamic>) {
+                    allPosts.add(UnifiedPost.fromPrivatePost(
+                      json,
+                      tenantName: _userSundaySchool?.name,
+                    ));
+                  }
+                } catch (e) {
+                  privateErrors++;
+                  debugPrint('Skipping malformed private post: $e');
+                }
+              }
+            }
           }
+        } catch (e) {
+          debugPrint('Error fetching private posts: $e');
+          // Continue even if private posts fail
         }
+      }
+
+      // Log parsing errors if any
+      if (publicErrors > 0 || privateErrors > 0) {
+        debugPrint(
+            'Post parsing summary: $publicErrors public errors, $privateErrors private errors');
       }
 
       // Sort by date (newest first)
@@ -272,9 +352,10 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
         });
       }
     } catch (e) {
+      debugPrint('Fatal error in _loadUnifiedFeed: $e');
       if (mounted) {
         setState(() {
-          _error = e.toString().replaceAll("Exception: ", "");
+          _error = 'የመረጃ ጫኝ ስህተት። እባክዎ እንደገና ይሞክሩ።';
           _isLoading = false;
         });
       }
@@ -1074,7 +1155,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 
   Future<void> _fetchComments() async {
     setState(() => _isLoading = true);
-    final result = await PublicFeedService.getPostComments(widget.post.id);
+    final result = widget.post.isPrivate
+        ? await PrivateFeedService.getPostComments(widget.post.id)
+        : await PublicFeedService.getPostComments(widget.post.id);
     if (mounted && result['success']) {
       setState(() {
         _comments =
@@ -1092,12 +1175,21 @@ class _CommentsSheetState extends State<_CommentsSheet> {
 
     Map<String, dynamic> result;
     if (_editingComment != null) {
-      result = await PublicFeedService.updatePostComment(
-          _editingComment!.id, _commentController.text.trim());
+      result = widget.post.isPrivate
+          ? await PrivateFeedService.updatePostComment(
+              _editingComment!.id, _commentController.text.trim())
+          : await PublicFeedService.updatePostComment(
+              _editingComment!.id, _commentController.text.trim());
     } else {
-      result = await PublicFeedService.createPostComment(
-          widget.post.id, _commentController.text.trim(),
-          parentId: _replyingTo?.id);
+      // Flatten replies: If replying to a reply, use its parentId. Otherwise use its id.
+      final int? parentId = _replyingTo?.parentId ?? _replyingTo?.id;
+      result = widget.post.isPrivate
+          ? await PrivateFeedService.createPostComment(
+              widget.post.id, _commentController.text.trim(),
+              parentId: parentId)
+          : await PublicFeedService.createPostComment(
+              widget.post.id, _commentController.text.trim(),
+              parentId: parentId);
     }
 
     if (mounted) {
@@ -1161,7 +1253,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     );
 
     if (confirmed == true) {
-      final result = await PublicFeedService.deletePostComment(comment.id);
+      final result = widget.post.isPrivate
+          ? await PrivateFeedService.deletePostComment(comment.id)
+          : await PublicFeedService.deletePostComment(comment.id);
       if (mounted) {
         if (result['success']) {
           setState(() {
@@ -1261,6 +1355,11 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                           fontSize: 14,
                         ),
                       ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -1503,18 +1602,17 @@ class _CommentsSheetState extends State<_CommentsSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (!isReply)
-                  _ActionButton(
-                    icon: Icons.reply,
-                    label: "መልስ",
-                    onTap: () {
-                      setState(() {
-                        _replyingTo = comment;
-                        _editingComment = null;
-                        _commentController.text = "";
-                      });
-                    },
-                  ),
+                _ActionButton(
+                  icon: Icons.reply,
+                  label: "መልስ",
+                  onTap: () {
+                    setState(() {
+                      _replyingTo = comment;
+                      _editingComment = null;
+                      _commentController.text = "";
+                    });
+                  },
+                ),
                 if (isOwner) ...[
                   const SizedBox(width: 16),
                   _ActionButton(

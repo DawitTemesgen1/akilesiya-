@@ -5,6 +5,7 @@ import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:amde_haymanot_abalat_guday/services/system_admin_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 
 class EditSchoolScreen extends StatefulWidget {
   final Map<String, dynamic> school;
@@ -154,14 +155,22 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
   }
 
   Future<void> _selectEstablishedDate() async {
-    final DateTime? picked = await showDatePicker(
+    final initialDate = _establishedDate != null
+        ? EthiopianDate.fromGregorian(_establishedDate!)
+        : EthiopianDate.now();
+
+    final pickedEth = await showDialog<EthiopianDate>(
       context: context,
-      initialDate: _establishedDate ?? DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      builder: (context) => EthiopianDatePickerDialog(
+        initialDate: initialDate,
+      ),
     );
-    if (picked != null && picked != _establishedDate) {
-      setState(() => _establishedDate = picked);
+
+    if (pickedEth != null) {
+      final picked = pickedEth.toGregorian();
+      if (picked != _establishedDate) {
+        setState(() => _establishedDate = picked);
+      }
     }
   }
 

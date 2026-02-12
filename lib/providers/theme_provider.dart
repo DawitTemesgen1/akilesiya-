@@ -82,6 +82,7 @@ class ThemeProvider extends ChangeNotifier {
   static const Color successColor = Color(0xFF10B981);
   static const Color warningColor = Color(0xFFFD7E14);
   static const Color dangerColor = Color(0xFFDC3545);
+  static const Color permissionColor = Color(0xFF0D6EFD);
 
   // Getters for current theme colors
   Color getBackgroundColor(BuildContext context) =>

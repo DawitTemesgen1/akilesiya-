@@ -9,6 +9,7 @@ import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:intl/intl.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 
 // --- Models ---
 class LibraryUser {
@@ -212,14 +213,16 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
   }
 
   Future<void> _selectFinishDate() async {
-    final picked = await showDatePicker(
+    final initialDate = EthiopianDate.fromGregorian(
+        DateTime.now().add(const Duration(days: 14)));
+    final pickedEth = await showDialog<EthiopianDate>(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 14)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context) => EthiopianDatePickerDialog(
+        initialDate: initialDate,
+      ),
     );
-    if (picked != null) {
-      setState(() => _finishByDate = picked);
+    if (pickedEth != null) {
+      setState(() => _finishByDate = pickedEth.toGregorian());
     }
   }
 

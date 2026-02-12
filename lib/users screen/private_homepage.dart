@@ -390,6 +390,8 @@ class PrivateComment {
   final DateTime timestamp;
   final String author;
   final String? authorAvatar;
+  final int? parentId;
+  final String? authorTenantId;
 
   PrivateComment({
     required this.id,
@@ -398,6 +400,8 @@ class PrivateComment {
     required this.timestamp,
     required this.author,
     this.authorAvatar,
+    this.parentId,
+    this.authorTenantId,
   });
 
   factory PrivateComment.fromJson(Map<String, dynamic> json) {
@@ -419,6 +423,8 @@ class PrivateComment {
       timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
       author: json['author'] ?? '',
       authorAvatar: buildFullUrl(json['authorAvatar']),
+      parentId: json['parentId'],
+      authorTenantId: json['authorTenantId']?.toString(),
     );
   }
 }
@@ -1648,6 +1654,10 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
   bool _isSending = false;
   String? _error;
   PrivateComment? _editingComment;
+  PrivateComment? _replyingTo;
+
+  final Set<int> _expandedComments = {};
+  int _topLevelLimit = 10;
 
   @override
   void initState() {
@@ -1698,20 +1708,26 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
       result =
           await PrivateFeedService.updatePostComment(_editingComment!.id, text);
     } else {
-      result = await PrivateFeedService.createPostComment(widget.post.id, text);
+      // Flatten replies: If replying to a reply, use its parentId. Otherwise use its id.
+      final int? parentId = _replyingTo?.parentId ?? _replyingTo?.id;
+      result = await PrivateFeedService.createPostComment(widget.post.id, text,
+          parentId: parentId);
     }
 
     if (mounted) {
       if (result['success']) {
         _commentController.clear();
-        setState(() {
-          _editingComment = null;
-        });
-        _fetchComments(); // Refresh list
-        if (_editingComment == null) {
-          widget.onCommentAdded(
-              _comments.length + 1); // Optimistic update only for new comments
+        if (_editingComment != null) {
+          setState(() {
+            _editingComment = null;
+          });
+        } else {
+          setState(() {
+            _replyingTo = null;
+          });
         }
+        _fetchComments(); // Refresh list
+        widget.onCommentAdded(_comments.length + 1);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(result['message'] ?? 'Failed to post comment'),
@@ -1762,8 +1778,35 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
     }
   }
 
+  void _cancelEditReply() {
+    setState(() {
+      _replyingTo = null;
+      _editingComment = null;
+      _commentController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final currentUserId =
+        userProvider.userProfile?['user_id']?.toString() ?? '';
+    final isSuperiorAdmin = userProvider.isSuperiorAdmin;
+    final isSystemAdmin = userProvider.isSystemAdmin;
+    final userTenantId = userProvider.tenantId;
+
+    // Group comments: Map of parentId -> list of replies
+    final Map<int, List<PrivateComment>> repliesMap = {};
+    final List<PrivateComment> topLevelComments = [];
+
+    for (var comment in _comments) {
+      if (comment.parentId == null) {
+        topLevelComments.add(comment);
+      } else {
+        repliesMap.putIfAbsent(comment.parentId!, () => []).add(comment);
+      }
+    }
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.75, // Tall sheet
       decoration: BoxDecoration(
@@ -1855,162 +1898,129 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.all(16),
-                            itemCount: _comments.length,
+                            itemCount:
+                                (topLevelComments.length > _topLevelLimit)
+                                    ? _topLevelLimit + 1
+                                    : topLevelComments.length,
                             itemBuilder: (context, index) {
-                              final comment = _comments[index];
-                              final isOwner = comment.userId ==
-                                  (Provider.of<UserProvider>(context,
-                                              listen: false)
-                                          .userProfile?['id']
-                                          ?.toString() ??
-                                      '');
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 18,
-                                          backgroundColor: Colors.white10,
-                                          backgroundImage:
-                                              comment.authorAvatar != null
-                                                  ? CachedNetworkImageProvider(
-                                                      comment.authorAvatar!)
-                                                  : null,
-                                          child: comment.authorAvatar == null
-                                              ? Text(
-                                                  comment.author.isNotEmpty
-                                                      ? comment.author[0]
-                                                      : '?',
-                                                  style: GoogleFonts.poppins(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: premiumGold),
-                                                )
-                                              : null,
+                              if (index == _topLevelLimit &&
+                                  topLevelComments.length > _topLevelLimit) {
+                                return Center(
+                                  child: TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _topLevelLimit += 10;
+                                      });
+                                    },
+                                    child: const Text("Load more comments",
+                                        style: TextStyle(color: premiumGold)),
+                                  ),
+                                );
+                              }
+
+                              final comment = topLevelComments[index];
+                              final replies = repliesMap[comment.id] ?? [];
+                              final bool isExpanded =
+                                  _expandedComments.contains(comment.id);
+                              final int repliesToShow =
+                                  (replies.length >= 2 && !isExpanded)
+                                      ? 0
+                                      : replies.length;
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildCommentItem(
+                                      comment,
+                                      currentUserId,
+                                      isSystemAdmin,
+                                      isSuperiorAdmin,
+                                      userTenantId),
+                                  if (replies.isNotEmpty && repliesToShow == 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          left: 48.0, bottom: 12),
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _expandedComments.add(comment.id);
+                                          });
+                                        },
+                                        child: Text(
+                                          "View all ${replies.length} replies",
+                                          style: const TextStyle(
+                                              color: premiumGold,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600),
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.05),
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                  topRight: Radius.circular(16),
-                                                  bottomLeft:
-                                                      Radius.circular(16),
-                                                  bottomRight:
-                                                      Radius.circular(16),
-                                                )),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      comment.author,
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 13),
-                                                    ),
-                                                    Text(
-                                                      DateFormat.yMMMd().format(
-                                                          comment.timestamp),
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                              color: Colors
-                                                                  .white24,
-                                                              fontSize: 10),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  comment.text,
-                                                  style: GoogleFonts
-                                                      .notoSansEthiopic(
-                                                          color: Colors.white70,
-                                                          fontSize: 14),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                    if (isOwner)
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
+                                  if (repliesToShow > 0)
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(left: 32.0),
+                                      child: Column(
                                         children: [
-                                          TextButton.icon(
-                                              onPressed: () {
-                                                setState(() {
-                                                  _editingComment = comment;
-                                                  _commentController.text =
-                                                      comment.text;
-                                                });
-                                              },
-                                              icon: const Icon(Iconsax.edit,
-                                                  size: 14,
-                                                  color: Colors.white54),
-                                              label: const Text("Edit",
-                                                  style: TextStyle(
-                                                      color: Colors.white54,
-                                                      fontSize: 12))),
-                                          TextButton.icon(
-                                              onPressed: () =>
-                                                  _deleteComment(comment),
-                                              icon: const Icon(Iconsax.trash,
-                                                  size: 14,
-                                                  color: Colors.redAccent),
-                                              label: const Text("Delete",
-                                                  style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                      fontSize: 12))),
+                                          ...replies.map((reply) =>
+                                              _buildCommentItem(
+                                                  reply,
+                                                  currentUserId,
+                                                  isSystemAdmin,
+                                                  isSuperiorAdmin,
+                                                  userTenantId,
+                                                  isReply: true)),
+                                          if (isExpanded)
+                                            Align(
+                                              alignment: Alignment.centerLeft,
+                                              child: TextButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _expandedComments
+                                                        .remove(comment.id);
+                                                  });
+                                                },
+                                                child: const Text(
+                                                    "Hide replies",
+                                                    style: TextStyle(
+                                                        color: Colors.white54,
+                                                        fontSize: 12)),
+                                              ),
+                                            ),
                                         ],
-                                      )
-                                  ],
-                                ),
+                                      ),
+                                    ),
+                                ],
                               );
                             },
                           ),
           ),
-          // Editing Indicator
-          if (_editingComment != null)
+          // Reply/Edit Indicator
+          if (_replyingTo != null || _editingComment != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               color: Colors.white.withValues(alpha: 0.1),
               child: Row(
                 children: [
-                  const Icon(Iconsax.edit, size: 16, color: premiumGold),
+                  Icon(
+                    _editingComment != null ? Iconsax.edit : Icons.reply,
+                    size: 16,
+                    color: premiumGold,
+                  ),
                   const SizedBox(width: 8),
-                  const Text("Editing comment...",
-                      style: TextStyle(color: Colors.white70)),
-                  const Spacer(),
+                  Expanded(
+                    child: Text(
+                      _editingComment != null
+                          ? "Editing comment..."
+                          : "Replying to ${_replyingTo!.author}...",
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ),
                   IconButton(
-                      icon: const Icon(Icons.close,
-                          size: 16, color: Colors.white54),
-                      onPressed: () {
-                        setState(() {
-                          _editingComment = null;
-                          _commentController.clear();
-                        });
-                      })
+                    icon: const Icon(Icons.close,
+                        size: 16, color: Colors.white54),
+                    onPressed: _cancelEditReply,
+                  ),
                 ],
               ),
             ),
@@ -2061,6 +2071,160 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
               ],
             ),
           )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommentItem(PrivateComment comment, dynamic currentUserId,
+      bool isSystemAdmin, bool isSuperiorAdmin, String? userTenantId,
+      {bool isReply = false}) {
+    final bool isOwner = comment.userId.toString() == currentUserId.toString();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: isReply ? 0.03 : 0.05),
+          borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: isReply ? 14 : 18,
+                  backgroundColor: Colors.white10,
+                  backgroundImage: comment.authorAvatar != null
+                      ? CachedNetworkImageProvider(comment.authorAvatar!)
+                      : null,
+                  child: comment.authorAvatar == null
+                      ? Text(
+                          comment.author.isNotEmpty ? comment.author[0] : '?',
+                          style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              color: premiumGold,
+                              fontSize: isReply ? 12 : 14),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(16),
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        )),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              comment.author,
+                              style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontSize: isReply ? 12 : 13),
+                            ),
+                            Text(
+                              DateFormat.yMMMd().format(comment.timestamp),
+                              style: GoogleFonts.poppins(
+                                  color: Colors.white24, fontSize: 10),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          comment.text,
+                          style: GoogleFonts.notoSansEthiopic(
+                              color: Colors.white70,
+                              fontSize: isReply ? 13 : 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _ActionButton(
+                  icon: Icons.reply,
+                  label: "Reply",
+                  onTap: () {
+                    setState(() {
+                      _replyingTo = comment;
+                      _editingComment = null;
+                      _commentController.text = "";
+                    });
+                  },
+                ),
+                if (isOwner) ...[
+                  const SizedBox(width: 16),
+                  _ActionButton(
+                    icon: Iconsax.edit,
+                    label: "Edit",
+                    onTap: () {
+                      setState(() {
+                        _editingComment = comment;
+                        _replyingTo = null;
+                        _commentController.text = comment.text;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 16),
+                  _ActionButton(
+                    icon: Iconsax.trash,
+                    label: "Delete",
+                    color: Colors.redAccent.withValues(alpha: 0.7),
+                    onTap: () => _deleteComment(comment),
+                  ),
+                ],
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: color ?? Colors.white54),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11,
+                  color: color ?? Colors.white54,
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );

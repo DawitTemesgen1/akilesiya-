@@ -35,7 +35,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   final ImagePicker _picker = ImagePicker();
 
@@ -49,6 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
@@ -65,6 +66,22 @@ class _ProfileScreenState extends State<ProfileScreen>
       _gradesFuture = ProfileService.getMyGrades();
       _booksFuture = ProfileService.getMyBooks();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Refresh profile data when app resumes
+      _refreshAllData();
+    }
   }
 
   Future<void> _refreshAllData() async {
@@ -302,7 +319,12 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   Widget _buildStatusTab(Map<String, dynamic> profile, Color primaryColor,
       Color surfaceColor, Color textColor, Color subtleText, bool isDark) {
-    bool inService = profile['service_sector'] != null;
+    // Determine status based on service_status
+    final status =
+        profile['service_status']?.toString().toLowerCase() ?? 'inactive';
+    final isActive = status == 'active';
+    final isOnBreak = status == 'onbreak';
+
     return ListView(
       primary: false, // Fix ScrollController conflict
       key: const PageStorageKey('status_tab'),
@@ -324,24 +346,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                       fontSize: 16,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
-              inService
-                  ? const Icon(Icons.check_circle,
-                      color: Colors.green, size: 40)
-                  : Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: kRedError, width: 2)),
-                      child:
-                          const Icon(Icons.close, color: kRedError, size: 30),
-                    ),
+              if (isActive)
+                const Icon(Icons.check_circle, color: Colors.green, size: 40)
+              else if (isOnBreak)
+                const Icon(Icons.pause_circle_filled,
+                    color: Colors.orange, size: 40)
+              else
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: kRedError, width: 2)),
+                  child: const Icon(Icons.close, color: kRedError, size: 30),
+                ),
               const SizedBox(height: 16),
               Text(
-                  inService
-                      ? (profile['service_sector']?.toString() ?? "Active")
-                      : "አገልግሎት ላይ ያልሆነ",
+                  isActive
+                      ? (profile['service_sector']?.toString() ??
+                          "በአገልግሎት ላይ ያለ")
+                      : (isOnBreak ? "በእረፍት ላይ" : "አገልግሎት ላይ ያልሆነ"),
                   style: GoogleFonts.notoSansEthiopic(
-                      color: inService ? Colors.green : kRedError,
+                      color: isActive
+                          ? Colors.green
+                          : (isOnBreak ? Colors.orange : kRedError),
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -923,8 +950,61 @@ class _ProfileScreenState extends State<ProfileScreen>
             ],
           ),
         ),
+        const SizedBox(height: 20),
+
+        // Custom Fields for Education and Family
+        _buildCategorizedCustomFieldsSection(
+            profile,
+            config,
+            ['EDUCATION', 'FAMILY'],
+            primaryColor,
+            surfaceColor,
+            textColor,
+            subtleText,
+            isDark),
+
         const SizedBox(height: 80),
       ],
+    );
+  }
+
+  Widget _buildCategorizedCustomFieldsSection(
+      Map<String, dynamic> profile,
+      ProfileConfigProvider config,
+      List<String> tabs,
+      Color primaryColor,
+      Color surfaceColor,
+      Color textColor,
+      Color subtleText,
+      bool isDark) {
+    final fields = config.customFields
+        .where((f) =>
+            f is Map &&
+            tabs.contains(f['profile_tab']?.toString().toUpperCase()))
+        .toList();
+
+    if (fields.isEmpty) return const SizedBox.shrink();
+
+    List<Widget> rows = [];
+    for (var field in fields) {
+      if (rows.isNotEmpty) rows.add(_buildDivider());
+      final fieldMap = field as Map<String, dynamic>;
+      final val = _getCustomFieldValue(profile, fieldMap);
+      rows.add(_buildDetailRow(
+          Icons.info_outline,
+          fieldMap['name']?.toString() ?? 'Custom Field',
+          val,
+          primaryColor,
+          subtleText,
+          textColor));
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isDark ? Colors.white10 : Colors.black12)),
+      child: Column(children: rows),
     );
   }
 
@@ -1265,6 +1345,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   // Disable UI or show loader? Simple async update.
                                   await ProfileService.updateBookStatus(
                                       id, newStatus);
+                                  if (!mounted) return;
                                   _initializeFutures(); // Refresh data
                                 },
                               ),

@@ -6,7 +6,10 @@ import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/user_admin_service.dart';
+import 'package:amde_haymanot_abalat_guday/admin%20only/admin_edit_user.dart';
+import 'package:amde_haymanot_abalat_guday/services/template_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 
 class MemberManagementCockpit extends StatefulWidget {
   const MemberManagementCockpit({super.key});
@@ -444,6 +447,8 @@ class MemberDetailSheet extends StatefulWidget {
 
 class _MemberDetailSheetState extends State<MemberDetailSheet> {
   Map<String, dynamic>? _userDetail;
+  List<dynamic> _customFields = [];
+  Map<String, dynamic> _selectedCustomFieldValues = {};
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -456,10 +461,49 @@ class _MemberDetailSheetState extends State<MemberDetailSheet> {
   Future<void> _loadUserDetail() async {
     setState(() => _isLoading = true);
     try {
-      final res = await UserAdminService.getFullUserDetail(widget.userId);
+      final results = await Future.wait([
+        UserAdminService.getFullUserDetail(widget.userId),
+        TemplateService.getCustomFields(),
+      ]);
+
+      final userRes = results[0];
+      final fieldsRes = results[1];
+
       if (mounted) {
         setState(() {
-          if (res['success'] == true) _userDetail = res['data'];
+          if (userRes['success'] == true) {
+            _userDetail = userRes['data'];
+            // Extract custom field values
+            final rawCustomValues = _userDetail?['custom_field_values'];
+            _selectedCustomFieldValues = {};
+            if (rawCustomValues is List) {
+              for (var item in rawCustomValues) {
+                if (item['field_id'] == null) continue;
+                final fid = item['field_id'].toString();
+                final val =
+                    (item['value'] ?? item['option_id'] ?? item['value_text'])
+                        ?.toString();
+                if (val == null) continue;
+
+                if (_selectedCustomFieldValues.containsKey(fid)) {
+                  final existing = _selectedCustomFieldValues[fid];
+                  if (existing is List) {
+                    if (!existing.contains(val)) existing.add(val);
+                  } else if (existing != val) {
+                    _selectedCustomFieldValues[fid] = [existing, val];
+                  }
+                } else {
+                  _selectedCustomFieldValues[fid] = val;
+                }
+              }
+            } else if (rawCustomValues is Map) {
+              _selectedCustomFieldValues =
+                  Map<String, dynamic>.from(rawCustomValues);
+            }
+          }
+          if (fieldsRes['success'] == true) {
+            _customFields = fieldsRes['data'];
+          }
           _isLoading = false;
         });
       }
@@ -585,6 +629,35 @@ class _MemberDetailSheetState extends State<MemberDetailSheet> {
                 _userDetail!['email'] ?? "No Email",
                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminEditUserScreen(
+                        userId: widget.userId,
+                        userName: _userDetail!['full_name'] ?? widget.name,
+                      ),
+                    ),
+                  ).then((didUpdate) {
+                    if (didUpdate == true) {
+                      _loadUserDetail();
+                    }
+                  });
+                },
+                icon: const Icon(Iconsax.edit, size: 16),
+                label: Text(
+                  "ሙሉ መረጃ ቀይር", // "Change Full Info"
+                  style: GoogleFonts.notoSansEthiopic(fontSize: 12),
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
             ],
           ),
         ),
@@ -625,8 +698,8 @@ class _MemberDetailSheetState extends State<MemberDetailSheet> {
             value: _userDetail!['service_status'] == 'Active',
             onChanged: (val) => _updateAdminField(
                 {'service_status': val ? 'Active' : 'Inactive'}),
-            activeTrackColor: primaryColor.withOpacity(0.5),
-            activeColor: primaryColor,
+            activeTrackColor: primaryColor.withValues(alpha: 0.5),
+            activeThumbColor: primaryColor,
           ),
         ),
         _buildAdminTile(
@@ -665,15 +738,27 @@ class _MemberDetailSheetState extends State<MemberDetailSheet> {
 
   Future<void> _verifyUser() async {
     setState(() => _isSaving = true);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final res = await UserAdminService.verifyUser(widget.userId);
       if (mounted) {
-        if (res['success'] == true) {
+        final wasSuccessful = res['success'] == true;
+        messenger.showSnackBar(
+          SnackBar(
+            content:
+                Text(wasSuccessful ? "ተጠቃሚው በተሳካ ሁኔታ ጸድቋል!" : "ለማጽደቅ አልተቻለም!"),
+            backgroundColor: wasSuccessful ? Colors.green : Colors.red,
+          ),
+        );
+        if (wasSuccessful) {
           _loadUserDetail();
         }
       }
     } catch (e) {
       debugPrint("Verification error: $e");
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -695,17 +780,112 @@ class _MemberDetailSheetState extends State<MemberDetailSheet> {
   }
 
   Widget _buildReadOnlyInfo(bool isDark) {
+    if (_userDetail == null) return const SizedBox.shrink();
+
     return Column(
       children: [
-        _infoRow("ክርስቲያናዊ ስም", _userDetail!['christian_name']),
-        _infoRow("የንስሐ አባት", _userDetail!['confession_father_name']),
-        _infoRow("የመንፈሳዊ ክፍል", _userDetail!['spiritual_class']),
-        _infoRow("ክፍል (Kifil)", _userDetail!['kifil']),
-        _infoRow("ስልክ", _userDetail!['phone_number']),
-        _infoRow("የትምህርት ደረጃ", _userDetail!['academic_level']),
-        _infoRow("የትውልድ ቀን", _userDetail!['dob']),
+        _buildInfoCategory("ጠቅላላ (General)", [
+          _infoRow("ስልክ", _userDetail!['phone_number']),
+          _infoRow("የትውልድ ቀን", _userDetail!['dob']),
+          ..._getTabCustomFields('PERSONAL'),
+        ]),
+        _buildInfoCategory("መንፈሳዊ (Spiritual)", [
+          _infoRow("ክርስቲያናዊ ስም", _userDetail!['christian_name']),
+          _infoRow("የንስሐ አባት", _userDetail!['confession_father_name']),
+          _infoRow("የመንፈሳዊ ክፍል", _userDetail!['spiritual_class']),
+          ..._getTabCustomFields('SPIRITUAL'),
+        ]),
+        _buildInfoCategory("ትምህርት (Education)", [
+          _infoRow("የትምህርት ደረጃ", _userDetail!['academic_level']),
+          _infoRow("ክፍል (Kifil)", _userDetail!['kifil']),
+          ..._getTabCustomFields('EDUCATION'),
+        ]),
+        _buildInfoCategory("ቤተሰብ (Family)", [
+          _infoRow("የእናት ስም", _userDetail!['mother_name']),
+          _infoRow("የአሳዳጊ ስም", _userDetail!['parent_name']),
+          _infoRow("የአሳዳጊ ስልክ", _userDetail!['parent_phone_number']),
+          ..._getTabCustomFields('FAMILY'),
+        ]),
       ],
     );
+  }
+
+  Widget _buildInfoCategory(String title, List<Widget> children) {
+    if (children.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _getTabCustomFields(String tabName) {
+    final fields = _customFields
+        .where((field) =>
+            field['profile_tab']?.toString().toUpperCase() == tabName)
+        .toList();
+
+    return fields.map((field) {
+      final fieldId = field['id'].toString();
+      final rawValue = _selectedCustomFieldValues[fieldId];
+      if (rawValue == null) return const SizedBox.shrink();
+
+      final options = field['options'] as List<dynamic>? ?? [];
+      final fieldType =
+          (field['field_type'] ?? field['type'])?.toString().toUpperCase() ??
+              'TEXT';
+
+      String displayValue = "";
+
+      if (rawValue is List) {
+        final optionNames = <String>[];
+        for (var vid in rawValue) {
+          final opt = options
+              .firstWhereOrNull((o) => o['id'].toString() == vid.toString());
+          if (opt != null) optionNames.add(opt['option_value'] ?? "");
+        }
+        displayValue =
+            optionNames.isNotEmpty ? optionNames.join(", ") : "ያልተጠቀሰ";
+      } else if (options.isNotEmpty &&
+          ['DROPDOWN', 'RADIO', 'VOTE'].contains(fieldType)) {
+        final opt = options
+            .firstWhereOrNull((o) => o['id'].toString() == rawValue.toString());
+        displayValue = opt?['option_value'] ?? rawValue.toString();
+      } else if (fieldType == 'TOGGLE' ||
+          fieldType == 'BOOLEAN' ||
+          fieldType == 'YES/NO TOGGLE') {
+        displayValue = (rawValue == 'true' || rawValue == '1') ? "አዎ" : "አይ";
+      } else {
+        displayValue = rawValue.toString();
+      }
+
+      return _infoRow(field['name'] ?? "Unknown", displayValue);
+    }).toList();
   }
 
   Widget _infoRow(String label, String? value) {
@@ -766,9 +946,10 @@ class _MemberDetailSheetState extends State<MemberDetailSheet> {
       );
       _loadUserDetail();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

@@ -2,6 +2,7 @@
 
 import 'package:amde_haymanot_abalat_guday/role%20based/family_detail.dart';
 import 'package:amde_haymanot_abalat_guday/services/family_service.dart';
+import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
@@ -14,11 +15,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 
-// --- UI Theme Constants ---
-// Replaced by ThemeProvider
-const Color successColor = Color(0xFF198754);
-const Color warningColor = Color(0xFFFD7E14);
-const Color dangerColor = Color(0xFFDC3545);
+// --- UI Theme Constants are now handled by ThemeProvider ---
 
 // --- Model ---
 class LinkedStudent {
@@ -28,7 +25,8 @@ class LinkedStudent {
   final String? spiritualClass;
   final double overallGrade;
   final double attendancePercentage;
-  final bool isSelectedForService;
+  final String? serviceStatus;
+  final String? serviceSector;
 
   LinkedStudent({
     required this.id,
@@ -37,16 +35,47 @@ class LinkedStudent {
     this.spiritualClass,
     required this.overallGrade,
     required this.attendancePercentage,
-    required this.isSelectedForService,
+    this.serviceStatus,
+    this.serviceSector,
   });
 
   // ======================= THE FIX =======================
   // This factory now safely handles numbers that arrive as strings.
   factory LinkedStudent.fromJson(Map<String, dynamic> json) {
+    // Construct full image URL if needed
+    String? imageUrl = json['profile_image_url'];
+    if (imageUrl != null &&
+        imageUrl.trim().isNotEmpty &&
+        !imageUrl.startsWith('http')) {
+      final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
+      final cleanBase = baseUrl.endsWith('/')
+          ? baseUrl.substring(0, baseUrl.length - 1)
+          : baseUrl;
+      final cleanPath =
+          imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
+      imageUrl = '$cleanBase/$cleanPath';
+    }
+
+    // Status fallback logic
+    final List<String?> statusFields = [
+      json['service_status']?.toString(),
+      json['status']?.toString(),
+      json['account_status']?.toString(),
+      json['user_status']?.toString(),
+    ];
+
+    String statusRaw = 'inactive';
+    for (var field in statusFields) {
+      if (field != null && field.trim().isNotEmpty) {
+        statusRaw = field.trim();
+        break;
+      }
+    }
+
     return LinkedStudent(
       id: json['id'].toString(),
       fullName: json['full_name'] ?? 'No Name',
-      profileImageUrl: json['profile_image_url'],
+      profileImageUrl: imageUrl,
       spiritualClass: json['spiritual_class'],
       // Use double.tryParse to handle both "88.5" and 88.5 safely.
       overallGrade:
@@ -54,8 +83,8 @@ class LinkedStudent {
       attendancePercentage:
           double.tryParse(json['attendancePercentage']?.toString() ?? '0.0') ??
               0.0,
-      isSelectedForService: json['isSelectedForService'] == 1 ||
-          json['isSelectedForService'] == true,
+      serviceStatus: statusRaw,
+      serviceSector: json['service_sector']?.toString(),
     );
   }
   // =======================================================
@@ -72,7 +101,8 @@ class FamilyViewScreen extends StatefulWidget {
   State<FamilyViewScreen> createState() => _FamilyViewScreenState();
 }
 
-class _FamilyViewScreenState extends State<FamilyViewScreen> {
+class _FamilyViewScreenState extends State<FamilyViewScreen>
+    with WidgetsBindingObserver {
   late Future<List<LinkedStudent>> _linkedStudentsFuture;
 
   Future<List<LinkedStudent>> _fetchLinkedStudents() async {
@@ -95,9 +125,25 @@ class _FamilyViewScreenState extends State<FamilyViewScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _linkedStudentsFuture = _fetchLinkedStudents();
-    super.initState();
-    _linkedStudentsFuture = _fetchLinkedStudents();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Refresh linked students when app resumes
+      setState(() {
+        _linkedStudentsFuture = _fetchLinkedStudents();
+      });
+    }
   }
 
   // Theme Getters
@@ -167,9 +213,9 @@ class _StudentDashboardCard extends StatelessWidget {
   const _StudentDashboardCard({required this.student});
 
   Color _getGradeColor(double grade) {
-    if (grade >= 85) return successColor;
-    if (grade >= 50) return warningColor;
-    return dangerColor;
+    if (grade >= 85) return ThemeProvider.successColor;
+    if (grade >= 50) return ThemeProvider.warningColor;
+    return ThemeProvider.dangerColor;
   }
 
   @override
@@ -254,8 +300,8 @@ class _StudentDashboardCard extends StatelessWidget {
                       children: [
                         _buildAttendanceIndicator(
                             student.attendancePercentage, context),
-                        _buildServiceStatus(
-                            student.isSelectedForService, context),
+                        _buildServiceStatus(student.serviceStatus,
+                            student.serviceSector, context),
                       ],
                     ),
                   ],
@@ -319,24 +365,40 @@ class _StudentDashboardCard extends StatelessWidget {
     ]);
   }
 
-  Widget _buildServiceStatus(bool isSelected, BuildContext context) {
+  Widget _buildServiceStatus(
+      String? status, String? sector, BuildContext context) {
+    // Don't default to 'active' - show actual status or null
+    final statusLower = status?.toLowerCase();
+    final isActive = statusLower == 'active';
+    final isOnBreak = statusLower == 'onbreak';
+
+    final Color statusColor = isActive
+        ? ThemeProvider.successColor
+        : (isOnBreak ? ThemeProvider.warningColor : ThemeProvider.dangerColor);
+
+    final IconData statusIcon = isActive
+        ? Iconsax.user_tick
+        : (isOnBreak ? Iconsax.pause_circle : Iconsax.close_circle);
+
+    final String statusText = isActive
+        ? (sector ?? 'በአገልግሎት ላይ ያለ')
+        : (isOnBreak ? 'በእረፍት ላይ' : 'አገልግሎት ላይ ያልሆነ');
+
     return Column(children: [
       Container(
           width: 70,
           height: 70,
           decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color:
-                  (isSelected ? successColor : warningColor).withValues(alpha: 0.1)),
-          child: Icon(
-              isSelected ? Iconsax.calendar_tick : Iconsax.calendar_remove,
-              color: isSelected ? successColor : warningColor,
-              size: 35)),
+              color: statusColor.withValues(alpha: 0.1)),
+          child: Icon(statusIcon, color: statusColor, size: 35)),
       const SizedBox(height: 8),
-      Text(isSelected ? 'On Service' : 'Not on Duty',
+      Text(statusText,
           style: GoogleFonts.poppins(
               color: Provider.of<ThemeProvider>(context)
-                  .getSubtleTextColor(context))),
+                  .getSubtleTextColor(context),
+              fontSize: 12,
+              fontWeight: FontWeight.w600)),
     ]);
   }
 }
@@ -380,7 +442,8 @@ class _ErrorDisplay extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Iconsax.warning_2, color: dangerColor, size: 60),
+            const Icon(Iconsax.warning_2,
+                color: ThemeProvider.dangerColor, size: 60),
             const SizedBox(height: 16),
             Text("Something Went Wrong",
                 style: GoogleFonts.poppins(
@@ -430,8 +493,10 @@ class _EmptyState extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Iconsax.user_search,
-                      color: kSubtleTextColor, size: 60),
+                  Icon(Iconsax.user_search,
+                      color: Provider.of<ThemeProvider>(context)
+                          .getSubtleTextColor(context),
+                      size: 60),
                   const SizedBox(height: 16),
                   Text("No Linked Students",
                       style: GoogleFonts.poppins(

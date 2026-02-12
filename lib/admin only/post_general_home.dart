@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 // Import the intl package for date formatting
 import 'package:intl/intl.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 
 import 'package:amde_haymanot_abalat_guday/services/public_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart'; // Added
@@ -40,32 +41,56 @@ class _AdminPublicPostManagementScreenState
       _isLoading = true;
       _error = null;
     });
+
     try {
       final result = await PublicFeedService.getPublicPosts();
-      if (mounted) {
-        if (result['success']) {
-          final dynamic rawData = result['data'];
-          List<dynamic> postsList = [];
 
-          if (rawData is List) {
-            postsList = rawData;
-          } else if (rawData is Map && rawData['posts'] is List) {
-            postsList = rawData['posts'];
-          }
+      if (!mounted) return;
 
-          setState(() {
-            _posts =
-                postsList.map((p) => UnifiedPost.fromPublicPost(p)).toList();
-            _isLoading = false;
-          });
-        } else {
-          throw Exception(result['message']);
+      if (result['success']) {
+        final dynamic rawData = result['data'];
+        List<UnifiedPost> parsedPosts = [];
+        int parseErrors = 0;
+
+        List<dynamic> postsList = [];
+        if (rawData is List) {
+          postsList = rawData;
+        } else if (rawData is Map && rawData['posts'] is List) {
+          postsList = rawData['posts'];
         }
+
+        // Parse each post individually with error handling
+        for (var postData in postsList) {
+          try {
+            if (postData is Map<String, dynamic>) {
+              parsedPosts.add(UnifiedPost.fromPublicPost(postData));
+            }
+          } catch (e) {
+            parseErrors++;
+            debugPrint('Skipping malformed post in admin screen: $e');
+          }
+        }
+
+        if (parseErrors > 0) {
+          debugPrint('Admin screen: Skipped $parseErrors malformed posts');
+        }
+
+        setState(() {
+          _posts = parsedPosts;
+          _isLoading = false;
+        });
+      } else {
+        // API returned success: false
+        setState(() {
+          _error = result['message'] ?? 'Failed to load posts';
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = e.toString().replaceAll("Exception: ", "");
+          _error =
+              'የመረጃ ጫኝ ስህተት። እባክዎ እንደገና ይሞክሩ።\n\nDetails: ${e.toString().replaceAll("Exception: ", "")}';
           _isLoading = false;
         });
       }
@@ -351,14 +376,21 @@ class _AdminPublicPostManagementScreenState
                                       .format(selectedEventDate!),
                             ),
                             onTap: () async {
-                              final DateTime? pickedDate = await showDatePicker(
+                              final initialDate = selectedEventDate != null
+                                  ? EthiopianDate.fromGregorian(
+                                      selectedEventDate!)
+                                  : EthiopianDate.now();
+
+                              final pickedDateEth =
+                                  await showDialog<EthiopianDate>(
                                 context: context,
-                                initialDate:
-                                    selectedEventDate ?? DateTime.now(),
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime(2101),
+                                builder: (context) => EthiopianDatePickerDialog(
+                                  initialDate: initialDate,
+                                ),
                               );
-                              if (pickedDate != null && context.mounted) {
+
+                              if (pickedDateEth != null && context.mounted) {
+                                final pickedDate = pickedDateEth.toGregorian();
                                 final TimeOfDay? pickedTime =
                                     await showTimePicker(
                                   context: context,
