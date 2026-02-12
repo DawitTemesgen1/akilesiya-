@@ -60,7 +60,7 @@ class AttendanceService {
       String date, String session, String attendanceType) async {
     try {
       final response = await ApiService.get(
-          '/attendance?date=$date&session=$session&attendanceType=$attendanceType');
+          '/attendance?date=$date&session=$session&attendance_type=$attendanceType');
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
         return result['data'] as Map<String, dynamic>;
