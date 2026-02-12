@@ -96,7 +96,7 @@ class _MemberDevelopmentHubScreenState extends State<MemberDevelopmentHubScreen>
     super.initState();
     // Use 'listen: false' in initState to read the provider's initial state
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    _isSuperiorAdmin = userProvider.roles.contains('superior_admin');
+    _isSuperiorAdmin = userProvider.isSuperiorOrSystemAdmin;
 
     // Tab controller length now depends on the user's role
     _tabController =

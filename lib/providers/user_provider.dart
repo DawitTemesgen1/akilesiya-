@@ -57,6 +57,11 @@ class UserProvider extends ChangeNotifier {
       _roles.contains('superior_admin') ||
       _roles.contains('content_admin');
 
+  bool get canManageDevelopment =>
+      _roles.contains('system_admin') ||
+      _roles.contains('superior_admin') ||
+      _roles.contains('development_admin');
+
   // =======================================================
   // --- MODIFICATIONS END HERE ---
   // =======================================================
