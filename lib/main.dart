@@ -52,7 +52,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await dotenv.load(fileName: ".env");
+    await dotenv.load(fileName: "assets/.env");
 
     final apiBaseUrl = _getApiBaseUrl();
     // DEBUG LOG
@@ -168,17 +168,22 @@ class _MyAppState extends State<MyApp> {
             // Handle both String (forgot password) and Map (signup with password)
             final extra = state.extra;
             if (extra is Map<String, dynamic>) {
-              // From signup with password
+              // From signup with password OR forgot password with extra flags
               return OtpVerificationScreen(
                 email: extra['email'] as String,
                 password: extra['password'] as String?,
+                isRegistration: extra['isRegistration'] ?? true,
               );
             } else if (extra is String) {
-              // From forgot password (legacy)
-              return OtpVerificationScreen(email: extra);
+              // From forgot password (legacy/direct string)
+              return OtpVerificationScreen(
+                email: extra,
+                isRegistration: false,
+              );
             } else {
               // Fallback - shouldn't happen
-              return const OtpVerificationScreen(email: '');
+              return const OtpVerificationScreen(
+                  email: '', isRegistration: false);
             }
           },
         ),

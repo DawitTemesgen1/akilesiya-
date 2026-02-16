@@ -1,22 +1,18 @@
-import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
-import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
-import 'package:amde_haymanot_abalat_guday/role%20based/learning_admin.dart';
-
-import 'package:amde_haymanot_abalat_guday/services/learning_service.dart';
-import 'package:amde_haymanot_abalat_guday/users%20screen/article_viewer.dart';
-import 'package:amde_haymanot_abalat_guday/users%20screen/video_player.dart';
 import 'package:flutter/material.dart';
-import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:amde_haymanot_abalat_guday/models/comment.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
-
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
-
-import 'package:animate_do/animate_do.dart';
-import 'package:amde_haymanot_abalat_guday/models/comment.dart';
+import 'package:amde_haymanot_abalat_guday/services/learning_service.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
+import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/article_viewer.dart';
+import 'package:amde_haymanot_abalat_guday/users%20screen/video_player.dart';
+import 'package:amde_haymanot_abalat_guday/role%20based/learning_admin.dart';
 
 // --- Premium Theme Constants ---
 const Color premiumDark = Color(0xFF0F0F1E);
@@ -66,8 +62,8 @@ class LearningContent {
     try {
       return DateTime.parse(dateString);
     } catch (e) {
-      debugPrint('--- የቀን ανάλυση አልተሳካም ---');
-      debugPrint('ዋጋ: $dateString, ስህተት: $e');
+      debugPrint('--- Date parsing failed ---');
+      debugPrint('Value: $dateString, Error: $e');
       debugPrint('-------------------------');
       return DateTime.now();
     }
@@ -248,7 +244,7 @@ class _LearningScreenState extends State<LearningScreen> {
                       isDark ? Iconsax.sun_1 : Iconsax.moon,
                       color: textColor,
                     ),
-                    tooltip: 'Toggle Theme',
+                    tooltip: l10n.learningToggleTheme,
                   ),
                 ],
               ),
@@ -457,6 +453,7 @@ class _LearningContentCardState extends State<_LearningContentCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode(context);
     final cardColor =
         isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
@@ -515,8 +512,7 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                                           .withValues(alpha: 0.5))),
                               child: Text(
                                   widget.content.category.isEmpty
-                                      ? AppLocalizations.of(context)!
-                                          .learningCategoryGeneral
+                                      ? l10n.learningCategoryGeneral
                                           .toUpperCase()
                                       : widget.content.category.toUpperCase(),
                                   style: GoogleFonts.poppins(
@@ -556,7 +552,7 @@ class _LearningContentCardState extends State<_LearningContentCard> {
                       const SizedBox(height: 12),
                       Text(
                           widget.content.title.isEmpty
-                              ? AppLocalizations.of(context)!.learningNoTitle
+                              ? l10n.learningNoTitle
                               : widget.content.title,
                           style: GoogleFonts.notoSansEthiopic(
                             fontSize: 18,
@@ -813,6 +809,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 
   Future<void> _fetchComments() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -830,7 +827,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         widget.onCommentAdded(_comments.length);
       } else {
         setState(() {
-          _error = result['message'] ?? 'Failed to load comments';
+          _error = result['message'] ?? l10n.learningCommentsLoadFailed;
           _isLoading = false;
         });
       }
@@ -838,6 +835,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 
   Future<void> _submitComment() async {
+    final l10n = AppLocalizations.of(context)!;
     final text = _commentController.text.trim();
     if (text.isEmpty || _isSending) return;
 
@@ -892,7 +890,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(result['message'] ?? 'Failed to post comment'),
+          content: Text(result['message'] ?? l10n.learningFailedToPostComment),
           backgroundColor: Colors.redAccent,
         ));
       }
@@ -900,23 +898,24 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 
   Future<void> _deleteComment(Comment comment) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: premiumDark,
-        title: const Text("Delete Comment?",
-            style: TextStyle(color: Colors.white)),
-        content: const Text("Are you sure you want to delete this comment?",
-            style: TextStyle(color: Colors.white70)),
+        title: Text(l10n.learningDeleteCommentTitle,
+            style: const TextStyle(color: Colors.white)),
+        content: Text(l10n.learningDeleteCommentConfirm,
+            style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel",
-                  style: TextStyle(color: Colors.white54))),
+              child: Text(l10n.cancelButton,
+                  style: const TextStyle(color: Colors.white54))),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text("Delete",
-                  style: TextStyle(color: Colors.redAccent))),
+              child: Text(l10n.learningDeleteAction,
+                  style: const TextStyle(color: Colors.redAccent))),
         ],
       ),
     );
@@ -931,7 +930,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           widget.onCommentAdded(_comments.length);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(result['message'] ?? 'Failed to delete comment'),
+            content:
+                Text(result['message'] ?? l10n.learningCommentDeleteFailed),
             backgroundColor: Colors.red,
           ));
         }
@@ -993,7 +993,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                Text("Comments",
+                Text(l10n.learningCommentsHeader,
                     style: GoogleFonts.poppins(
                         fontSize: 18,
                         color: Colors.white,
@@ -1039,7 +1039,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                 const Icon(Iconsax.message,
                                     size: 48, color: Colors.white24),
                                 const SizedBox(height: 16),
-                                Text("No comments yet",
+                                Text(l10n.learningNoCommentsYet,
                                     style: GoogleFonts.notoSansEthiopic(
                                         color: Colors.white54)),
                               ],
@@ -1088,8 +1088,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                                       .remove(comment.id);
                                                 });
                                               },
-                                              child: const Text("Hide replies",
-                                                  style: TextStyle(
+                                              child: Text(
+                                                  l10n.learningHideReplies,
+                                                  style: const TextStyle(
                                                       color: Colors.white54,
                                                       fontSize: 12)),
                                             ),
@@ -1102,7 +1103,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                                 });
                                               },
                                               child: Text(
-                                                  "View ${replies.length} replies",
+                                                  l10n.learningViewReplies(
+                                                      replies.length),
                                                   style: const TextStyle(
                                                       color: Colors.white54,
                                                       fontSize: 12)),
@@ -1131,8 +1133,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   Expanded(
                     child: Text(
                       _editingComment != null
-                          ? "Editing comment..."
-                          : "Replying to ${_replyingTo!.author}...",
+                          ? l10n.learningEditingComment
+                          : l10n.learningReplyingTo(_replyingTo!.author),
                       style:
                           const TextStyle(color: Colors.white70, fontSize: 12),
                     ),
@@ -1159,7 +1161,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     controller: _commentController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: "Write a comment...",
+                      hintText: l10n.learningCommentHint,
                       hintStyle: const TextStyle(color: Colors.white38),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.05),
@@ -1258,7 +1260,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                     fontSize: isReply ? 12 : 13,
                                     color: Colors.white)),
                           ),
-                          Text(DateFormat.MMMd().format(comment.timestamp),
+                          Text(
+                              EthiopianDate.fromGregorian(comment.timestamp)
+                                  .toString(),
                               style: GoogleFonts.poppins(
                                   fontSize: 10, color: Colors.white54)),
                         ],
@@ -1278,7 +1282,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 // Allow replying to replies too (nested reply interaction)
                 _ActionButton(
                   icon: Icons.reply,
-                  label: "መልስ",
+                  label: l10n.learningReplyAction,
                   onTap: () {
                     setState(() {
                       _replyingTo = comment;
@@ -1292,7 +1296,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   const SizedBox(width: 16),
                   _ActionButton(
                     icon: Iconsax.edit,
-                    label: "አስተካክል",
+                    label: l10n.learningEditAction,
                     onTap: () {
                       setState(() {
                         _editingComment = comment;
@@ -1306,7 +1310,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   const SizedBox(width: 16),
                   _ActionButton(
                     icon: Iconsax.trash,
-                    label: "አጥፋ",
+                    label: l10n.learningDeleteAction,
                     color: Colors.redAccent.withValues(alpha: 0.7),
                     onTap: () => _deleteComment(comment),
                   ),

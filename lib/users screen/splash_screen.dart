@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -56,6 +57,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     // 3. Watch the provider to trigger rebuilds/checks when loading completes
     final userProvider = context.watch<UserProvider>();
+    final l10n = AppLocalizations.of(context)!;
 
     // Use addPostFrameCallback to safely trigger navigation after the build phase
     // if conditions are met during this build.
@@ -98,8 +100,8 @@ class _SplashScreenState extends State<SplashScreen> {
                         color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFFD700)
-                                .withValues(alpha: 0.5), // Beautiful Golden Glow
+                            color: const Color(0xFFFFD700).withValues(
+                                alpha: 0.5), // Beautiful Golden Glow
                             blurRadius: 50,
                             spreadRadius: 2,
                           ),
@@ -118,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     delay: const Duration(milliseconds: 1200),
                     duration: const Duration(milliseconds: 1000),
                     child: Text(
-                      'አቅሌስያ', // App Name
+                      l10n.appName, // App Name
                       style: GoogleFonts.poppins(
                         fontSize: 42,
                         fontWeight: FontWeight.bold,
@@ -159,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 30),
                       child: Text(
-                        'የነገዋ ቤተ ክርስቲያን ዛሬ ትገነባለች',
+                        l10n.splashMotto,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 18,

@@ -12,7 +12,7 @@ class ApiService {
   static late String _baseUrl;
   static const _storage = FlutterSecureStorage();
   static const String _tokenKey = 'jwt_token';
-  static const Duration _timeoutDuration = Duration(seconds: 90);
+  static const Duration _timeoutDuration = Duration(seconds: 20);
 
   static String get baseUrl => _baseUrl;
 
@@ -140,7 +140,7 @@ class ApiService {
       return response;
     } catch (e) {
       debugPrint('❌ GET Exception: $e');
-      if (retryCount < 2 &&
+      if (retryCount < 1 &&
           (e is http.ClientException ||
               e is SocketException ||
               e is TimeoutException)) {
@@ -153,8 +153,8 @@ class ApiService {
     }
   }
 
-  static Future<http.Response> post(
-      String endpoint, Map<String, dynamic> body) async {
+  static Future<http.Response> post(String endpoint, Map<String, dynamic> body,
+      {int retryCount = 0, bool useRetry = true}) async {
     final formattedEndpoint =
         endpoint.startsWith('/') ? endpoint : '/$endpoint';
     try {
@@ -168,12 +168,22 @@ class ApiService {
       return response;
     } catch (e) {
       debugPrint('❌ POST Exception: $e');
+      if (useRetry &&
+          retryCount < 1 &&
+          (e is http.ClientException ||
+              e is SocketException ||
+              e is TimeoutException)) {
+        debugPrint('🔄 Retrying POST request (Attempt ${retryCount + 1})...');
+        await Future.delayed(Duration(seconds: 1 * (retryCount + 1)));
+        return post(endpoint, body,
+            retryCount: retryCount + 1, useRetry: useRetry);
+      }
       throw http.ClientException('Network error: $e');
     }
   }
 
-  static Future<http.Response> put(
-      String endpoint, Map<String, dynamic> body) async {
+  static Future<http.Response> put(String endpoint, Map<String, dynamic> body,
+      {int retryCount = 0, bool useRetry = true}) async {
     final formattedEndpoint =
         endpoint.startsWith('/') ? endpoint : '/$endpoint';
     try {
@@ -187,12 +197,22 @@ class ApiService {
       return response;
     } catch (e) {
       debugPrint('❌ PUT Exception: $e');
+      if (useRetry &&
+          retryCount < 1 &&
+          (e is http.ClientException ||
+              e is SocketException ||
+              e is TimeoutException)) {
+        debugPrint('🔄 Retrying PUT request (Attempt ${retryCount + 1})...');
+        await Future.delayed(Duration(seconds: 1 * (retryCount + 1)));
+        return put(endpoint, body,
+            retryCount: retryCount + 1, useRetry: useRetry);
+      }
       throw http.ClientException('Network error: $e');
     }
   }
 
-  static Future<http.Response> patch(
-      String endpoint, Map<String, dynamic> body) async {
+  static Future<http.Response> patch(String endpoint, Map<String, dynamic> body,
+      {int retryCount = 0, bool useRetry = true}) async {
     final formattedEndpoint =
         endpoint.startsWith('/') ? endpoint : '/$endpoint';
     try {
@@ -206,11 +226,22 @@ class ApiService {
       return response;
     } catch (e) {
       debugPrint('❌ PATCH Exception: $e');
+      if (useRetry &&
+          retryCount < 1 &&
+          (e is http.ClientException ||
+              e is SocketException ||
+              e is TimeoutException)) {
+        debugPrint('🔄 Retrying PATCH request (Attempt ${retryCount + 1})...');
+        await Future.delayed(Duration(seconds: 1 * (retryCount + 1)));
+        return patch(endpoint, body,
+            retryCount: retryCount + 1, useRetry: useRetry);
+      }
       throw http.ClientException('Network error: $e');
     }
   }
 
-  static Future<http.Response> delete(String endpoint) async {
+  static Future<http.Response> delete(String endpoint,
+      {int retryCount = 0, bool useRetry = true}) async {
     final formattedEndpoint =
         endpoint.startsWith('/') ? endpoint : '/$endpoint';
     try {
@@ -223,6 +254,15 @@ class ApiService {
       return response;
     } catch (e) {
       debugPrint('❌ DELETE Exception: $e');
+      if (useRetry &&
+          retryCount < 1 &&
+          (e is http.ClientException ||
+              e is SocketException ||
+              e is TimeoutException)) {
+        debugPrint('🔄 Retrying DELETE request (Attempt ${retryCount + 1})...');
+        await Future.delayed(Duration(seconds: 1 * (retryCount + 1)));
+        return delete(endpoint, retryCount: retryCount + 1, useRetry: useRetry);
+      }
       throw http.ClientException('Network error: $e');
     }
   }

@@ -11,65 +11,10 @@ import 'package:amde_haymanot_abalat_guday/widgets/sync_status_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
-
-// --- Amharic Localization Strings for Attendance Screen ---
-abstract class AmharicStringsAttendance {
-  static const String screenTitle = 'የተማሪ ክትትል አስተዳደር';
-  static const String accessDenied = 'መዳረሻ ተከልክሏል';
-  static const String noPermission = 'ይህንን ክፍል ለመጠቀም ፈቃድ የለዎትም።';
-  static const String tabTakeAttendance = 'ክትትል ይመዝግቡ';
-  static const String tabManageAdmins = 'አስተዳዳሪዎችን ያቀናብሩ';
-
-  static const String statusPresent = 'ቀርቧል';
-  static const String statusAbsent = 'ቀርቷል';
-  static const String statusLate = 'ዘግይቷል';
-  static const String statusPermission = 'በፈቃድ';
-
-  static const String typeLabel = 'የክትትል ዓይነት';
-  static const String typeLearning = 'የትምህርት ክፍለ ጊዜ';
-  static const String typeHymnLearning = 'የዜማ ትምህርት';
-  static const String typeAwudemihiret = 'አውደ ምሕረት';
-  static const String typeSpecial = 'ልዩ መርሃ ግብር';
-
-  static const String sessionLabel = 'ክፍለ ጊዜ';
-  static const String sessionMorning = 'ጥዋት';
-  static const String sessionAfternoon = 'ከሰዓት';
-
-  static const String filterBy = 'ማጣሪያ በ';
-  static const String group = 'ቡድን';
-  static const String all = 'ሁሉም';
-  static const String students = 'ተማሪዎች';
-  static const String selectOption = 'አማራጭ ይምረጡ';
-  static const String unnamedStudent = 'ስም ያልተሰጠው ተማሪ';
-  static const String lateTimeLabel = 'ዘግይቷል'; // Prefix for time
-
-  static const String loadingStudents = 'ተማሪዎችን በመጫን ላይ...';
-  static const String loadingRecords = 'መረጃዎችን በመጫን ላይ...';
-  static const String emptyStateTitle = 'ምንም ተማሪዎች አልተገኙም';
-  static const String emptyStateSubtitle =
-      'ማጣሪያዎችዎን ለማስተካከል ይሞክሩ ወይም ተማሪዎችን ወደዚህ ትምህርት ቤት ያክሉ።';
-
-  static const String topicLabel = '📝 የቀን ርዕስ';
-  static const String saveAttendanceButton = 'ክትትልን ያስቀምጡ';
-  static const String readOnlyError = 'ለማንበብ ብቻ: ክትትል ማስቀመጥ አይቻልም።';
-  static const String errorLoadingStudents = 'ተማሪዎችን በመጫን ላይ ስህተት:';
-  static const String errorLoadingRecords = 'መረጃዎችን በመጫን ላይ ስህተት:';
-  static const String saveSuccess = 'ክትትል በተሳካ ሁኔታ ተመዝግቧል! 🎉';
-  static const String saveOffline =
-      'ክትትል ኦፍላይን ተመዝግቧል። ኢንተርኔት ሲገኝ በራስ-ሰር ይላካል።';
-  static const String errorSavingAttendance = 'ክትትል ማስቀመጥ ላይ ስህተት:';
-
-  static const String searchUserHint = 'ተጠቃሚ ይፈልጉ...';
-  static const String rolesUpdateSuccess = 'ሚናዎች በተሳካ ሁኔታ ተዘምነዋል።';
-  static const String genericError = 'ስህተት:';
-  static const String userStatusPending = 'በመጠባበቅ ላይ';
-  static const String noName = 'ስም የለም';
-  static const String noEmail = 'ኢሜይል የለም';
-}
 
 // --- (Constants are unchanged) ---
 // --- (Constants are unchanged) ---
@@ -101,8 +46,7 @@ class Student {
     }
     return Student(
         id: json['id'].toString(),
-        name: json['full_name'] as String? ??
-            AmharicStringsAttendance.unnamedStudent,
+        name: json['full_name'] as String? ?? 'Unnamed Student',
         customFields: fields);
   }
 }
@@ -146,7 +90,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     if (!isSuperiorAdmin && !isAttendanceAdmin) {
       return Scaffold(
           appBar: AppBar(
-              title: Text(AmharicStringsAttendance.screenTitle,
+              title: Text(AppLocalizations.of(context)!.attendanceScreenTitle,
                   style: GoogleFonts.notoSansEthiopic())),
           body: Center(
               child: Column(
@@ -154,11 +98,11 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   children: [
                 Icon(Iconsax.lock, size: 48, color: dangerColor),
                 const SizedBox(height: 16),
-                Text(AmharicStringsAttendance.accessDenied,
+                Text(AppLocalizations.of(context)!.attendanceAccessDenied,
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(AmharicStringsAttendance.noPermission,
+                Text(AppLocalizations.of(context)!.attendanceNoPermission,
                     style: GoogleFonts.notoSansEthiopic())
               ])));
     }
@@ -168,14 +112,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     if (isAttendanceAdmin || isSuperiorAdmin) {
       tabs.add(Tab(
           icon: const Icon(Iconsax.document_text),
-          text: AmharicStringsAttendance.tabTakeAttendance)); // Translated
+          text:
+              AppLocalizations.of(context)!.attendanceTabRecord)); // Translated
       final bool isReadOnly = !isAttendanceAdmin;
       tabViews.add(AttendanceTakerView(isReadOnly: isReadOnly));
     }
     if (isSuperiorAdmin) {
       tabs.add(Tab(
           icon: const Icon(Iconsax.security_user),
-          text: AmharicStringsAttendance.tabManageAdmins)); // Translated
+          text: AppLocalizations.of(context)!
+              .attendanceTabManageAdmins)); // Translated
       tabViews.add(const _AttendanceAdminManagementView());
     }
 
@@ -185,7 +131,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         backgroundColor: backgroundColor,
         appBar: AppBar(
           title: Text(
-              '📊 ${AmharicStringsAttendance.screenTitle}', // Translated
+              '📊 ${AppLocalizations.of(context)!.attendanceScreenTitle}', // Translated
               style: GoogleFonts.notoSansEthiopic(
                   fontWeight: FontWeight.bold, color: onSurfaceColor)),
           backgroundColor: backgroundColor,
@@ -239,7 +185,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
   Color get warningColor => const Color(0xFFFD7E14);
   Color get successColor => const Color(0xFF10B981);
 
-  final bool _isLoading = false;
+  // final bool _isLoading = false; // Unused field
   List<Student> _allStudents = [];
   List<Student> _filteredStudents = [];
   dynamic _dynamicFilterField;
@@ -297,8 +243,9 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       final students = await AttendanceService.getStudents();
       if (mounted) setState(() => _allStudents = students);
     } catch (error) {
+      if (!mounted) return;
       _handleError(
-          '${AmharicStringsAttendance.errorLoadingStudents} $error'); // Translated
+          '${AppLocalizations.of(context)!.attendanceErrorLoadingStudents} $error'); // Translated
     } finally {
       if (mounted) setState(() => _isLoadingStudents = false);
     }
@@ -350,7 +297,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       // This catch block is what shows the snackbar. Our fix prevents
       // the code from ever reaching here due to a null list.
       _handleError(
-          '${AmharicStringsAttendance.errorLoadingRecords} $e'); // Translated
+          '${AppLocalizations.of(context)!.attendanceErrorLoadingRecords} $e'); // Translated
     } finally {
       if (mounted) setState(() => _isLoadingRecords = false);
     }
@@ -374,7 +321,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
 
   Future<void> _handleSave() async {
     if (widget.isReadOnly) {
-      _handleError(AmharicStringsAttendance.readOnlyError); // Translated
+      _handleError(
+          AppLocalizations.of(context)!.attendanceReadOnlyError); // Translated
       return;
     }
     setState(() => _isSaving = true);
@@ -412,16 +360,18 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       if (mounted) {
         final syncProvider = context.read<SyncProvider>();
         await syncProvider.updatePendingCount();
+        if (!mounted) return;
 
         if (isOnline) {
-          _handleSuccess(AmharicStringsAttendance.saveSuccess);
+          _handleSuccess(AppLocalizations.of(context)!.attendanceSaveSuccess);
         } else {
-          _handleSuccess(AmharicStringsAttendance.saveOffline);
+          _handleSuccess(AppLocalizations.of(context)!.attendanceSaveOffline);
         }
       }
     } catch (e) {
+      if (!mounted) return;
       _handleError(
-          '${AmharicStringsAttendance.errorSavingAttendance} ${e.toString()}');
+          '${AppLocalizations.of(context)!.attendanceErrorSaving} ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -510,39 +460,41 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
               .firstWhere((opt) => opt['id'] == item, orElse: () => null);
           return option != null
               ? option['option_value']
-              : AmharicStringsAttendance.selectOption;
+              : AppLocalizations.of(context)!.attendanceSelectOption;
         } catch (e) {
-          return AmharicStringsAttendance.selectOption;
+          return AppLocalizations.of(context)!.attendanceSelectOption;
         }
       }
     }
-    if (item == null) return AmharicStringsAttendance.all;
-    if (item is Map) return item['name'] ?? AmharicStringsAttendance.filterBy;
+    if (item == null) return AppLocalizations.of(context)!.attendanceAll;
+    if (item is Map) {
+      return item['name'] ?? AppLocalizations.of(context)!.attendanceFilterBy;
+    }
     if (item is AttendanceType) {
       switch (item) {
         case AttendanceType.learning:
-          return AmharicStringsAttendance.typeLearning;
+          return AppLocalizations.of(context)!.attendanceTypeLearning;
         case AttendanceType.hymnLearning:
-          return AmharicStringsAttendance.typeHymnLearning;
+          return AppLocalizations.of(context)!.attendanceTypeHymnLearning;
         case AttendanceType.awudemihiret:
-          return AmharicStringsAttendance.typeAwudemihiret;
+          return AppLocalizations.of(context)!.attendanceTypeAwudemihiret;
         case AttendanceType.special:
-          return AmharicStringsAttendance.typeSpecial;
+          return AppLocalizations.of(context)!.attendanceTypeSpecial;
       }
     } else if (item is Session) {
       return item == Session.morning
-          ? AmharicStringsAttendance.sessionMorning
-          : AmharicStringsAttendance.sessionAfternoon;
+          ? AppLocalizations.of(context)!.attendanceSessionMorning
+          : AppLocalizations.of(context)!.attendanceSessionAfternoon;
     } else if (item is AttendanceStatus) {
       switch (item) {
         case AttendanceStatus.present:
-          return AmharicStringsAttendance.statusPresent;
+          return AppLocalizations.of(context)!.attendanceStatusPresent;
         case AttendanceStatus.absent:
-          return AmharicStringsAttendance.statusAbsent;
+          return AppLocalizations.of(context)!.attendanceStatusAbsent;
         case AttendanceStatus.late:
-          return AmharicStringsAttendance.statusLate;
+          return AppLocalizations.of(context)!.attendanceStatusLate;
         case AttendanceStatus.permission:
-          return AmharicStringsAttendance.statusPermission;
+          return AppLocalizations.of(context)!.attendanceStatusPermission;
       }
     }
     return item.toString();
@@ -558,8 +510,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       SliverToBoxAdapter(child: _buildHeader(filterableFields)),
       _isLoadingStudents
           ? SliverFillRemaining(
-              child: _buildLoadingState(
-                  AmharicStringsAttendance.loadingStudents)) // Translated
+              child: _buildLoadingState(AppLocalizations.of(context)!
+                  .attendanceLoadingStudents)) // Translated
           : _buildContentSlivers()
     ]);
   }
@@ -570,8 +522,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
       SliverToBoxAdapter(child: _buildDateHeader(stats)),
       if (_isLoadingRecords)
         SliverFillRemaining(
-            child: _buildLoadingState(
-                AmharicStringsAttendance.loadingRecords)) // Translated
+            child: _buildLoadingState(AppLocalizations.of(context)!
+                .attendanceLoadingRecords)) // Translated
       else if (_filteredStudents.isEmpty)
         SliverFillRemaining(child: _buildEmptyState())
       else
@@ -606,7 +558,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                   child: _buildEnhancedDropdown<AttendanceType>(
                       value: _selectedAttendanceType,
                       items: AttendanceType.values,
-                      label: AmharicStringsAttendance.typeLabel, // Translated
+                      label: AppLocalizations.of(context)!
+                          .attendanceTypeLabel, // Translated
                       icon: Iconsax.calendar_edit,
                       dropdownColor: surfaceColor,
                       textColor: onSurfaceColor,
@@ -621,8 +574,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                   child: _buildEnhancedDropdown<Session>(
                       value: _selectedSession,
                       items: Session.values,
-                      label:
-                          AmharicStringsAttendance.sessionLabel, // Translated
+                      label: AppLocalizations.of(context)!
+                          .attendanceSessionLabel, // Translated
                       icon: Iconsax.clock,
                       dropdownColor: surfaceColor,
                       textColor: onSurfaceColor,
@@ -641,7 +594,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                     child: _buildEnhancedDropdown<dynamic>(
                         value: _dynamicFilterField,
                         items: filterableFields,
-                        label: AmharicStringsAttendance.filterBy, // Translated
+                        label: AppLocalizations.of(context)!
+                            .attendanceFilterBy, // Translated
                         icon: Iconsax.filter,
                         dropdownColor: surfaceColor,
                         textColor: onSurfaceColor,
@@ -669,7 +623,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                         ],
                         label: _dynamicFilterField != null
                             ? _dynamicFilterField['name']
-                            : AmharicStringsAttendance.group, // Translated
+                            : AppLocalizations.of(context)!
+                                .attendanceGroup, // Translated
                         icon: Iconsax.people,
                         dropdownColor: surfaceColor,
                         textColor: onSurfaceColor,
@@ -692,7 +647,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
               scrollDirection: Axis.horizontal,
               child: Row(children: [
                 _buildStatChip(
-                    '${_filteredStudents.length} ${AmharicStringsAttendance.students}', // Translated
+                    '${_filteredStudents.length} ${AppLocalizations.of(context)!.attendanceStudents}', // Translated
                     Iconsax.profile_2user,
                     successColor),
                 if (_dynamicFilterField != null &&
@@ -747,9 +702,10 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                                 color: onSurfaceColor),
                           ),
                           Text(
-                            DateFormat.yMMMEd()
-                                .format(_selectedDate.toGregorian()),
-                            style: GoogleFonts.poppins(
+                            EthiopianDate.fromGregorian(
+                                    _selectedDate.toGregorian())
+                                .toString(),
+                            style: GoogleFonts.notoSansEthiopic(
                                 fontSize: 13, color: subtleTextColor),
                           ),
                         ],
@@ -760,7 +716,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                         const Icon(Icons.keyboard_arrow_down_rounded,
                             color: Colors.white38),
                         Text(
-                          'ቀን ቀይር',
+                          AppLocalizations.of(context)!.attendanceChangeDate,
                           style: GoogleFonts.notoSansEthiopic(
                             fontSize: 10,
                             color: primaryColor,
@@ -777,14 +733,22 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildMiniStat(AmharicStringsAttendance.statusPresent,
-                    stats['present']!, successColor), // Translated
-                _buildMiniStat(AmharicStringsAttendance.statusAbsent,
-                    stats['absent']!, dangerColor), // Translated
-                _buildMiniStat(AmharicStringsAttendance.statusLate,
-                    stats['late']!, warningColor), // Translated
-                _buildMiniStat(AmharicStringsAttendance.statusPermission,
-                    stats['permission']!, Colors.blue.shade700), // Translated
+                _buildMiniStat(
+                    AppLocalizations.of(context)!.attendanceStatusPresent,
+                    stats['present']!,
+                    successColor), // Translated
+                _buildMiniStat(
+                    AppLocalizations.of(context)!.attendanceStatusAbsent,
+                    stats['absent']!,
+                    dangerColor), // Translated
+                _buildMiniStat(
+                    AppLocalizations.of(context)!.attendanceStatusLate,
+                    stats['late']!,
+                    warningColor), // Translated
+                _buildMiniStat(
+                    AppLocalizations.of(context)!.attendanceStatusPermission,
+                    stats['permission']!,
+                    Colors.blue.shade700), // Translated
               ],
             ),
           ],
@@ -807,7 +771,8 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
             controller: _topicController,
             readOnly: widget.isReadOnly,
             decoration: InputDecoration(
-              labelText: AmharicStringsAttendance.topicLabel, // Translated
+              labelText: AppLocalizations.of(context)!
+                  .attendanceTopicLabel, // Translated
               labelStyle: GoogleFonts.notoSansEthiopic(color: subtleTextColor),
               filled: true,
               fillColor: backgroundColor,
@@ -842,7 +807,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                         child: CircularProgressIndicator(
                             strokeWidth: 3, color: Colors.white))
                     : Text(
-                        '${AmharicStringsAttendance.saveAttendanceButton} (${stats['present']! + stats['late']! + stats['permission']!}/${stats['total']!})', // Translated + dynamic stats
+                        '${AppLocalizations.of(context)!.attendanceSaveButton} (${stats['present']! + stats['late']! + stats['permission']!}/${stats['total']!})', // Translated + dynamic stats
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 16, fontWeight: FontWeight.w600)),
                 onPressed:
@@ -953,7 +918,11 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                               fontSize: 16)))),
               const SizedBox(width: 12),
               Expanded(
-                  child: Text(student.name,
+                  child: Text(
+                      student.name == 'Unnamed Student'
+                          ? AppLocalizations.of(context)!
+                              .attendanceUnnamedStudent
+                          : student.name,
                       style: GoogleFonts.notoSansEthiopic(
                           // Use Amharic font
                           fontWeight: FontWeight.bold,
@@ -969,7 +938,7 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                       color: warningColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6)),
                   child: Text(
-                      '${AmharicStringsAttendance.lateTimeLabel}: ${lateTime.format(context)}', // Translated
+                      '${AppLocalizations.of(context)!.attendanceLateTimeLabel}: ${lateTime.format(context)}', // Translated
                       style: GoogleFonts.notoSansEthiopic(
                           // Use Amharic font
                           color: warningColor,
@@ -983,28 +952,32 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                   status,
                   AttendanceStatus.present,
                   Iconsax.tick_circle,
-                  AmharicStringsAttendance.statusPresent, // Translated
+                  AppLocalizations.of(context)!
+                      .attendanceStatusPresent, // Translated
                   successColor),
               _buildStatusButton(
                   student.id,
                   status,
                   AttendanceStatus.absent,
                   Iconsax.close_circle,
-                  AmharicStringsAttendance.statusAbsent, // Translated
+                  AppLocalizations.of(context)!
+                      .attendanceStatusAbsent, // Translated
                   dangerColor),
               _buildStatusButton(
                   student.id,
                   status,
                   AttendanceStatus.late,
                   Iconsax.clock,
-                  AmharicStringsAttendance.statusLate, // Translated
+                  AppLocalizations.of(context)!
+                      .attendanceStatusLate, // Translated
                   warningColor),
               _buildStatusButton(
                   student.id,
                   status,
                   AttendanceStatus.permission,
                   Iconsax.document,
-                  AmharicStringsAttendance.statusPermission, // Translated
+                  AppLocalizations.of(context)!
+                      .attendanceStatusPermission, // Translated
                   Colors.blue.shade700)
             ])
           ])),
@@ -1084,13 +1057,17 @@ class _AttendanceTakerViewState extends State<AttendanceTakerView> {
                 shape: BoxShape.circle),
             child: Icon(Iconsax.profile_2user, color: primaryColor, size: 50)),
         const SizedBox(height: 20),
-        Text(AmharicStringsAttendance.emptyStateTitle, // Translated
+        Text(
+            AppLocalizations.of(context)!
+                .attendanceEmptyStateTitle, // Translated
             style: GoogleFonts.notoSansEthiopic(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: subtleTextColor)),
         const SizedBox(height: 8),
-        Text(AmharicStringsAttendance.emptyStateSubtitle, // Translated
+        Text(
+            AppLocalizations.of(context)!
+                .attendanceEmptyStateSubtitle, // Translated
             textAlign: TextAlign.center,
             style: GoogleFonts.notoSansEthiopic(
                 fontSize: 14, color: subtleTextColor))
@@ -1149,7 +1126,8 @@ class _AttendanceAdminManagementViewState
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(AmharicStringsAttendance.rolesUpdateSuccess,
+            content: Text(
+                AppLocalizations.of(context)!.attendanceRolesUpdateSuccess,
                 style: GoogleFonts.notoSansEthiopic()), // Translated
             backgroundColor: successColor));
         _loadUsers();
@@ -1157,7 +1135,8 @@ class _AttendanceAdminManagementViewState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${AmharicStringsAttendance.genericError} $e',
+            content: Text(
+                '${AppLocalizations.of(context)!.attendanceGenericError} $e',
                 style: GoogleFonts.notoSansEthiopic()), // Translated
             backgroundColor: dangerColor));
       }
@@ -1172,8 +1151,8 @@ class _AttendanceAdminManagementViewState
             padding: const EdgeInsets.all(16.0),
             child: TextField(
                 decoration: InputDecoration(
-                    hintText:
-                        AmharicStringsAttendance.searchUserHint, // Translated
+                    hintText: AppLocalizations.of(context)!
+                        .attendanceSearchUserHint, // Translated
                     hintStyle:
                         GoogleFonts.notoSansEthiopic(color: subtleTextColor),
                     filled: true,
@@ -1200,7 +1179,7 @@ class _AttendanceAdminManagementViewState
                 if (snapshot.hasError) {
                   return Center(
                       child: Text(
-                          '${AmharicStringsAttendance.genericError} ${snapshot.error}',
+                          '${AppLocalizations.of(context)!.attendanceGenericError} ${snapshot.error}',
                           style: GoogleFonts.notoSansEthiopic())); // Translated
                 }
                 final allUsers = snapshot.data ?? [];
@@ -1239,14 +1218,16 @@ class _AttendanceAdminManagementViewState
                         title: Row(children: [
                           Text(
                               user['full_name'] ??
-                                  AmharicStringsAttendance.noName,
+                                  AppLocalizations.of(context)!
+                                      .attendanceNoName,
                               style:
                                   GoogleFonts.notoSansEthiopic()), // Translated
                           const SizedBox(width: 8),
                           if (!isVerified)
                             Chip(
                                 label: Text(
-                                    AmharicStringsAttendance.userStatusPending,
+                                    AppLocalizations.of(context)!
+                                        .attendanceUserStatusPending,
                                     style: GoogleFonts.notoSansEthiopic(
                                         fontSize: 10,
                                         color: Colors.black87)), // Translated
@@ -1254,7 +1235,8 @@ class _AttendanceAdminManagementViewState
                                 padding: EdgeInsets.zero)
                         ]),
                         subtitle: Text(
-                            user['email'] ?? AmharicStringsAttendance.noEmail,
+                            user['email'] ??
+                                AppLocalizations.of(context)!.attendanceNoEmail,
                             style:
                                 GoogleFonts.notoSansEthiopic()), // Translated
                         trailing: Switch(

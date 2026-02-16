@@ -218,6 +218,10 @@ class _AdminEditUserScreenState extends State<AdminEditUserScreen> {
       length: 4,
       child: Scaffold(
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Iconsax.arrow_left),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           title: Text('${widget.userName}ን ያስተዳድሩ'),
           actions: [
             IconButton(

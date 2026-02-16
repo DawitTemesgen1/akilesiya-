@@ -5,6 +5,7 @@ import 'dart:developer' as developer;
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
@@ -108,6 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final userProvider = context.watch<UserProvider>();
     final profileConfig = context.watch<ProfileConfigProvider>();
     final themeProvider = context.watch<ThemeProvider>();
+    final l10n = AppLocalizations.of(context)!;
     final profile = userProvider.userProfile;
 
     // Theme colors
@@ -170,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _buildHeader(profile, userProvider.avatarUrl,
+                  child: _buildHeader(l10n, profile, userProvider.avatarUrl,
                       primaryColor, surfaceColor, textColor, subtleText),
                 ),
               ),
@@ -199,18 +201,20 @@ class _ProfileScreenState extends State<ProfileScreen>
                           .label, // Matches screenshot small underline
                       labelStyle: GoogleFonts.notoSansEthiopic(
                           fontWeight: FontWeight.bold, fontSize: 13),
-                      tabs: const [
+                      tabs: [
                         Tab(
-                            text: "ሁኔታ",
-                            icon: Icon(Iconsax.chart_2,
+                            text: l10n.profileTabStatus,
+                            icon: const Icon(Iconsax.chart_2,
                                 size: 20)), // Matches 'Status' bar chart
-                        Tab(text: "የግል", icon: Icon(Iconsax.user, size: 20)),
                         Tab(
-                            text: "መንፈሳዊ",
-                            icon: Icon(Iconsax.teacher, size: 20)),
+                            text: l10n.profileTabPersonal,
+                            icon: const Icon(Iconsax.user, size: 20)),
                         Tab(
-                            text: "ትምህርት እና ቤተሰብ",
-                            icon: Icon(Iconsax.book, size: 20)),
+                            text: l10n.profileTabSpiritual,
+                            icon: const Icon(Iconsax.teacher, size: 20)),
+                        Tab(
+                            text: l10n.profileTabEducation,
+                            icon: const Icon(Iconsax.book, size: 20)),
                       ],
                     ),
                   ),
@@ -221,13 +225,13 @@ class _ProfileScreenState extends State<ProfileScreen>
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildStatusTab(profile, primaryColor, surfaceColor, textColor,
-                  subtleText, isDark),
-              _buildPersonalTab(profile, profileConfig, primaryColor,
+              _buildStatusTab(l10n, profile, primaryColor, surfaceColor,
+                  textColor, subtleText, isDark),
+              _buildPersonalTab(l10n, profile, profileConfig, primaryColor,
                   surfaceColor, textColor, subtleText, isDark),
-              _buildSpiritualTab(profile, profileConfig, primaryColor,
+              _buildSpiritualTab(l10n, profile, profileConfig, primaryColor,
                   surfaceColor, textColor, subtleText, isDark),
-              _buildEducationTab(profile, profileConfig, primaryColor,
+              _buildEducationTab(l10n, profile, profileConfig, primaryColor,
                   surfaceColor, textColor, subtleText, isDark),
             ],
           ),
@@ -248,6 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildHeader(
+      AppLocalizations l10n,
       Map<String, dynamic> profile,
       String? avatarUrl,
       Color primaryColor,
@@ -305,7 +310,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ],
         ),
         const SizedBox(height: 16),
-        Text(profile['full_name'] ?? 'ስም የለም',
+        Text(profile['full_name'] ?? l10n.profileNoName,
             style: GoogleFonts.notoSansEthiopic(
                 color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
@@ -317,8 +322,14 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // --- TAB CONTENT ---
 
-  Widget _buildStatusTab(Map<String, dynamic> profile, Color primaryColor,
-      Color surfaceColor, Color textColor, Color subtleText, bool isDark) {
+  Widget _buildStatusTab(
+      AppLocalizations l10n,
+      Map<String, dynamic> profile,
+      Color primaryColor,
+      Color surfaceColor,
+      Color textColor,
+      Color subtleText,
+      bool isDark) {
     // Determine status based on service_status
     final status =
         profile['service_status']?.toString().toLowerCase() ?? 'inactive';
@@ -340,7 +351,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   Border.all(color: isDark ? Colors.white10 : Colors.black12)),
           child: Column(
             children: [
-              Text("የአገልግሎት ሁኔታ",
+              Text(l10n.profileServiceStatus,
                   style: GoogleFonts.notoSansEthiopic(
                       color: textColor,
                       fontSize: 16,
@@ -363,8 +374,10 @@ class _ProfileScreenState extends State<ProfileScreen>
               Text(
                   isActive
                       ? (profile['service_sector']?.toString() ??
-                          "በአገልግሎት ላይ ያለ")
-                      : (isOnBreak ? "በእረፍት ላይ" : "አገልግሎት ላይ ያልሆነ"),
+                          l10n.profileStatusActive)
+                      : (isOnBreak
+                          ? l10n.profileStatusOnBreak
+                          : l10n.profileStatusInactive),
                   style: GoogleFonts.notoSansEthiopic(
                       color: isActive
                           ? Colors.green
@@ -372,7 +385,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       fontSize: 18,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text("ይህ ሁኔታ የሚተዳደረው በስተዳደር ነው::",
+              Text(l10n.profileStatusManagedByAdmin,
                   style: GoogleFonts.notoSansEthiopic(
                       color: subtleText, fontSize: 12)),
             ],
@@ -426,7 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("የመገኘት ማጠቃለያ",
+                        Text(l10n.profileAttendanceSummary,
                             style: GoogleFonts.notoSansEthiopic(
                                 color: textColor,
                                 fontWeight: FontWeight.bold,
@@ -455,20 +468,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _legendRow(Icons.person, "ተገኝቷል: $present",
-                                Colors.green, subtleText),
+                            _legendRow(
+                                Icons.person,
+                                "${l10n.profilePresent}: $present",
+                                Colors.green,
+                                subtleText),
                             const SizedBox(height: 10),
-                            _legendRow(Icons.person_off, "ቀርቷል: $absent",
-                                kRedError, subtleText),
+                            _legendRow(
+                                Icons.person_off,
+                                "${l10n.profileAbsent}: $absent",
+                                kRedError,
+                                subtleText),
                             const SizedBox(height: 10),
-                            _legendRow(Icons.calendar_today, "አስፈቅዷል: 0",
-                                kGoldColor, subtleText),
+                            _legendRow(
+                                Icons.calendar_today,
+                                "${l10n.profileOnLeave}: 0",
+                                kGoldColor,
+                                subtleText),
                           ],
                         )
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Text("ዝርዝር ታሪክን ለማየት ይጫኑ",
+                    Text(l10n.profileClickToSeeHistory,
                         style: GoogleFonts.notoSansEthiopic(
                             color: primaryColor, fontSize: 12)),
                   ],
@@ -479,7 +501,7 @@ class _ProfileScreenState extends State<ProfileScreen>
         ),
         const SizedBox(height: 16),
         _buildReadingHistoryCard(
-            primaryColor, surfaceColor, textColor, subtleText),
+            l10n, primaryColor, surfaceColor, textColor, subtleText),
         const SizedBox(height: 80),
       ],
     );
@@ -497,6 +519,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   // --- LIST TABS ---
 
   Widget _buildPersonalTab(
+      AppLocalizations l10n,
       Map<String, dynamic> profile,
       ProfileConfigProvider profileConfig,
       Color primaryColor,
@@ -509,12 +532,28 @@ class _ProfileScreenState extends State<ProfileScreen>
 
     // Standard fields
     final standardFields = [
-      {'icon': Iconsax.heart, 'label': 'የክርስትና ስም', 'key': 'christian_name'},
-      {'icon': Iconsax.user_square, 'label': 'የእናት ስም', 'key': 'mother_name'},
-      {'icon': Iconsax.call, 'label': 'ስልክ ቁጥር', 'key': 'phone_number'},
-      {'icon': Icons.cake_outlined, 'label': 'ዕድሜ', 'key': 'age'},
-      {'icon': Icons.date_range_outlined, 'label': 'የትውልድ ቀን', 'key': 'dob'},
-      {'icon': Icons.male, 'label': 'ጾታ', 'key': 'gender'},
+      {
+        'icon': Iconsax.heart,
+        'label': l10n.profileChristianName,
+        'key': 'christian_name'
+      },
+      {
+        'icon': Iconsax.user_square,
+        'label': l10n.profileMotherName,
+        'key': 'mother_name'
+      },
+      {
+        'icon': Iconsax.call,
+        'label': l10n.profilePhoneNumber,
+        'key': 'phone_number'
+      },
+      {'icon': Icons.cake_outlined, 'label': l10n.profileAge, 'key': 'age'},
+      {
+        'icon': Icons.date_range_outlined,
+        'label': l10n.profileDob,
+        'key': 'dob'
+      },
+      {'icon': Icons.male, 'label': l10n.profileGender, 'key': 'gender'},
     ];
 
     for (var field in standardFields) {
@@ -543,7 +582,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       final val = _getCustomFieldValue(profile, fieldMap);
       rows.add(_buildDetailRow(
           Icons.info_outline,
-          fieldMap['name']?.toString() ?? 'Custom Field',
+          fieldMap['name']?.toString() ?? l10n.profileCustomFieldDefault,
           val,
           primaryColor,
           subtleText,
@@ -569,6 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildSpiritualTab(
+      AppLocalizations l10n,
       Map<String, dynamic> profile,
       ProfileConfigProvider profileConfig,
       Color primaryColor,
@@ -581,7 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (profileConfig.isWidgetVisible('confession_father_name')) {
       rows.add(_buildDetailRow(
           Iconsax.user_square,
-          "የንስሃ አባት ስም",
+          l10n.profileConfessionFather,
           profile['confession_father_name'],
           primaryColor,
           subtleText,
@@ -590,14 +630,14 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
 
     if (profileConfig.isWidgetVisible('spiritual_class')) {
-      rows.add(_buildDetailRow(Iconsax.teacher, "የመንፈሳዊ ትምህርት ክፍል",
+      rows.add(_buildDetailRow(Iconsax.teacher, l10n.profileSpiritualClass,
           profile['spiritual_class'], primaryColor, subtleText, textColor));
     }
 
     if (profileConfig.isWidgetVisible('kifil')) {
       if (rows.isNotEmpty) rows.add(_buildDivider());
-      rows.add(_buildDetailRow(Iconsax.people, "ክፍል", profile['kifil'],
-          primaryColor, subtleText, textColor));
+      rows.add(_buildDetailRow(Iconsax.people, l10n.profileClass,
+          profile['kifil'], primaryColor, subtleText, textColor));
     }
 
     // Add custom fields from config
@@ -612,7 +652,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       final val = _getCustomFieldValue(profile, fieldMap);
       rows.add(_buildDetailRow(
           Icons.info_outline,
-          fieldMap['name']?.toString() ?? 'Custom Field',
+          fieldMap['name']?.toString() ?? l10n.profileCustomFieldDefault,
           val,
           primaryColor,
           subtleText,
@@ -723,6 +763,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildEducationTab(
+      AppLocalizations l10n,
       Map<String, dynamic> profile,
       ProfileConfigProvider config,
       Color primaryColor,
@@ -775,7 +816,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       style: GoogleFonts.notoSansEthiopic(
                           color: textColor, fontSize: 13),
                       decoration: InputDecoration(
-                        labelText: "ክፍል",
+                        labelText: l10n.profileFilterClassLabel,
                         labelStyle: TextStyle(color: subtleText, fontSize: 12),
                         contentPadding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -806,10 +847,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       style: GoogleFonts.notoSansEthiopic(
                           color: textColor, fontSize: 13),
                       decoration: InputDecoration(
-                        labelText: "ዓመት",
+                        labelText: l10n.profileFilterYear,
                         labelStyle: TextStyle(color: subtleText, fontSize: 12),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
                         border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
@@ -888,8 +929,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(height: 10),
                     Text(
                       hasError
-                          ? "ውጤት አልተገኘም ወይም ይህ ተጠቃሚ ተማሪ አይደለም"
-                          : "ምንም ውጤት የለም",
+                          ? l10n.profileNoGradesFound
+                          : l10n.profileNoGradesYet,
                       style: GoogleFonts.notoSansEthiopic(color: subtleText),
                       textAlign: TextAlign.center,
                     ),
@@ -909,13 +950,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                       padding: const EdgeInsets.all(16),
                       child: Align(
                           alignment: Alignment.centerLeft,
-                          child: Text("የውጤት ዝርዝር",
+                          child: Text(l10n.profileGradeList,
                               style: GoogleFonts.notoSansEthiopic(
                                   color: primaryColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16)))),
                   ...courses.map((c) => _buildCourseItem(
-                      c, primaryColor, textColor, subtleText, isDark))
+                      l10n, c, primaryColor, textColor, subtleText, isDark))
                 ],
               ),
             );
@@ -931,18 +972,18 @@ class _ProfileScreenState extends State<ProfileScreen>
             children: [
               _buildDetailRow(
                   Iconsax.ruler,
-                  "የትምህርት ደረጃ",
+                  l10n.profileAcademicLevel,
                   profile['academic_level'],
                   primaryColor,
                   subtleText,
                   textColor),
               _buildDivider(),
-              _buildDetailRow(Iconsax.user_tick, "የወላጅ ስም",
+              _buildDetailRow(Iconsax.user_tick, l10n.profileParentName,
                   profile['parent_name'], primaryColor, subtleText, textColor),
               _buildDivider(),
               _buildDetailRow(
                   Iconsax.call,
-                  "የወላጅ ስልክ",
+                  l10n.profileParentPhone,
                   profile['parent_phone_number'],
                   primaryColor,
                   subtleText,
@@ -954,6 +995,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
         // Custom Fields for Education and Family
         _buildCategorizedCustomFieldsSection(
+            l10n,
             profile,
             config,
             ['EDUCATION', 'FAMILY'],
@@ -969,6 +1011,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildCategorizedCustomFieldsSection(
+      AppLocalizations l10n,
       Map<String, dynamic> profile,
       ProfileConfigProvider config,
       List<String> tabs,
@@ -992,7 +1035,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       final val = _getCustomFieldValue(profile, fieldMap);
       rows.add(_buildDetailRow(
           Icons.info_outline,
-          fieldMap['name']?.toString() ?? 'Custom Field',
+          fieldMap['name']?.toString() ?? l10n.profileCustomFieldDefault,
           val,
           primaryColor,
           subtleText,
@@ -1008,8 +1051,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildCourseItem(Map<String, dynamic> c, Color primaryColor,
-      Color textColor, Color subtleText, bool isDark) {
+  Widget _buildCourseItem(AppLocalizations l10n, Map<String, dynamic> c,
+      Color primaryColor, Color textColor, Color subtleText, bool isDark) {
     double score = 0;
     try {
       if (c['total'] != null) {
@@ -1056,15 +1099,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                 color: textColor, fontSize: 15, fontWeight: FontWeight.w600),
           ),
           subtitle: assessments.isEmpty
-              ? Text("No grades yet",
+              ? Text(l10n.profileNoGradesYet,
                   style: TextStyle(color: subtleText, fontSize: 11))
-              : Text("${assessments.length} assessments",
+              : Text(l10n.profileAssessmentsCount(assessments.length),
                   style: TextStyle(color: subtleText, fontSize: 11)),
           children: [
             if (assessments.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text("ምንም የፈተና ውጤት አልገባም",
+                child: Text(l10n.profileNoAssessments,
                     style: TextStyle(
                         color: subtleText, fontStyle: FontStyle.italic)),
               )
@@ -1077,12 +1120,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("የፈተና ዓይነት (Assessment)",
+                        Text(l10n.profileAssessmentType,
                             style: TextStyle(
                                 color: subtleText,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold)),
-                        Text("ውጤት (Score)",
+                        Text(l10n.profileScore,
                             style: TextStyle(
                                 color: subtleText,
                                 fontSize: 11,
@@ -1142,10 +1185,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("ጠቅላላ ውጤት",
-                                style: GoogleFonts.notoSansEthiopic(
-                                    color: Colors.white70, fontSize: 12)),
-                            Text("Total Score",
+                            Text(l10n.profileTotalScoreLabel,
                                 style: GoogleFonts.poppins(
                                     color: subtleText, fontSize: 10)),
                           ],
@@ -1219,8 +1259,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         endIndent: 16);
   }
 
-  Widget _buildReadingHistoryCard(Color primaryColor, Color surfaceColor,
-      Color textColor, Color subtleText) {
+  Widget _buildReadingHistoryCard(AppLocalizations l10n, Color primaryColor,
+      Color surfaceColor, Color textColor, Color subtleText) {
     return FutureBuilder<dynamic>(
       future: _booksFuture,
       builder: (context, snapshot) {
@@ -1260,7 +1300,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("ቤተ-መጽሐፍት",
+                  Text(l10n.profileLibrary,
                       style: GoogleFonts.notoSansEthiopic(
                           color: textColor,
                           fontWeight: FontWeight.bold,
@@ -1271,10 +1311,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                         borderRadius: BorderRadius.circular(8)),
                     child: Row(
                       children: [
-                        _buildTabButton("የሚነበብ", 0, toRead.length, primaryColor,
-                            textColor, subtleText),
-                        _buildTabButton("የተነበበ", 1, read.length, primaryColor,
-                            textColor, subtleText),
+                        _buildTabButton(l10n.profileToRead, 0, toRead.length,
+                            primaryColor, textColor, subtleText),
+                        _buildTabButton(l10n.profileRead, 1, read.length,
+                            primaryColor, textColor, subtleText),
                       ],
                     ),
                   )
@@ -1287,15 +1327,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Text(
                     _readingTab == 0
-                        ? "ምንም የሚነበብ መጽሐፍ የለም"
-                        : "እስካሁን ያነበቡት መጽሐፍ የለም",
+                        ? l10n.profileNoBooksToRead
+                        : l10n.profileNoBooksRead,
                     style: GoogleFonts.notoSansEthiopic(color: subtleText),
                   ),
                 )
               else
                 ...currentList.map((book) {
-                  final title =
-                      book['title'] ?? book['bookTitle'] ?? 'Unknown Title';
+                  final title = book['title'] ??
+                      book['bookTitle'] ??
+                      l10n.profileUnknownTitle;
                   final deadlineRaw = book['deadline'] ?? book['finishBy'];
                   final id = book['id']?.toString() ??
                       book['assignedBookId']?.toString();
@@ -1306,8 +1347,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                       final dt = DateTime.parse(deadlineRaw.toString());
                       final now = DateTime.now();
                       final diff = dt.difference(now).inDays;
+                      final etDate = EthiopianDate.fromGregorian(dt);
                       deadlineStr =
-                          "${dt.day}/${dt.month}/${dt.year} (${diff > 0 ? '$diff ቀናት ቀርተዋል' : 'ጊዜው አልፏል'})";
+                          "$etDate (${diff > 0 ? l10n.profileDaysRemaining(diff) : l10n.profileTimeElapsed})";
                     } catch (e) {
                       deadlineStr = deadlineRaw.toString();
                     }
@@ -1363,11 +1405,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                                   const SizedBox(height: 4),
                                   if (_readingTab == 0 &&
                                       deadlineStr.isNotEmpty)
-                                    Text("የማጠናቀቂያ ጊዜ: $deadlineStr",
+                                    Text(
+                                        "${l10n.profileDeadlinePrefix} $deadlineStr",
                                         style: GoogleFonts.notoSansEthiopic(
                                             color: primaryColor, fontSize: 12)),
                                   if (_readingTab == 1)
-                                    Text("ተነብቦ ተረጋግጧል",
+                                    Text(l10n.profileReadConfirmed,
                                         style: GoogleFonts.notoSansEthiopic(
                                             color: Colors.green, fontSize: 12))
                                 ],

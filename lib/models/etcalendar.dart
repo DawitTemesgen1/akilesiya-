@@ -185,20 +185,6 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
     _selectedDay = widget.initialDate.day;
   }
 
-  void _changeYear(int amount) {
-    setState(() {
-      _selectedYear += amount;
-      final daysInMonth =
-          EthiopianDate(year: _selectedYear, month: _selectedMonth, day: 1)
-              .daysInMonth;
-      if (_selectedDay > daysInMonth) {
-        _selectedDay = daysInMonth;
-      }
-    });
-
-    HapticFeedback.mediumImpact();
-  }
-
   int _getFirstDayOfWeek() {
     // We calculate the weekday of the 1st day of the selected month
     final firstOfMonthGregorian =
@@ -337,39 +323,54 @@ class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
                     Expanded(
                       flex: 2,
                       child: Container(
-                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                               color: Colors.white.withValues(alpha: 0.1)),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove,
-                                  size: 18, color: Colors.white70),
-                              onPressed: () => _changeYear(-1),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: _selectedYear,
+                            isExpanded: true,
+                            dropdownColor: const Color(0xFF1A1A2A),
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white70),
+                            items: List.generate(
+                              201, // Years from 1900 to 2100
+                              (index) {
+                                final year = 1900 + index;
+                                return DropdownMenuItem(
+                                  value: year,
+                                  child: Text(
+                                    '$year',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 15,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                            Text(
-                              '$_selectedYear',
-                              style: GoogleFonts.outfit(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add,
-                                  size: 18, color: Colors.white70),
-                              onPressed: () => _changeYear(1),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                          ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() {
+                                  _selectedYear = value;
+                                  final newDays = EthiopianDate(
+                                          year: _selectedYear,
+                                          month: _selectedMonth,
+                                          day: 1)
+                                      .daysInMonth;
+                                  if (_selectedDay > newDays) {
+                                    _selectedDay = newDays;
+                                  }
+                                });
+                                HapticFeedback.selectionClick();
+                              }
+                            },
+                          ),
                         ),
                       ),
                     ),

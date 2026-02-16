@@ -1,0 +1,15 @@
+{
+  "planDeleteDeptTitle": "ክፍሉን ሰርዝ",
+  "planDeleteDeptMessage": "'{deptName}'ን ለመሰረዝ እርግጠኛ ነዎት? ከዚህ ክፍል ጋር የተያያዙ ሁሉም እቅዶችም ይሰረዛሉ።",
+  "planDeleteDeptConfirm": "አዎ, ሰርዝ",
+  "planDeletePlanTitle": "እቅዱን ሰርዝ",
+  "planDeletePlanMessage": "ይህን እቅድ ለመሰረዝ እርግጠኛ ነዎት? ይህን ድርጊት መመለስ አይቻልም።",
+  "planDeletePlanConfirm": "አዎ, ሰርዝ",
+  "planConfirmButton": "አረጋግጥ",
+  "planNoAdminsFound": "ምንም አስተዳዳሪዎች ወይም ሥራ አስኪያጆች አልተገኙም",
+  "planNoAdminsMessage": "በማንኛውም የክፍል ካርድ ላይ ካለው 'አባላትን አስተዳድር' አማራጭ ሚናዎችን ይመድቡ።",
+  "planAdminOfDepts": "የ {count} ክፍል(ሎች) አስተዳዳሪ",
+  "planManagerOfDepts": "የ {count} ክፍል(ሎች) ሥራ አስኪያጅ",
+  "planManageRolesTooltip": "በዚህ ክፍል ውስጥ ሚናዎችን አስተዳድር",
+  "planUnknownUser": "ያልታወቀ ተጠቃሚ"
+}

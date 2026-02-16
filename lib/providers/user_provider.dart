@@ -83,9 +83,13 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> handleSuccessfulAuth() async {
-    _isLoggedIn = true;
-    await fetchUserProfile();
+  Future<void> handleSuccessfulAuth([Map<String, dynamic>? profileData]) async {
+    if (profileData != null) {
+      _processProfileData(profileData);
+      notifyListeners();
+    } else {
+      await fetchUserProfile();
+    }
   }
 
   Future<void> handleLogout() async {

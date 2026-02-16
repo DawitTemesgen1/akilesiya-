@@ -58,8 +58,7 @@ class _LoginState extends State<Login> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(
-          () => _tenantsError = "Failed to load schools. Check connection.");
+      setState(() => _tenantsError = "LOAD_ERROR");
     } finally {
       if (mounted) setState(() => _tenantsLoading = false);
     }
@@ -238,7 +237,7 @@ class _LoginState extends State<Login> {
                           FadeInUp(
                             delay: const Duration(milliseconds: 300),
                             child: Text(
-                              "Login with Email",
+                              l10n.loginWithEmail,
                               textAlign: TextAlign.center,
                               style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 16, color: Colors.white70),
@@ -258,7 +257,7 @@ class _LoginState extends State<Login> {
                               controller: _emailController,
                               style: const TextStyle(color: Colors.white),
                               decoration: _buildInputDecoration(
-                                  labelText: "Email Address",
+                                  labelText: l10n.loginEmail,
                                   prefixIcon: Icons.email),
                               keyboardType: TextInputType.emailAddress,
                               validator: (value) {
@@ -269,7 +268,7 @@ class _LoginState extends State<Login> {
                                 final emailRegex = RegExp(
                                     r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
                                 if (!emailRegex.hasMatch(value)) {
-                                  return "Invalid email address";
+                                  return l10n.errorInvalidEmail;
                                 }
                                 return null;
                               },
@@ -283,7 +282,7 @@ class _LoginState extends State<Login> {
                               controller: _passwordController,
                               style: const TextStyle(color: Colors.white),
                               decoration: _buildInputDecoration(
-                                  labelText: "Password",
+                                  labelText: l10n.loginPassword,
                                   prefixIcon: Icons.lock,
                                   isPassword: true),
                               obscureText: _obscurePassword,
@@ -292,7 +291,7 @@ class _LoginState extends State<Login> {
                                   return l10n.errorRequiredField;
                                 }
                                 if (value.length < 6) {
-                                  return "Password must be at least 6 characters";
+                                  return l10n.errorPasswordTooShort;
                                 }
                                 return null;
                               },
@@ -307,7 +306,7 @@ class _LoginState extends State<Login> {
                               child: TextButton(
                                 onPressed: () =>
                                     context.push('/forgot-password'),
-                                child: Text("Forgot Password?",
+                                child: Text(l10n.loginForgotPassword,
                                     style: TextStyle(color: premiumGold)),
                               ),
                             ),
@@ -334,7 +333,7 @@ class _LoginState extends State<Login> {
                                       height: 24,
                                       child: CircularProgressIndicator(
                                           strokeWidth: 3, color: premiumDark))
-                                  : Text("Login",
+                                  : Text(l10n.loginButton,
                                       style: GoogleFonts.poppins(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold)),
@@ -441,7 +440,10 @@ class _LoginState extends State<Login> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                    child: Text(_tenantsError ?? l10n.loginNoSchoolsFound,
+                    child: Text(
+                        _tenantsError == "LOAD_ERROR"
+                            ? l10n.loginLoadSchoolsError
+                            : (_tenantsError ?? l10n.loginNoSchoolsFound),
                         style: const TextStyle(
                             color: Colors.orange, fontSize: 12))),
                 TextButton(

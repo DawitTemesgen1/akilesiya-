@@ -11,7 +11,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:intl/intl.dart';
+import '../l10n/app_localizations.dart';
 
 // --- DATA MODELS ---
 class DepartmentMember {
@@ -40,7 +40,7 @@ class User {
     final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
     return User(
       id: json['id'].toString(), // Robustify: ID can be int or string
-      name: json['full_name'] ?? 'Unknown',
+      name: json['full_name'] ?? '',
       avatarUrl: json['profile_image_url'] != null &&
               json['profile_image_url'].isNotEmpty
           ? '$baseUrl/uploads/${json['profile_image_url']}'
@@ -79,7 +79,7 @@ class Department {
       members: (json['members'] as List<dynamic>?)
               ?.map((memberJson) => DepartmentMember(
                   userId: memberJson['userId'],
-                  name: memberJson['name'] ?? 'Unknown',
+                  name: memberJson['name'] ?? '',
                   avatarUrl: memberJson['avatarUrl'],
                   role: memberJson['role']))
               .toList() ??
@@ -261,7 +261,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('Permissions updated. Reloading...'),
+                content: Text(
+                    AppLocalizations.of(context)!.platformLinksSaveSuccess),
                 backgroundColor: Colors.green));
           }
         }
@@ -318,7 +319,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         _isLoading = false;
       });
     } else if (mounted) {
-      _showErrorSnackbar(result['message'] ?? 'Failed to load data.');
+      _showErrorSnackbar(
+          result['message'] ?? AppLocalizations.of(context)!.planErrorLoadData);
       setState(() => _isLoading = false);
     }
   }
@@ -351,7 +353,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         _isLoading = false;
       });
     } else if (mounted) {
-      _showErrorSnackbar(result['message'] ?? 'Failed to refresh plans.');
+      _showErrorSnackbar(
+          result['message'] ?? AppLocalizations.of(context)!.planErrorRefresh);
       setState(() => _isLoading = false);
     }
   }
@@ -397,9 +400,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
     if (mounted && result['success']) {
       final newDeptData = result['data'] as Map<String, dynamic>;
       setState(() => _allowedDepartments.add(Department.fromJson(newDeptData)));
-      _showSuccessSnackbar('Department created successfully.');
+      _showSuccessSnackbar(AppLocalizations.of(context)!.planDeptCreateSuccess);
     } else if (mounted) {
-      _showErrorSnackbar(result['message'] ?? 'Failed to create department.');
+      _showErrorSnackbar(result['message'] ??
+          AppLocalizations.of(context)!.planDeptCreateError);
     }
   }
 
@@ -417,9 +421,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           _allowedDepartments[index] = Department.fromJson(result['data']);
         }
       });
-      _showSuccessSnackbar('Department info updated successfully.');
+      _showSuccessSnackbar(AppLocalizations.of(context)!.planDeptUpdateSuccess);
     } else if (mounted) {
-      _showErrorSnackbar(result['message'] ?? 'Failed to update department.');
+      _showErrorSnackbar(result['message'] ??
+          AppLocalizations.of(context)!.planDeptUpdateError);
     }
   }
 
@@ -430,9 +435,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         _allowedDepartments.removeWhere((d) => d.id == deptId);
         _plans.removeWhere((p) => p.departmentId == deptId);
       });
-      _showSuccessSnackbar('Department and its plans deleted.');
+      _showSuccessSnackbar(AppLocalizations.of(context)!.planDeptDeleteSuccess);
     } else if (mounted) {
-      _showErrorSnackbar(result['message'] ?? 'Failed to delete department.');
+      _showErrorSnackbar(result['message'] ??
+          AppLocalizations.of(context)!.planDeptDeleteError);
     }
   }
 
@@ -457,17 +463,17 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         if (newPlan.academicYear == _selectedYear) {
           setState(() => _plans.insert(0, newPlan));
         }
-        _showSuccessSnackbar(
-            'Plan added successfully for ${newPlan.academicYear}.');
+        _showSuccessSnackbar(AppLocalizations.of(context)!
+            .planAddSuccess(newPlan.academicYear.toString()));
       } catch (e) {
         print('CRITICAL ERROR parsing new plan: $e');
         // Don't crash, just show error and maybe refresh
-        _showErrorSnackbar(
-            'Plan created, but failed to display immediately. Refreshing...');
+        _showErrorSnackbar(AppLocalizations.of(context)!.planAddErrorDisplay);
         _initializeData();
       }
     } else if (mounted) {
-      _showErrorSnackbar(result['message'] ?? 'Failed to add plan.');
+      _showErrorSnackbar(
+          result['message'] ?? AppLocalizations.of(context)!.planAddError);
     }
   }
 
@@ -498,9 +504,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         final index = _plans.indexWhere((p) => p.id == updatedPlan.id);
         if (index != -1) _plans[index] = updatedPlan;
       });
-      _showSuccessSnackbar('Plan updated successfully.');
+      _showSuccessSnackbar(AppLocalizations.of(context)!.planUpdateSuccess);
     } else if (mounted) {
-      _showErrorSnackbar(result['message'] ?? 'Failed to update plan.');
+      _showErrorSnackbar(
+          result['message'] ?? AppLocalizations.of(context)!.planUpdateError);
     }
   }
 
@@ -508,9 +515,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
     final result = await PlanService.deletePlan(planId.toString());
     if (mounted && result['success']) {
       setState(() => _plans.removeWhere((plan) => plan.id == planId));
-      _showSuccessSnackbar("Plan deleted successfully.");
+      _showSuccessSnackbar(AppLocalizations.of(context)!.planDeleteSuccess);
     } else if (mounted) {
-      _showErrorSnackbar(result['message'] ?? 'Failed to delete plan.');
+      _showErrorSnackbar(
+          result['message'] ?? AppLocalizations.of(context)!.planDeleteError);
     }
   }
 
@@ -521,7 +529,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         await PlanService.togglePlanStatus(plan.id.toString(), isDone);
     if (mounted && !result['success']) {
       setState(() => plan.isDone = originalStatus);
-      _showErrorSnackbar(result['message'] ?? 'Failed to update status.');
+      _showErrorSnackbar(result['message'] ??
+          AppLocalizations.of(context)!.planStatusUpdateError);
     }
   }
 
@@ -575,7 +584,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
     return AppBar(
       backgroundColor: primaryColor,
       elevation: 0,
-      title: Text('እቅድ ቁጥጥር',
+      title: Text(AppLocalizations.of(context)!.planManagementTitle,
           style: GoogleFonts.notoSansEthiopic(
               fontWeight: FontWeight.w600, color: onSurfaceColor)),
       leading: IconButton(
@@ -586,17 +595,17 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         if (isSuperiorAdmin)
           PopupMenuButton<String>(
             icon: const Icon(Icons.settings_backup_restore_rounded),
-            tooltip: "Year End Setup",
+            tooltip: AppLocalizations.of(context)!.planYearEndSetupTooltip,
             color: cardColor,
             itemBuilder: (context) => [
               PopupMenuItem(
                 value: 'rollover',
-                child: Text("Perform Annual Rollover",
+                child: Text(AppLocalizations.of(context)!.planRolloverTitle,
                     style: GoogleFonts.notoSansEthiopic(color: onSurfaceColor)),
               ),
               PopupMenuItem(
                 value: 'undo',
-                child: Text("Undo Rollover",
+                child: Text(AppLocalizations.of(context)!.planUndoRolloverTitle,
                     style: GoogleFonts.notoSansEthiopic(color: Colors.orange)),
               ),
             ],
@@ -617,11 +626,16 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         labelStyle: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.w600),
         unselectedLabelColor: onSurfaceColor.withValues(alpha: 0.7),
         tabs: [
-          const Tab(icon: Icon(Icons.dashboard_rounded), text: "ክፍላት"),
-          const Tab(icon: Icon(Icons.list_alt_rounded), text: "ሁሉም እቅዶች"),
+          Tab(
+              icon: const Icon(Icons.dashboard_rounded),
+              text: AppLocalizations.of(context)!.planTabDepartments),
+          Tab(
+              icon: const Icon(Icons.list_alt_rounded),
+              text: AppLocalizations.of(context)!.planTabAllPlans),
           if (isSuperiorAdmin && _tabController.length >= 3)
-            const Tab(
-                icon: Icon(Icons.admin_panel_settings), text: "Permissions"),
+            Tab(
+                icon: const Icon(Icons.admin_panel_settings),
+                text: AppLocalizations.of(context)!.planTabPermissions),
         ],
       ),
     );
@@ -641,10 +655,11 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                     backgroundColor: accentColor,
                     foregroundColor: primaryColor,
                     icon: const Icon(Icons.add),
-                    label: Text("አዲስ ክፍል",
+                    label: Text(
+                        AppLocalizations.of(context)!.planDeptCreateButton,
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.bold)),
-                    tooltip: 'Add Department',
+                    tooltip: AppLocalizations.of(context)!.planDeptCreateTitle,
                   )
                 : null)
             : (_tabController.index == 1
@@ -658,12 +673,12 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                         : Colors.grey.shade700,
                     foregroundColor: primaryColor,
                     icon: const Icon(Icons.add),
-                    label: Text("አዲስ እቅድ",
+                    label: Text(AppLocalizations.of(context)!.planAddButton,
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.bold)),
                     tooltip: _allowedDepartments.isNotEmpty
-                        ? 'አዲስ እቅድ ያክሉ'
-                        : 'እቅድ ለመጨመር የተፈቀደ ክፍል የለም',
+                        ? AppLocalizations.of(context)!.planAddTitle
+                        : AppLocalizations.of(context)!.planSelectDeptRequired,
                   )
                 : const SizedBox.shrink()));
   }
@@ -671,8 +686,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
   Widget _buildDepartmentGrid(bool isSuperiorAdmin) {
     if (_allowedDepartments.isEmpty) {
       return _buildEmptyState(
-          "No Departments Assigned",
-          "Contact a superior admin to be assigned to a department.",
+          AppLocalizations.of(context)!.planEmptyNoDepts,
+          AppLocalizations.of(context)!.planEmptyContactAdmin,
           Icons.grid_view_rounded);
     }
     return RefreshIndicator(
@@ -749,7 +764,9 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
-                  Text('$totalCount እቅዶች',
+                  Text(
+                      AppLocalizations.of(context)!
+                          .planDeptCardPlansCount(totalCount.toString()),
                       style: GoogleFonts.notoSansEthiopic(
                           color: Colors.white70, fontSize: 12)),
                   const SizedBox(height: 8),
@@ -763,7 +780,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                        '${(completionPercentage * 100).toStringAsFixed(0)}% ተጠናቋል',
+                        AppLocalizations.of(context)!.planDeptCardPercentDone(
+                            (completionPercentage * 100).toStringAsFixed(0)),
                         style: GoogleFonts.notoSansEthiopic(
                             color: department.color,
                             fontSize: 12,
@@ -795,7 +813,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           value: 'manage',
           child: ListTile(
             leading: const Icon(Icons.group_add_outlined, color: Colors.white),
-            title: Text("Manage Members & Roles",
+            title: Text(AppLocalizations.of(context)!.planDeptMenuManage,
                 style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
           ),
         ),
@@ -803,7 +821,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           value: 'edit',
           child: ListTile(
             leading: const Icon(Icons.edit_outlined, color: Colors.white),
-            title: Text("አስተካክል",
+            title: Text(AppLocalizations.of(context)!.planDeptMenuEdit,
                 style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
           ),
         ),
@@ -813,7 +831,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
             value: 'delete',
             child: ListTile(
               leading: Icon(Icons.delete_outline, color: Colors.red.shade400),
-              title: Text("ሰርዝ",
+              title: Text(AppLocalizations.of(context)!.planDeptMenuDelete,
                   style:
                       GoogleFonts.notoSansEthiopic(color: Colors.red.shade400)),
             ),
@@ -829,7 +847,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           padding: const EdgeInsets.fromLTRB(16, 16, 0, 0),
           child: Row(
             children: [
-              Text("Year:",
+              Text(AppLocalizations.of(context)!.planYearLabel,
                   style: GoogleFonts.notoSansEthiopic(color: Colors.white70)),
               const SizedBox(width: 10),
               DropdownButton<int>(
@@ -862,7 +880,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Chip(
               label: Text(
-                  "ማጣሪያ: ${_allowedDepartments.firstWhere((d) => d.id == _selectedDepartmentIdForFilter, orElse: () => Department(id: 0, name: '', color: Colors.grey)).name}",
+                  "${AppLocalizations.of(context)!.planFilterLabel} ${_allowedDepartments.firstWhere((d) => d.id == _selectedDepartmentIdForFilter, orElse: () => Department(id: 0, name: '', color: Colors.grey)).name}",
                   style: GoogleFonts.notoSansEthiopic(
                       color: primaryColor, fontWeight: FontWeight.bold)),
               backgroundColor: accentColor,
@@ -875,13 +893,14 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         Expanded(
           child: _plans.isEmpty && !_isLoading
               ? _buildEmptyState(
-                  "No plans found for ${_getEthiopianYear(_selectedYear)} ዓ.ም.",
-                  "Add a new plan to get started.",
+                  AppLocalizations.of(context)!.planEmptyNoPlans(
+                      _getEthiopianYear(_selectedYear).toString()),
+                  AppLocalizations.of(context)!.planEmptyAddPrompt,
                   Icons.assignment_outlined)
               : _filteredAndSortedPlans.isEmpty
                   ? _buildEmptyState(
-                      "No plans match your search.",
-                      "Try a different search term or clear the filter.",
+                      AppLocalizations.of(context)!.planEmptyNoSearch,
+                      AppLocalizations.of(context)!.planEmptyClearFilter,
                       Icons.search_off_rounded)
                   : RefreshIndicator(
                       onRefresh: _initializeData,
@@ -909,7 +928,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
               onChanged: (value) => setState(() => _searchQuery = value),
               style: GoogleFonts.notoSansEthiopic(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'እቅዶችን ፈልግ...',
+                hintText: AppLocalizations.of(context)!.planSearchHint,
                 hintStyle: GoogleFonts.notoSansEthiopic(color: Colors.white54),
                 prefixIcon: const Icon(Icons.search, color: Colors.white54),
                 filled: true,
@@ -929,17 +948,17 @@ class _PlanControlScreenState extends State<PlanControlScreen>
             itemBuilder: (context) => [
               PopupMenuItem(
                   value: PlanSortOrder.byDate,
-                  child: Text('በቅርብ ጊዜ',
+                  child: Text(AppLocalizations.of(context)!.planSortLatest,
                       style:
                           GoogleFonts.notoSansEthiopic(color: Colors.white))),
               PopupMenuItem(
                   value: PlanSortOrder.byDueDate,
-                  child: Text('በመድረሻ ቀን',
+                  child: Text(AppLocalizations.of(context)!.planSortDueDate,
                       style:
                           GoogleFonts.notoSansEthiopic(color: Colors.white))),
               PopupMenuItem(
                   value: PlanSortOrder.byStatus,
-                  child: Text('በሁኔታ',
+                  child: Text(AppLocalizations.of(context)!.planSortStatus,
                       style:
                           GoogleFonts.notoSansEthiopic(color: Colors.white))),
             ],
@@ -952,7 +971,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
   Widget _buildPlanItem(PlanItem plan, bool isSuperiorAdmin) {
     final department = _allowedDepartments.firstWhere(
         (d) => d.id == plan.departmentId,
-        orElse: () => Department(id: 0, name: 'ያልታወቀ', color: Colors.grey));
+        orElse: () => Department(
+            id: 0,
+            name: AppLocalizations.of(context)!.planUnknownDept,
+            color: Colors.grey));
     final assignee = plan.assigneeId != null
         ? _allUsers.firstWhere((u) => u.id == plan.assigneeId,
             orElse: () =>
@@ -1059,7 +1081,11 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                               backgroundImage: assignee.avatarUrl != null
                                   ? NetworkImage(assignee.avatarUrl!)
                                   : null),
-                          label: Text(assignee.name,
+                          label: Text(
+                              assignee.name.isEmpty
+                                  ? AppLocalizations.of(context)!
+                                      .planUnknownUser
+                                  : assignee.name,
                               style: GoogleFonts.notoSansEthiopic(
                                   color: accentColor)),
                           backgroundColor: primaryColor,
@@ -1107,10 +1133,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
     final adminUserIds = permissionsMap.keys.toList();
 
     if (adminUserIds.isEmpty) {
-      return _buildEmptyState(
-          "No Admins or Managers Found",
-          "Assign roles from the 'Manage Members' option on any department card.",
-          Icons.no_accounts);
+      return _buildEmptyState(AppLocalizations.of(context)!.planNoAdminsFound,
+          AppLocalizations.of(context)!.planNoAdminsMessage, Icons.no_accounts);
     }
 
     // 2. Build the list view based on the processed data.
@@ -1121,7 +1145,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         final userId = adminUserIds[index];
         final user = _allUsers.firstWhere((u) => u.id == userId,
             orElse: () => User(
-                id: '', name: 'Unknown User', role: 'user', avatarUrl: null));
+                id: '',
+                name: AppLocalizations.of(context)!.planUnknownUser,
+                role: 'user',
+                avatarUrl: null));
         final permissions = permissionsMap[userId]!;
 
         // Create a summary for the subtitle
@@ -1130,10 +1157,13 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         final managerCount =
             permissions.where((p) => p['role'] == 'manager').length;
         String summary = '';
-        if (adminCount > 0) summary += "Admin of $adminCount Dept(s)";
+        if (adminCount > 0)
+          summary += AppLocalizations.of(context)!
+              .planAdminOfDepts(adminCount.toString());
         if (managerCount > 0) {
           if (summary.isNotEmpty) summary += " • ";
-          summary += "Manager of $managerCount Dept(s)";
+          summary += AppLocalizations.of(context)!
+              .planManagerOfDepts(managerCount.toString());
         }
 
         return Card(
@@ -1147,7 +1177,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                   ? Text(user.name.isNotEmpty ? user.name[0] : '?')
                   : null,
             ),
-            title: Text(user.name,
+            title: Text(
+                user.name.isEmpty
+                    ? AppLocalizations.of(context)!.planUnknownUser
+                    : user.name,
                 style: GoogleFonts.notoSansEthiopic(
                     color: Colors.white, fontWeight: FontWeight.bold)),
             subtitle: Text(summary,
@@ -1172,7 +1205,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                 trailing: IconButton(
                   icon: const Icon(Icons.manage_accounts_outlined,
                       color: Colors.white70),
-                  tooltip: 'Manage Roles in this Department',
+                  tooltip: AppLocalizations.of(context)!.planManageRolesTooltip,
                   onPressed: () {
                     _showManageMembersSheet(department);
                   },
@@ -1226,12 +1259,13 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                   departmentId: department.id, members: memberPayload);
               if (mounted) {
                 if (result['success']) {
-                  _showSuccessSnackbar("Members updated successfully.");
+                  _showSuccessSnackbar(
+                      AppLocalizations.of(context)!.planDeptMembersSaveSuccess);
                   Navigator.pop(context);
                   _initializeData();
                 } else {
-                  _showErrorSnackbar(
-                      result['message'] ?? 'Failed to save members.');
+                  _showErrorSnackbar(result['message'] ??
+                      AppLocalizations.of(context)!.planDeptMembersSaveError);
                 }
               }
             }
@@ -1249,7 +1283,9 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                   children: [
                     Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: Text('${department.name} - Manage Roles',
+                        child: Text(
+                            AppLocalizations.of(context)!
+                                .planDeptMembersTitle(department.name),
                             style: GoogleFonts.notoSansEthiopic(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -1257,7 +1293,9 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                     Expanded(
                       child: tempMembers.isEmpty
                           ? Center(
-                              child: Text("No members in this department.",
+                              child: Text(
+                                  AppLocalizations.of(context)!
+                                      .planDeptMembersEmpty,
                                   style: GoogleFonts.notoSansEthiopic(
                                       color: Colors.white70)))
                           : ListView.builder(
@@ -1269,7 +1307,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                                     (u) => u.id == member.userId,
                                     orElse: () => User(
                                         id: '',
-                                        name: 'Unknown',
+                                        name: AppLocalizations.of(context)!
+                                            .planUnknownUser,
                                         avatarUrl: null,
                                         role: 'user'));
                                 return ListTile(
@@ -1283,7 +1322,11 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                                             : '?')
                                         : null,
                                   ),
-                                  title: Text(user.name,
+                                  title: Text(
+                                      user.name.isEmpty
+                                          ? AppLocalizations.of(context)!
+                                              .planUnknownUser
+                                          : user.name,
                                       style: GoogleFonts.notoSansEthiopic(
                                           color: Colors.white)),
                                   subtitle: PopupMenuButton<String>(
@@ -1306,20 +1349,26 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                                       ],
                                     ),
                                     itemBuilder: (context) => [
-                                      const PopupMenuItem(
+                                      PopupMenuItem(
                                           value: 'admin',
-                                          child: Text('Admin (Read/Write)',
-                                              style: TextStyle(
+                                          child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .planRoleAdmin,
+                                              style: const TextStyle(
                                                   color: Colors.white))),
-                                      const PopupMenuItem(
+                                      PopupMenuItem(
                                           value: 'manager',
-                                          child: Text('Manager (Read-Only)',
-                                              style: TextStyle(
+                                          child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .planRoleManager,
+                                              style: const TextStyle(
                                                   color: Colors.white))),
-                                      const PopupMenuItem(
+                                      PopupMenuItem(
                                           value: 'member',
-                                          child: Text('Member',
-                                              style: TextStyle(
+                                          child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .planRoleMember,
+                                              style: const TextStyle(
                                                   color: Colors.white))),
                                     ],
                                   ),
@@ -1351,7 +1400,9 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                                 }
                               },
                               icon: const Icon(Icons.add),
-                              label: Text('አዲስ አባል',
+                              label: Text(
+                                  AppLocalizations.of(context)!
+                                      .planAddMemberButton,
                                   style: GoogleFonts.notoSansEthiopic(
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -1365,7 +1416,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                                 minimumSize: const Size(0, 50),
                               ),
                               onPressed: saveChanges,
-                              child: Text('አስቀምጥ',
+                              child: Text(
+                                  AppLocalizations.of(context)!.planSaveButton,
                                   style: GoogleFonts.notoSansEthiopic(
                                       fontWeight: FontWeight.bold)),
                             ),
@@ -1405,7 +1457,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           backgroundColor: cardColor,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-          title: Text(isEditing ? 'ክፍል ያርትዑ' : 'አዲስ ክፍል ይፍጠሩ',
+          title: Text(
+              isEditing
+                  ? AppLocalizations.of(context)!.planDeptEditTitle
+                  : AppLocalizations.of(context)!.planDeptCreateTitle,
               style: GoogleFonts.notoSansEthiopic(
                   color: Colors.white, fontWeight: FontWeight.w600)),
           content: SingleChildScrollView(
@@ -1418,16 +1473,20 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                   TextFormField(
                       controller: nameController,
                       style: GoogleFonts.notoSansEthiopic(color: Colors.white),
-                      decoration: _getDialogInputDecoration('የክፍል ስም'),
-                      validator: (v) => v!.isEmpty ? 'ስም ያስገቡ' : null),
+                      decoration: _getDialogInputDecoration(
+                          AppLocalizations.of(context)!.planDeptNameLabel),
+                      validator: (v) => v!.isEmpty
+                          ? AppLocalizations.of(context)!.planDeptNameRequired
+                          : null),
                   const SizedBox(height: 16),
                   TextFormField(
                       controller: descController,
                       style: GoogleFonts.notoSansEthiopic(color: Colors.white),
-                      decoration: _getDialogInputDecoration('ዝርዝር (አማራጭ)'),
+                      decoration: _getDialogInputDecoration(
+                          AppLocalizations.of(context)!.planDeptDescLabel),
                       maxLines: 2),
                   const SizedBox(height: 16),
-                  Text("ቀለም ይምረጡ",
+                  Text(AppLocalizations.of(context)!.planDeptColorLabel,
                       style: GoogleFonts.notoSansEthiopic(
                           color: Colors.white.withValues(alpha: 0.7))),
                   const SizedBox(height: 8),
@@ -1455,7 +1514,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('ይቅር',
+                child: Text(AppLocalizations.of(context)!.planCancelButton,
                     style: GoogleFonts.notoSansEthiopic(color: accentColor))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -1470,7 +1529,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                   if (mounted) Navigator.pop(context);
                 }
               },
-              child: Text(isEditing ? 'አስቀምጥ' : 'ፍጠር',
+              child: Text(
+                  isEditing
+                      ? AppLocalizations.of(context)!.planSaveButton
+                      : AppLocalizations.of(context)!.planCreateButton,
                   style: GoogleFonts.notoSansEthiopic(
                       fontWeight: FontWeight.bold)),
             ),
@@ -1485,12 +1547,12 @@ class _PlanControlScreenState extends State<PlanControlScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: cardColor,
-        title: Text('አባል ይምረጡ',
+        title: Text(AppLocalizations.of(context)!.planSelectMemberTitle,
             style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
         content: SizedBox(
           width: double.maxFinite,
           child: availableUsers.isEmpty
-              ? Text("ሊጨመር የሚችል አባል የለም።",
+              ? Text(AppLocalizations.of(context)!.planNoAvailableMembers,
                   style: GoogleFonts.notoSansEthiopic(color: Colors.white70))
               : ListView.builder(
                   shrinkWrap: true,
@@ -1515,7 +1577,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('ይቅር',
+              child: Text(AppLocalizations.of(context)!.planCancelButton,
                   style: GoogleFonts.notoSansEthiopic(color: accentColor))),
         ],
       ),
@@ -1524,7 +1586,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
 
   Future<void> _showAddOrEditPlanDialog({PlanItem? plan}) async {
     if (_allowedDepartments.isEmpty) {
-      _showErrorSnackbar("እቅድ ለመጨመር የተፈቀደልዎት ክፍል የለም።");
+      _showErrorSnackbar(AppLocalizations.of(context)!.planSelectDeptRequired);
       return;
     }
 
@@ -1549,7 +1611,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
           final selectedAssignee = selectedAssigneeId != null
               ? _allUsers.firstWhere((u) => u.id == selectedAssigneeId,
                   orElse: () => User(
-                      id: '', name: 'Unknown', avatarUrl: null, role: 'user'))
+                      id: '',
+                      name: AppLocalizations.of(context)!.planUnknownUser,
+                      avatarUrl: null,
+                      role: 'user'))
               : null;
           final availableUsers = List.of(_allUsers);
 
@@ -1557,7 +1622,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
             backgroundColor: cardColor,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0)),
-            title: Text(isEditing ? 'እቅድ ያርትዑ' : 'አዲስ እቅድ ያክሉ',
+            title: Text(
+                isEditing
+                    ? AppLocalizations.of(context)!.planEditTitle
+                    : AppLocalizations.of(context)!.planAddTitle,
                 style: GoogleFonts.notoSansEthiopic(
                     color: Colors.white, fontWeight: FontWeight.w600)),
             content: SingleChildScrollView(
@@ -1571,41 +1639,48 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                         controller: _titleController,
                         style:
                             GoogleFonts.notoSansEthiopic(color: Colors.white),
-                        decoration: _getDialogInputDecoration('ርዕስ'),
-                        validator: (v) => v!.isEmpty ? 'ርዕስ ያስገቡ' : null),
+                        decoration: _getDialogInputDecoration(
+                            AppLocalizations.of(context)!.planTitleLabel),
+                        validator: (v) => v!.isEmpty
+                            ? AppLocalizations.of(context)!.planTitleRequired
+                            : null),
                     const SizedBox(height: 16),
                     TextFormField(
                         controller: _descriptionController,
                         style:
                             GoogleFonts.notoSansEthiopic(color: Colors.white),
-                        decoration: _getDialogInputDecoration('ዝርዝር'),
+                        decoration: _getDialogInputDecoration(
+                            AppLocalizations.of(context)!.planDescLabel),
                         maxLines: 3),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<int>(
                       initialValue: selectedAcademicYear,
                       style: GoogleFonts.notoSansEthiopic(color: Colors.white),
                       dropdownColor: cardColor,
-                      decoration: _getDialogInputDecoration('Year / ዓ.ም.'),
+                      decoration: _getDialogInputDecoration(
+                          AppLocalizations.of(context)!.planAcademicYearLabel),
                       items: _yearOptions
                           .map((gregorianYear) => DropdownMenuItem(
                               value: gregorianYear,
                               child: Text(
-                                  '${_getEthiopianYear(gregorianYear)} ዓ.ም.',
+                                  '${_getEthiopianYear(gregorianYear)} ${AppLocalizations.of(context)!.planYearSuffix}',
                                   style: GoogleFonts.notoSansEthiopic())))
                           .toList(),
                       onChanged: isEditing
                           ? null
                           : (value) => setDialogState(
                               () => selectedAcademicYear = value!),
-                      validator: (value) =>
-                          value == null ? 'Please select a year' : null,
+                      validator: (value) => value == null
+                          ? AppLocalizations.of(context)!.planYearRequired
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<int>(
                       initialValue: selectedDeptId,
                       style: GoogleFonts.notoSansEthiopic(color: Colors.white),
                       dropdownColor: cardColor,
-                      decoration: _getDialogInputDecoration('ክፍል'),
+                      decoration: _getDialogInputDecoration(
+                          AppLocalizations.of(context)!.planDeptLabel),
                       items: _allowedDepartments
                           .map((d) => DropdownMenuItem(
                               value: d.id,
@@ -1614,11 +1689,12 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                           .toList(),
                       onChanged: (value) =>
                           setDialogState(() => selectedDeptId = value),
-                      validator: (value) =>
-                          value == null ? 'እባክዎ ክፍል ይምረጡ' : null,
+                      validator: (value) => value == null
+                          ? AppLocalizations.of(context)!.planSelectDeptRequired
+                          : null,
                     ),
                     const SizedBox(height: 16),
-                    Text("ኃላፊ",
+                    Text(AppLocalizations.of(context)!.planAssigneeLabel,
                         style: GoogleFonts.notoSansEthiopic(
                             color: Colors.white.withValues(alpha: 0.7))),
                     const SizedBox(height: 8),
@@ -1656,12 +1732,16 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                                   radius: 16,
                                   child: Icon(Icons.person_outline, size: 18)),
                               const SizedBox(width: 12),
-                              Text('ኃላፊ አልተመረጠም',
+                              Text(
+                                  AppLocalizations.of(context)!
+                                      .planAssigneeNotSelected,
                                   style: GoogleFonts.notoSansEthiopic(
                                       color: Colors.white70)),
                             ],
                             const Spacer(),
-                            Text('ቀይር',
+                            Text(
+                                AppLocalizations.of(context)!
+                                    .planChangeAssignee,
                                 style: GoogleFonts.notoSansEthiopic(
                                     color: accentColor)),
                           ],
@@ -1687,7 +1767,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                               children: [
                                 Text(
                                   selectedDate == null
-                                      ? 'ቀን አልተመረጠም'
+                                      ? AppLocalizations.of(context)!
+                                          .planDateNotSelected
                                       : EthiopianDate.fromGregorian(
                                               selectedDate!)
                                           .toString(),
@@ -1698,8 +1779,9 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                                 ),
                                 if (selectedDate != null)
                                   Text(
-                                    DateFormat.yMMMEd().format(selectedDate!),
-                                    style: GoogleFonts.poppins(
+                                    EthiopianDate.fromGregorian(selectedDate!)
+                                        .toString(),
+                                    style: GoogleFonts.notoSansEthiopic(
                                         color: Colors.white38, fontSize: 11),
                                   ),
                               ],
@@ -1730,7 +1812,9 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8)),
                             ),
-                            child: Text('ቀን ምረጥ',
+                            child: Text(
+                                AppLocalizations.of(context)!
+                                    .planSelectDateButton,
                                 style: GoogleFonts.notoSansEthiopic(
                                     color: accentColor,
                                     fontSize: 12,
@@ -1740,7 +1824,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                       ),
                     ),
                     SwitchListTile(
-                      title: Text('ከፍተኛ ቅድሚያ',
+                      title: Text(
+                          AppLocalizations.of(context)!.planHighPriorityLabel,
                           style: GoogleFonts.notoSansEthiopic(
                               color: Colors.white)),
                       value: isHighPriority,
@@ -1753,7 +1838,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                               : Colors.white70),
                     ),
                     SwitchListTile(
-                      title: Text('Recurring Plan (Annual)',
+                      title: Text(
+                          AppLocalizations.of(context)!.planRecurringLabel,
                           style: GoogleFonts.notoSansEthiopic(
                               color: Colors.white)),
                       value: isRecurring,
@@ -1765,7 +1851,8 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                     ),
                     if (isEditing)
                       SwitchListTile(
-                        title: Text('ተግባሩ ተጠናቋል',
+                        title: Text(
+                            AppLocalizations.of(context)!.planStatusDoneLabel,
                             style: GoogleFonts.notoSansEthiopic(
                                 color: Colors.white)),
                         value: isDone,
@@ -1781,7 +1868,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('ይቅር',
+                  child: Text(AppLocalizations.of(context)!.planCancelButton,
                       style: GoogleFonts.notoSansEthiopic(color: accentColor))),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -1808,7 +1895,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                     if (mounted) Navigator.pop(context);
                   }
                 },
-                child: Text(isEditing ? 'አስቀምጥ' : 'አክል',
+                child: Text(
+                    isEditing
+                        ? AppLocalizations.of(context)!.planSaveButton
+                        : AppLocalizations.of(context)!.planAddButton,
                     style: GoogleFonts.notoSansEthiopic(
                         fontWeight: FontWeight.bold)),
               ),
@@ -1826,16 +1916,16 @@ class _PlanControlScreenState extends State<PlanControlScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: cardColor,
-        title: Text("Annual Plan Rollover",
+        title: Text(AppLocalizations.of(context)!.planRolloverTitle,
             style: GoogleFonts.notoSansEthiopic(color: Colors.white)),
         content: Text(
-          "This will copy 'recurring' plans from ${_getEthiopianYear(sourceYear)} to ${_getEthiopianYear(destinationYear)}. Original plans will not be changed.\n\nAre you sure?",
+          "${AppLocalizations.of(context)!.planRolloverMessagePart1} ${_getEthiopianYear(sourceYear)} ${AppLocalizations.of(context)!.planRolloverMessagePart2} ${_getEthiopianYear(destinationYear)}${AppLocalizations.of(context)!.planRolloverMessagePart3}",
           style: GoogleFonts.notoSansEthiopic(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Cancel",
+            child: Text(AppLocalizations.of(context)!.planCancelButton,
                 style: GoogleFonts.notoSansEthiopic(color: accentColor)),
           ),
           ElevatedButton(
@@ -1843,24 +1933,26 @@ class _PlanControlScreenState extends State<PlanControlScreen>
                 backgroundColor: accentColor, foregroundColor: primaryColor),
             onPressed: () async {
               final navigator = Navigator.of(context);
-              _showSuccessSnackbar("Performing rollover...");
+              _showSuccessSnackbar(
+                  AppLocalizations.of(context)!.planRolloverInProgress);
               final result = await PlanService.performRollover(
                 sourceYear: sourceYear,
                 destinationYear: destinationYear,
               );
               if (mounted) {
                 if (result['success']) {
-                  _showSuccessSnackbar(
-                      result['message'] ?? 'Rollover complete!');
+                  _showSuccessSnackbar(result['message'] ??
+                      AppLocalizations.of(context)!.planRolloverSuccess);
                   setState(() => _selectedYear = destinationYear);
                   _initializeData();
                 } else {
-                  _showErrorSnackbar(result['message'] ?? 'Rollover failed.');
+                  _showErrorSnackbar(result['message'] ??
+                      AppLocalizations.of(context)!.planRolloverError);
                 }
                 navigator.pop();
               }
             },
-            child: Text("Confirm & Rollover",
+            child: Text(AppLocalizations.of(context)!.planRolloverConfirmButton,
                 style:
                     GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold)),
           )
@@ -1875,36 +1967,43 @@ class _PlanControlScreenState extends State<PlanControlScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: cardColor,
-        title: Text("Undo Rollover",
+        title: Text(AppLocalizations.of(context)!.planUndoRolloverTitle,
             style: GoogleFonts.notoSansEthiopic(color: Colors.orange)),
         content: Text(
-          "This will PERMANENTLY DELETE all plans from the year ${_getEthiopianYear(yearToClear)}.\n\nThis is for correcting a mistaken rollover. This action cannot be undone. Are you sure?",
+          AppLocalizations.of(context)!.planUndoRolloverMessage(
+              _getEthiopianYear(yearToClear).toString()),
           style: GoogleFonts.notoSansEthiopic(color: Colors.white70),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text("Cancel",
+            child: Text(AppLocalizations.of(context)!.planCancelButton,
                 style: GoogleFonts.notoSansEthiopic(color: accentColor)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange, foregroundColor: primaryColor),
-            child: Text("Yes, Undo for ${_getEthiopianYear(yearToClear)}",
+            child: Text(
+                AppLocalizations.of(context)!
+                    .planUndoRolloverConfirmButtonWithYear(
+                        _getEthiopianYear(yearToClear).toString()),
                 style:
                     GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold)),
             onPressed: () async {
               final navigator = Navigator.of(context);
-              _showSuccessSnackbar("Undoing rollover...");
+              _showSuccessSnackbar(
+                  AppLocalizations.of(context)!.planRolloverUndoInProgress);
               final result = await PlanService.undoRollover(
                 yearToDelete: yearToClear,
               );
               if (mounted) {
                 if (result['success']) {
-                  _showSuccessSnackbar(result['message'] ?? 'Undo successful!');
+                  _showSuccessSnackbar(result['message'] ??
+                      AppLocalizations.of(context)!.planRolloverUndoSuccess);
                   _initializeData();
                 } else {
-                  _showErrorSnackbar(result['message'] ?? 'Undo failed.');
+                  _showErrorSnackbar(result['message'] ??
+                      AppLocalizations.of(context)!.planRolloverUndoError);
                 }
                 navigator.pop();
               }
@@ -1917,11 +2016,11 @@ class _PlanControlScreenState extends State<PlanControlScreen>
 
   Future<void> _confirmDeleteDepartment(Department department) async {
     final confirmed = await _showConfirmationDialog(
-        title: 'ክፍሉን ሰርዝ',
-        content:
-            '\'${department.name}\'ን ለመሰረዝ እርግጠኛ ነዎት? ከዚህ ክፍል ጋር የተያያዙ ሁሉም እቅዶችም ይሰረዛሉ።',
+        title: AppLocalizations.of(context)!.planDeleteDeptTitle,
+        content: AppLocalizations.of(context)!
+            .planDeleteDeptMessage(department.name),
         isDestructive: true,
-        confirmText: 'አዎ, ሰርዝ');
+        confirmText: AppLocalizations.of(context)!.planDeleteDeptConfirm);
     if (confirmed == true) {
       _deleteDepartment(department.id);
     }
@@ -1929,10 +2028,10 @@ class _PlanControlScreenState extends State<PlanControlScreen>
 
   Future<bool> _confirmDeletePlan() async {
     return await _showConfirmationDialog(
-            title: 'እቅዱን ሰርዝ',
-            content: 'ይህን እቅድ ለመሰረዝ እርግጠኛ ነዎት? ይህን ድርጊት መመለስ አይቻልም።',
+            title: AppLocalizations.of(context)!.planDeletePlanTitle,
+            content: AppLocalizations.of(context)!.planDeletePlanMessage,
             isDestructive: true,
-            confirmText: 'አዎ, ሰርዝ') ??
+            confirmText: AppLocalizations.of(context)!.planDeletePlanConfirm) ??
         false;
   }
 
@@ -1940,7 +2039,7 @@ class _PlanControlScreenState extends State<PlanControlScreen>
       {required String title,
       required String content,
       bool isDestructive = false,
-      String confirmText = 'Confirm'}) async {
+      String? confirmText}) async {
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -1955,11 +2054,13 @@ class _PlanControlScreenState extends State<PlanControlScreen>
         actions: <Widget>[
           TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel',
+              child: Text(AppLocalizations.of(context)!.planCancelButton,
                   style: GoogleFonts.notoSansEthiopic(color: accentColor))),
           TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text(confirmText,
+              child: Text(
+                  confirmText ??
+                      AppLocalizations.of(context)!.planConfirmButton,
                   style: GoogleFonts.notoSansEthiopic(
                       color: isDestructive ? Colors.red : Colors.green))),
         ],

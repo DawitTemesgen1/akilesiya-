@@ -33,9 +33,10 @@ class _PlatformAnalyticsScreenState extends State<PlatformAnalyticsScreen> {
     if (result['success'] == true) {
       if (mounted) setState(() => _analyticsData = result['data']);
     } else {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(result['message']), backgroundColor: Colors.red));
+      }
     }
     if (mounted) setState(() => _isLoading = false);
   }
@@ -49,9 +50,9 @@ class _PlatformAnalyticsScreenState extends State<PlatformAnalyticsScreen> {
     // Handle data parsing safely
     final rawAvg = _analyticsData?['schoolStats']?['avg_members_per_school'];
     double avgMembers = 0.0;
-    if (rawAvg is num)
+    if (rawAvg is num) {
       avgMembers = rawAvg.toDouble();
-    else if (rawAvg is String) avgMembers = double.tryParse(rawAvg) ?? 0.0;
+    } else if (rawAvg is String) avgMembers = double.tryParse(rawAvg) ?? 0.0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -311,10 +312,11 @@ class _PlatformAnalyticsScreenState extends State<PlatformAnalyticsScreen> {
 
   Widget _buildGrowthList(bool isDark, Color primaryColor) {
     final growthData = _analyticsData?['userGrowth'] ?? [];
-    if (growthData.isEmpty)
+    if (growthData.isEmpty) {
       return Center(
           child: Text('No growth data',
               style: GoogleFonts.poppins(color: Colors.grey)));
+    }
 
     return Column(
       children: growthData.map<Widget>((data) {
@@ -365,10 +367,11 @@ class _PlatformAnalyticsScreenState extends State<PlatformAnalyticsScreen> {
 
   Widget _buildRoleDistribution(bool isDark, Color primaryColor) {
     final roles = _analyticsData?['roleDistribution'] ?? [];
-    if (roles.isEmpty)
+    if (roles.isEmpty) {
       return Center(
           child:
               Text('No data', style: GoogleFonts.poppins(color: Colors.grey)));
+    }
 
     return Column(
       children: roles.map<Widget>((role) {

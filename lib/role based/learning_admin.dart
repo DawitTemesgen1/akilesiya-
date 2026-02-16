@@ -12,50 +12,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 
 // --- Amharic Localization Strings for Learning Admin Hub ---
-abstract class AmharicStringsLearningAdmin {
-  static const String hubTitle = 'የትምህርት አስተዳደር ማዕከል';
-  static const String manageContentTitle = 'የትምህርት ይዘትን አስተዳድር';
-  static const String tabManageContent = 'ይዘትን አስተዳድር';
-  static const String tabPromoteAdmins = 'አስተዳዳሪዎችን ሹም';
-  static const String failedToLoadContent = 'የአስተዳዳሪ ይዘትን መጫን አልተሳካም።';
-  static const String confirmDeletion = 'መሰረዝን ያረጋግጡ';
-  static const String deleteConfirmation =
-      'ይህንን ይዘት መሰረዝ ይፈልጋሉ? ይህ እርምጃ ሊቀለበስ አይችልም።';
-  static const String cancel = 'ይቅር';
-  static const String delete = 'ሰርዝ';
-  static const String deleteFailed = 'መሰረዝ አልተሳካም።';
-  static const String video = 'ቪዲዮ';
-  static const String article = 'ጽሑፍ';
-  static const String noTitle = 'ርዕስ የለም';
-  static const String createContent = 'ይዘት ፍጠር';
-  static const String editContent = 'ይዘት አስተካክል';
-  static const String required = 'ያስፈልጋል';
-  static const String pleaseWaitUpload = 'እባክዎን ምስሉ እስኪሰቀል ይጠብቁ።';
-  static const String uploadFailed = 'መስቀል አልተሳካም:';
-  static const String title = 'ርዕስ';
-  static const String description = 'መግለጫ';
-  static const String type = 'ዓይነት';
-  static const String youtubeURL = 'የዩቲዩብ አድራሻ';
-  static const String articleMarkdown = 'የጽሑፍ ማርክዳውን';
-  static const String category = 'ምድብ';
-  static const String duration = 'የጊዜ ርዝመት (ለምሳሌ፣ 15:30 ወይም 10 ደቂቃ ንባብ)';
-  static const String difficulty = 'ችግር';
-  static const String visibility = 'የሚታይበት ቦታ';
-  static const String beginner = 'ጀማሪ';
-  static const String intermediate = 'መካከለኛ';
-  static const String advanced = 'የላቀ';
-  static const String forMySsOnly = 'ለሰንበት ትምህርት ቤቴ ብቻ';
-  static const String forEveryone = 'ለሁሉም';
-  static const String save = 'አስቀምጥ';
-  static const String tapToUploadImage = 'ምስል ለመስቀል ይጫኑ';
-  static const String uploadImage = 'ምስል ስቀል';
-  static const String noNameProvided = 'ስም አልተሰጠም';
-  static const String roleUpdated = '\'s ሚና ተዘምኗል።';
-  static const String failedToUpdateRole = 'ሚና ማዘመን አልተሳካም:';
-  static const String noUsersFound = 'ምንም ተጠቃሚዎች አልተገኙም።';
-}
+// Localized Learning Admin Hub
 
 // Data model from your learning_screen.dart
 class LearningContent {
@@ -84,14 +44,14 @@ class LearningContent {
   factory LearningContent.fromJson(Map<String, dynamic> json) {
     return LearningContent(
       id: json['id']?.toString() ?? UniqueKey().toString(),
-      title: json['title'] ?? AmharicStringsLearningAdmin.noTitle,
+      title: json['title'] ?? '',
       description: json['description'] ?? '',
-      type: json['type'] ?? AmharicStringsLearningAdmin.article.toLowerCase(),
+      type: json['type'] ?? 'article',
       imageUrl: json['imageUrl'] ?? '',
       content: json['content'] ?? '',
-      duration: json['duration'] ?? 'N/A',
-      category: json['category'] ?? 'General',
-      difficulty: json['difficulty'] ?? AmharicStringsLearningAdmin.beginner,
+      duration: json['duration'] ?? '',
+      category: json['category'] ?? '',
+      difficulty: json['difficulty'] ?? '',
     );
   }
 }
@@ -105,6 +65,7 @@ class LearningAdminHubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final userProvider = context.watch<UserProvider>();
     final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
 
@@ -114,7 +75,7 @@ class LearningAdminHubScreen extends StatelessWidget {
         length: 2,
         child: Scaffold(
           appBar: AppBar(
-            title: Text(AmharicStringsLearningAdmin.hubTitle,
+            title: Text(l10n.learningAdminHubTitle,
                 style: GoogleFonts.notoSansEthiopic(
                     fontWeight: FontWeight.bold)), // Translated
             bottom: TabBar(
@@ -122,12 +83,10 @@ class LearningAdminHubScreen extends StatelessWidget {
               tabs: [
                 Tab(
                     icon: const Icon(Iconsax.document),
-                    text: AmharicStringsLearningAdmin
-                        .tabManageContent), // Translated
+                    text: l10n.learningAdminTabManageContent), // Translated
                 Tab(
                     icon: const Icon(Iconsax.user_add),
-                    text: AmharicStringsLearningAdmin
-                        .tabPromoteAdmins), // Translated
+                    text: l10n.learningAdminTabPromoteAdmins), // Translated
               ],
             ),
           ),
@@ -144,7 +103,7 @@ class LearningAdminHubScreen extends StatelessWidget {
     else {
       return Scaffold(
         appBar: AppBar(
-          title: Text(AmharicStringsLearningAdmin.manageContentTitle,
+          title: Text(l10n.learningAdminManageContentTitle,
               style: GoogleFonts.notoSansEthiopic(
                   fontWeight: FontWeight.bold)), // Translated
         ),
@@ -188,10 +147,10 @@ class _ManageContentTabState extends State<_ManageContentTab> {
     } else {
       setState(() => _isLoading = false);
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              result['message'] ??
-                  AmharicStringsLearningAdmin.failedToLoadContent,
+              result['message'] ?? l10n.learningAdminFailedToLoadContent,
               style: GoogleFonts.notoSansEthiopic()), // Translated
           backgroundColor: AppTheme.danger,
         ));
@@ -213,22 +172,23 @@ class _ManageContentTabState extends State<_ManageContentTab> {
   }
 
   Future<void> _deleteContent(String id) async {
+    final l10n = AppLocalizations.of(context)!;
     final bool? shouldDelete = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-              title: Text(AmharicStringsLearningAdmin.confirmDeletion,
+              title: Text(l10n.learningAdminConfirmDeletion,
                   style: GoogleFonts.notoSansEthiopic()), // Translated
-              content: Text(AmharicStringsLearningAdmin.deleteConfirmation,
+              content: Text(l10n.learningAdminDeleteConfirmation,
                   style: GoogleFonts.notoSansEthiopic()), // Translated
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: Text(AmharicStringsLearningAdmin.cancel,
+                  child: Text(l10n.learningAdminCancel,
                       style: GoogleFonts.notoSansEthiopic()), // Translated
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: Text(AmharicStringsLearningAdmin.delete,
+                  child: Text(l10n.learningAdminDelete,
                       style: GoogleFonts.notoSansEthiopic(
                           color: AppTheme.danger)), // Translated
                 ),
@@ -240,8 +200,7 @@ class _ManageContentTabState extends State<_ManageContentTab> {
     final result = await LearningService.deleteContent(id);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            result['message'] ?? AmharicStringsLearningAdmin.deleteFailed,
+        content: Text(result['message'] ?? l10n.learningAdminDeleteFailed,
             style: GoogleFonts.notoSansEthiopic()), // Translated
         backgroundColor: result['success'] ? AppTheme.success : AppTheme.danger,
       ));
@@ -272,11 +231,14 @@ class _ManageContentTabState extends State<_ManageContentTab> {
                       leading: Icon(item.type == 'video'
                           ? Iconsax.video
                           : Iconsax.document),
-                      title: Text(item.title,
+                      title: Text(
+                          item.title.isEmpty
+                              ? AppLocalizations.of(context)!.defaultNoTitle
+                              : item.title,
                           style: GoogleFonts.notoSansEthiopic(
                               fontWeight: FontWeight.bold)), // Use Amharic font
                       subtitle: Text(
-                          "${item.category} • ${item.difficulty}", // Keep structure, content is data
+                          "${item.category.isEmpty ? AppLocalizations.of(context)!.defaultContentCategory : item.category} • ${item.difficulty == 'Beginner' ? AppLocalizations.of(context)!.learningAdminBeginner : (item.difficulty == 'Intermediate' ? AppLocalizations.of(context)!.learningAdminIntermediate : (item.difficulty == 'Advanced' ? AppLocalizations.of(context)!.learningAdminAdvanced : item.difficulty))}", // Keep structure, content is data
                           style: GoogleFonts
                               .notoSansEthiopic()), // Use Amharic font
                       trailing: Row(
@@ -324,8 +286,7 @@ class AdminUser {
   factory AdminUser.fromJson(Map<String, dynamic> json) {
     return AdminUser(
       id: json['id'],
-      fullName: json['fullName'] ??
-          AmharicStringsLearningAdmin.noNameProvided, // Translated
+      fullName: json['fullName'] ?? 'No name provided', // Translated
       isLearningAdmin: json['isLearningAdmin'] ?? false,
     );
   }
@@ -365,9 +326,9 @@ class _PromoteAdminsTabState extends State<_PromoteAdminsTab> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              '${AmharicStringsLearningAdmin.hubTitle}: ${e.toString()}',
+          content: Text('${l10n.learningAdminHubTitle}: ${e.toString()}',
               style: GoogleFonts.notoSansEthiopic()), // Translated
           backgroundColor: AppTheme.danger,
         ));
@@ -393,9 +354,9 @@ class _PromoteAdminsTabState extends State<_PromoteAdminsTab> {
         throw Exception(body['message']);
       }
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              '${user.fullName}${AmharicStringsLearningAdmin.roleUpdated}',
+          content: Text('${user.fullName}${l10n.learningAdminRoleUpdated}',
               style: GoogleFonts.notoSansEthiopic()), // Translated
           backgroundColor: AppTheme.success,
           duration: const Duration(seconds: 2),
@@ -404,9 +365,10 @@ class _PromoteAdminsTabState extends State<_PromoteAdminsTab> {
     } catch (e) {
       setState(() => user.isLearningAdmin = originalValue); // Revert on failure
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(
-              '${AmharicStringsLearningAdmin.failedToUpdateRole} ${e.toString()}',
+              '${l10n.learningAdminFailedToUpdateRole} ${e.toString()}',
               style: GoogleFonts.notoSansEthiopic()), // Translated
           backgroundColor: AppTheme.danger,
         ));
@@ -421,6 +383,7 @@ class _PromoteAdminsTabState extends State<_PromoteAdminsTab> {
           child: CircularProgressIndicator(color: AppTheme.primary));
     }
     if (_users.isEmpty) {
+      final l10n = AppLocalizations.of(context)!;
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -428,7 +391,7 @@ class _PromoteAdminsTabState extends State<_PromoteAdminsTab> {
             const Icon(Iconsax.user_remove,
                 size: 60, color: AppTheme.textSecondary),
             const SizedBox(height: 16),
-            Text(AmharicStringsLearningAdmin.noUsersFound,
+            Text(l10n.learningAdminNoUsersFound,
                 style: GoogleFonts.notoSansEthiopic(
                     color: AppTheme.textSecondary)), // Translated
           ],
@@ -485,8 +448,7 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
       _durationCtrl,
       _categoryCtrl;
   String _type = 'video';
-  String _difficulty =
-      AmharicStringsLearningAdmin.beginner; // Use translated default
+  String _difficulty = 'Beginner'; // Use translated default
   String _visibility = 'tenant';
   XFile? _pickedImageXFile;
   String? _networkImageUrl;
@@ -538,9 +500,9 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              '${AmharicStringsLearningAdmin.uploadFailed} ${e.toString()}',
+          content: Text('${l10n.learningAdminUploadFailed} ${e.toString()}',
               style: GoogleFonts.notoSansEthiopic()), // Translated
           backgroundColor: AppTheme.danger,
         ));
@@ -553,8 +515,9 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (_isUploading) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(AmharicStringsLearningAdmin.pleaseWaitUpload,
+        content: Text(l10n.learningAdminPleaseWaitUpload,
             style: GoogleFonts.notoSansEthiopic()), // Translated
         backgroundColor: AppTheme.warning,
       ));
@@ -588,11 +551,12 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AlertDialog(
       title: Text(
           widget.content == null
-              ? AmharicStringsLearningAdmin.createContent
-              : AmharicStringsLearningAdmin.editContent,
+              ? l10n.learningAdminCreateContent
+              : l10n.learningAdminEditContent,
           style: GoogleFonts.notoSansEthiopic()), // Translated
       content: Form(
         key: _formKey,
@@ -610,34 +574,32 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
               TextFormField(
                   controller: _titleCtrl,
                   decoration: InputDecoration(
-                      labelText:
-                          AmharicStringsLearningAdmin.title), // Translated
+                      labelText: l10n.learningAdminTitle), // Translated
                   validator: (v) =>
-                      v!.isEmpty ? AmharicStringsLearningAdmin.required : null,
+                      v!.isEmpty ? l10n.learningAdminRequired : null,
                   style: GoogleFonts.notoSansEthiopic()), // Use Amharic font
               const SizedBox(height: 8),
               TextFormField(
                   controller: _descCtrl,
                   decoration: InputDecoration(
-                      labelText: AmharicStringsLearningAdmin
-                          .description), // Translated
+                      labelText: l10n.learningAdminDescription), // Translated
                   maxLines: 3,
                   validator: (v) =>
-                      v!.isEmpty ? AmharicStringsLearningAdmin.required : null,
+                      v!.isEmpty ? l10n.learningAdminRequired : null,
                   style: GoogleFonts.notoSansEthiopic()), // Use Amharic font
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: _type,
                 decoration: InputDecoration(
-                    labelText: AmharicStringsLearningAdmin.type), // Translated
+                    labelText: l10n.learningAdminType), // Translated
                 items: ['video', 'article']
                     .map((t) => DropdownMenuItem(
                         value: t,
                         child: Text(
                             t == 'video'
-                                ? AmharicStringsLearningAdmin.video
-                                : AmharicStringsLearningAdmin
-                                    .article, // Translated options
+                                ? l10n.learningAdminVideo
+                                : l10n
+                                    .learningAdminArticle, // Translated options
                             style: GoogleFonts.notoSansEthiopic())))
                     .toList(),
                 onChanged: (v) => setState(() => _type = v!),
@@ -647,60 +609,64 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
                   controller: _contentCtrl,
                   decoration: InputDecoration(
                       labelText: _type == 'video'
-                          ? AmharicStringsLearningAdmin.youtubeURL
-                          : AmharicStringsLearningAdmin
-                              .articleMarkdown), // Translated labels
+                          ? l10n.learningAdminYoutubeURL
+                          : l10n
+                              .learningAdminArticleMarkdown), // Translated labels
                   maxLines: 5,
                   validator: (v) =>
-                      v!.isEmpty ? AmharicStringsLearningAdmin.required : null,
+                      v!.isEmpty ? l10n.learningAdminRequired : null,
                   style: GoogleFonts.notoSansEthiopic()), // Use Amharic font
               const SizedBox(height: 8),
               TextFormField(
                   controller: _categoryCtrl,
                   decoration: InputDecoration(
-                      labelText:
-                          AmharicStringsLearningAdmin.category), // Translated
+                      labelText: l10n.learningAdminCategory), // Translated
                   style: GoogleFonts.notoSansEthiopic()), // Use Amharic font
               const SizedBox(height: 8),
               TextFormField(
                   controller: _durationCtrl,
                   decoration: InputDecoration(
-                      labelText:
-                          AmharicStringsLearningAdmin.duration), // Translated
+                      labelText: l10n.learningAdminDuration), // Translated
                   style: GoogleFonts.notoSansEthiopic()), // Use Amharic font
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: _difficulty,
                 decoration: InputDecoration(
-                    labelText:
-                        AmharicStringsLearningAdmin.difficulty), // Translated
+                    labelText: l10n.learningAdminDifficulty), // Translated
                 items: [
-                  AmharicStringsLearningAdmin.beginner, // Translated option
-                  AmharicStringsLearningAdmin.intermediate, // Translated option
-                  AmharicStringsLearningAdmin.advanced, // Translated option
-                ]
-                    .map((t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(t,
-                            style: GoogleFonts
-                                .notoSansEthiopic()))) // Use Amharic font
-                    .toList(),
+                  'Beginner',
+                  'Intermediate',
+                  'Advanced',
+                ].map((t) {
+                  String label;
+                  if (t == 'Beginner') {
+                    label = l10n.learningAdminBeginner;
+                  } else if (t == 'Intermediate') {
+                    label = l10n.learningAdminIntermediate;
+                  } else {
+                    label = l10n.learningAdminAdvanced;
+                  }
+
+                  return DropdownMenuItem(
+                      value: t,
+                      child:
+                          Text(label, style: GoogleFonts.notoSansEthiopic()));
+                }).toList(),
                 onChanged: (v) => setState(() => _difficulty = v!),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 initialValue: _visibility,
                 decoration: InputDecoration(
-                    labelText:
-                        AmharicStringsLearningAdmin.visibility), // Translated
+                    labelText: l10n.learningAdminVisibility), // Translated
                 items: [
                   DropdownMenuItem(
                       value: 'tenant',
-                      child: Text(AmharicStringsLearningAdmin.forMySsOnly,
+                      child: Text(l10n.learningAdminForMySsOnly,
                           style: GoogleFonts.notoSansEthiopic())), // Translated
                   DropdownMenuItem(
                       value: 'public',
-                      child: Text(AmharicStringsLearningAdmin.forEveryone,
+                      child: Text(l10n.learningAdminForEveryone,
                           style: GoogleFonts.notoSansEthiopic())), // Translated
                 ],
                 onChanged: (v) => setState(() => _visibility = v!),
@@ -712,11 +678,11 @@ class _ContentFormDialogState extends State<_ContentFormDialog> {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(AmharicStringsLearningAdmin.cancel,
+            child: Text(l10n.learningAdminCancel,
                 style: GoogleFonts.notoSansEthiopic())), // Translated
         ElevatedButton(
             onPressed: _submitForm,
-            child: Text(AmharicStringsLearningAdmin.save,
+            child: Text(l10n.learningAdminSave,
                 style: GoogleFonts.notoSansEthiopic())), // Translated
       ],
     );
@@ -762,9 +728,13 @@ class _ImagePickerWidget extends StatelessWidget {
                           const Icon(Iconsax.gallery_add,
                               color: AppTheme.textSecondary),
                           const SizedBox(height: 4),
-                          Text(AmharicStringsLearningAdmin.tapToUploadImage,
-                              style: GoogleFonts.notoSansEthiopic(
-                                  color: AppTheme.textSecondary)), // Translated
+                          Builder(builder: (context) {
+                            return Text(
+                                AppLocalizations.of(context)!
+                                    .learningAdminTapToUploadImage,
+                                style: GoogleFonts.notoSansEthiopic(
+                                    color: AppTheme.textSecondary));
+                          }), // Translated
                         ],
                       ),
                     )

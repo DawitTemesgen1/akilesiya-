@@ -740,7 +740,7 @@ class _AdminMemberDevelopmentScreenState
                     ),
                     const SizedBox(height: 24),
                     DropdownButtonFormField<String>(
-                      value: category,
+                      initialValue: category,
                       dropdownColor: surfaceColor,
                       style: GoogleFonts.notoSansEthiopic(color: textColor),
                       decoration: _buildInputDecoration(

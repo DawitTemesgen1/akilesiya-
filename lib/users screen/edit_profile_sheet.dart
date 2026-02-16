@@ -340,10 +340,16 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
             if (profileConfig.isWidgetVisible('spiritual_class'))
               _buildDropdownFormField(
                   value: _spiritualClass,
-                  label: 'የመንፈሳዊ ትምህርት ክፍል',
+                  label:
+                      AppLocalizations.of(context)!.profileSpiritualClassLabel,
                   icon: Iconsax.teacher,
                   items: spiritualClassOptions,
-                  onChanged: (val) => setState(() => _spiritualClass = val)),
+                  onChanged: (val) => setState(() => _spiritualClass = val),
+                  itemBuilder: (item) {
+                    final level = item.replaceAll('ኛ ክፍል', '');
+                    return AppLocalizations.of(context)!
+                        .profileSpiritualGrade(level);
+                  }),
             if (profileConfig.isWidgetVisible('academic_level'))
               _buildTextFormField(
                   _academicLevelController,
@@ -715,15 +721,17 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
   }
 
   Widget _buildReadOnlyField(String label, String value, IconData icon) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
-        initialValue: value.isEmpty ? 'ያልተሞላ' : value,
+        initialValue:
+            (value.isEmpty || value == 'Not Set') ? l10n.profileNotSet : value,
         readOnly: true,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: Colors.grey),
-          helperText: "በአስተዳዳሪ ብቻ የሚሞላ (Read Only)",
+          helperText: l10n.profileManagedByAdminReadOnly,
           filled: true,
           fillColor: Colors.grey.withAlpha((0.05 * 255).round()),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -753,12 +761,14 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   border: const OutlineInputBorder()),
               keyboardType: keyboardType));
 
-  Widget _buildDropdownFormField(
-          {String? value,
-          required String label,
-          required IconData icon,
-          required List<String> items,
-          required ValueChanged<String?> onChanged}) =>
+  Widget _buildDropdownFormField({
+    String? value,
+    required String label,
+    required IconData icon,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    String Function(String)? itemBuilder,
+  }) =>
       Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
           child: DropdownButtonFormField<String>(
@@ -768,8 +778,10 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                   prefixIcon: Icon(icon),
                   border: const OutlineInputBorder()),
               items: items
-                  .map((item) =>
-                      DropdownMenuItem(value: item, child: Text(item)))
+                  .map((item) => DropdownMenuItem(
+                      value: item,
+                      child:
+                          Text(itemBuilder != null ? itemBuilder(item) : item)))
                   .toList(),
               onChanged: onChanged));
 
@@ -813,7 +825,7 @@ class _UserEditProfileScreenState extends State<UserEditProfileScreen> {
                     ),
                     Text(
                       _dob == null
-                          ? 'Not Set'
+                          ? AppLocalizations.of(context)!.profileNotSet
                           : EthiopianDate.fromGregorian(_dob!).toString(),
                       style: GoogleFonts.notoSansEthiopic(
                         fontSize: 16,

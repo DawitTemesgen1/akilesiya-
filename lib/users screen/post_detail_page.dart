@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -13,6 +14,7 @@ import 'package:amde_haymanot_abalat_guday/models/comment.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 
 import 'package:amde_haymanot_abalat_guday/users%20screen/homepage.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 
 class PostDetailPage extends StatefulWidget {
   final UnifiedPost post;
@@ -129,8 +131,12 @@ class _PostDetailPageState extends State<PostDetailPage>
                   icon: Icon(Iconsax.share, color: textColor),
                   onPressed: () {
                     HapticFeedback.lightImpact();
+                    final l10n = AppLocalizations.of(context)!;
                     Share.share(
-                      'Check out this post: ${widget.post.title}\n\n${widget.post.description}\n\nShared via Akilesiya App',
+                      l10n.postShareMessage(
+                        widget.post.description,
+                        widget.post.title,
+                      ),
                       subject: widget.post.title,
                     );
                   },
@@ -250,7 +256,7 @@ class _PostDetailPageState extends State<PostDetailPage>
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'አስፈላጊ',
+                                AppLocalizations.of(context)!.postImportant,
                                 style: GoogleFonts.notoSansEthiopic(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
@@ -316,8 +322,7 @@ class _PostDetailPageState extends State<PostDetailPage>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              DateFormat('MMM dd, yyyy • h:mm a')
-                                  .format(widget.post.date),
+                              "${EthiopianDate.fromGregorian(widget.post.date)} • ${DateFormat.jm().format(widget.post.date)}",
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
                                 color: subtleText,
@@ -447,7 +452,8 @@ class _PostDetailPageState extends State<PostDetailPage>
           ),
           const SizedBox(width: 4),
           Text(
-            widget.post.tenantName ?? 'የእኔ ቤተክርስቲያን',
+            widget.post.tenantName ??
+                AppLocalizations.of(context)!.postMySundaySchool,
             style: GoogleFonts.notoSansEthiopic(
               fontSize: 12,
               fontWeight: FontWeight.bold,
@@ -502,7 +508,7 @@ class _PostDetailPageState extends State<PostDetailPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'የዝግጅት ቀን',
+                  AppLocalizations.of(context)!.postEventDate,
                   style: GoogleFonts.notoSansEthiopic(
                     fontSize: 13,
                     color: subtleText,
@@ -511,8 +517,8 @@ class _PostDetailPageState extends State<PostDetailPage>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  DateFormat('EEEE, MMMM dd, yyyy')
-                      .format(widget.post.eventDate!),
+                  EthiopianDate.fromGregorian(widget.post.eventDate!)
+                      .toString(),
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -572,7 +578,7 @@ class _PostDetailPageState extends State<PostDetailPage>
           _buildStatItem(
             icon: Iconsax.heart5,
             count: _likes,
-            label: 'ወደዱ',
+            label: AppLocalizations.of(context)!.postLikes,
             color: Colors.red,
             textColor: textColor,
             subtleText: subtleText,
@@ -603,7 +609,8 @@ class _PostDetailPageState extends State<PostDetailPage>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'አስተያየቶች', // Changed label to plural
+                    AppLocalizations.of(context)!
+                        .postCommentsCount, // Changed label to plural
                     style: GoogleFonts.notoSansEthiopic(
                       fontSize: 14,
                       color: subtleText,
@@ -714,7 +721,9 @@ class _PostDetailPageState extends State<PostDetailPage>
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _isLiked ? 'ወድጃለሁ' : 'አውደው',
+                          _isLiked
+                              ? AppLocalizations.of(context)!.postLikedAction
+                              : AppLocalizations.of(context)!.postLikeAction,
                           style: GoogleFonts.notoSansEthiopic(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -758,7 +767,7 @@ class _PostDetailPageState extends State<PostDetailPage>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'አስተያየት',
+                        AppLocalizations.of(context)!.postCommentAction,
                         style: GoogleFonts.notoSansEthiopic(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -794,25 +803,25 @@ class _PostDetailPageState extends State<PostDetailPage>
       case PostType.event:
         return {
           'icon': Iconsax.calendar_1,
-          'label': 'ዝግጅት',
+          'label': AppLocalizations.of(context)!.postTypeEvent,
           'color': const Color(0xFF3B82F6),
         };
       case PostType.announcement:
         return {
           'icon': Iconsax.notification,
-          'label': 'ማስታወቂያ',
+          'label': AppLocalizations.of(context)!.postTypeAnnouncement,
           'color': const Color(0xFFF59E0B),
         };
       case PostType.prayer:
         return {
           'icon': Iconsax.heart,
-          'label': 'ጸሎት',
+          'label': AppLocalizations.of(context)!.postTypePrayer,
           'color': const Color(0xFFEC4899),
         };
       case PostType.news:
         return {
           'icon': Iconsax.document_text,
-          'label': 'ዜና',
+          'label': AppLocalizations.of(context)!.postTypeNews,
           'color': const Color(0xFF10B981),
         };
     }
@@ -919,7 +928,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(result['message'] ?? 'Failed to post comment'),
+          content: Text(result['message'] ??
+              AppLocalizations.of(context)!.commonFailedToPostComment),
           backgroundColor: Colors.red,
         ));
       }
@@ -932,19 +942,20 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E2E), // Premium Dark
-        title: const Text("Delete Comment?",
-            style: TextStyle(color: Colors.white)),
-        content: const Text("Are you sure you want to delete this comment?",
-            style: TextStyle(color: Colors.white70)),
+        title: Text(AppLocalizations.of(context)!.commentsDeleteConfirmTitle,
+            style: const TextStyle(color: Colors.white)),
+        content: Text(
+            AppLocalizations.of(context)!.commentsDeleteConfirmMessage,
+            style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text("Cancel",
-                  style: TextStyle(color: Colors.white54))),
+              child: Text(AppLocalizations.of(context)!.cancelButton,
+                  style: const TextStyle(color: Colors.white54))),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text("Delete",
-                  style: TextStyle(color: Colors.redAccent))),
+              child: Text(AppLocalizations.of(context)!.learningDeleteAction,
+                  style: const TextStyle(color: Colors.redAccent))),
         ],
       ),
     );
@@ -1033,7 +1044,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Comments",
+                    Text(AppLocalizations.of(context)!.learningCommentsHeader,
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -1068,9 +1079,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     child: CircularProgressIndicator(
                         color: Color(0xFFFFD700))) // Premium Gold
                 : _comments.isEmpty
-                    ? const Center(
-                        child: Text("No comments yet. Be the first!",
-                            style: TextStyle(color: Colors.white60)))
+                    ? Center(
+                        child: Text(
+                            AppLocalizations.of(context)!.learningNoCommentsYet,
+                            style: const TextStyle(color: Colors.white60)))
                     : ListView.builder(
                         controller: controller,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1087,8 +1099,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                     _topLevelLimit += 10;
                                   });
                                 },
-                                child: const Text("View more comments",
-                                    style: TextStyle(
+                                child: Text(
+                                    AppLocalizations.of(context)!.viewMore,
+                                    style: const TextStyle(
                                         color:
                                             Color(0xFFFFD700))), // Premium Gold
                               ),
@@ -1120,7 +1133,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                       });
                                     },
                                     child: Text(
-                                      "View all ${replies.length} replies",
+                                      AppLocalizations.of(context)!
+                                          .postViewAllReplies(replies.length),
                                       style: const TextStyle(
                                           color:
                                               Color(0xFFFFD700), // Premium Gold
@@ -1152,8 +1166,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                                     .remove(comment.id);
                                               });
                                             },
-                                            child: const Text("Hide replies",
-                                                style: TextStyle(
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .postHideReplies,
+                                                style: const TextStyle(
                                                     color: Colors.white54,
                                                     fontSize: 12)),
                                           ),
@@ -1181,8 +1197,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   Expanded(
                     child: Text(
                       _editingComment != null
-                          ? "Editing comment..."
-                          : "Replying to ${_replyingTo!.author}...",
+                          ? AppLocalizations.of(context)!.learningEditingComment
+                          : AppLocalizations.of(context)!.commentsReplyingTo(
+                              _replyingTo!
+                                  .author), // Wait, where is author coming from?
                       style:
                           const TextStyle(color: Colors.white70, fontSize: 12),
                     ),
@@ -1204,7 +1222,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   controller: _commentController,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                      hintText: "Write a comment...",
+                      hintText:
+                          AppLocalizations.of(context)!.learningCommentHint,
                       hintStyle: const TextStyle(color: Colors.white38),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.1),
@@ -1292,7 +1311,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                     fontSize: isReply ? 13 : 14,
                                     color: Colors.white)),
                           ),
-                          Text(DateFormat.MMMd().format(comment.timestamp),
+                          Text(
+                              EthiopianDate.fromGregorian(comment.timestamp)
+                                  .toString(),
                               style: GoogleFonts.poppins(
                                   fontSize: 10, color: Colors.white54)),
                         ],
@@ -1311,7 +1332,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
               children: [
                 _ActionButton(
                   icon: Icons.reply,
-                  label: "Reply",
+                  label: AppLocalizations.of(context)!.commentsReplyAction,
                   onTap: () {
                     setState(() {
                       _replyingTo = comment;
@@ -1324,7 +1345,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   const SizedBox(width: 16),
                   _ActionButton(
                     icon: Iconsax.edit,
-                    label: "Edit",
+                    label: AppLocalizations.of(context)!.commentsEditAction,
                     onTap: () {
                       setState(() {
                         _editingComment = comment;
@@ -1338,7 +1359,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   const SizedBox(width: 16),
                   _ActionButton(
                     icon: Iconsax.trash,
-                    label: "Delete",
+                    label: AppLocalizations.of(context)!.commentsDeleteAction,
                     color: Colors.redAccent.withValues(alpha: 0.7),
                     onTap: () => _deleteComment(comment),
                   ),

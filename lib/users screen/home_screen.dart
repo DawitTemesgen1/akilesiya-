@@ -178,6 +178,7 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onProfileTap;
   final Locale currentLocale;
   final LanguageProvider languageProvider;
+  final bool showBackButton;
 
   const ModernAppBar({
     super.key,
@@ -185,6 +186,7 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onProfileTap,
     required this.currentLocale,
     required this.languageProvider,
+    this.showBackButton = false,
   });
 
   @override
@@ -192,14 +194,20 @@ class ModernAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       elevation: 0,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: Icon(Iconsax.menu,
-              color: Theme.of(context).appBarTheme.foregroundColor),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-          tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
-        ),
-      ),
+      leading: showBackButton
+          ? IconButton(
+              icon: Icon(Iconsax.arrow_left,
+                  color: Theme.of(context).appBarTheme.foregroundColor),
+              onPressed: () => Navigator.of(context).pop(),
+            )
+          : Builder(
+              builder: (context) => IconButton(
+                icon: Icon(Iconsax.menu,
+                    color: Theme.of(context).appBarTheme.foregroundColor),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+              ),
+            ),
       title: Text(
         title,
         style: currentLocale.languageCode == 'am'

@@ -124,10 +124,14 @@ class AuthService {
     required String otp,
   }) async {
     try {
-      final response = await ApiService.post('/auth/verify-otp', {
-        'email': email,
-        'otp': otp,
-      });
+      final response = await ApiService.post(
+        '/auth/verify-otp',
+        {
+          'email': email,
+          'otp': otp,
+        },
+        useRetry: false,
+      );
 
       final data = json.decode(response.body);
 
@@ -176,9 +180,13 @@ class AuthService {
   static Future<Map<String, dynamic>> forgotPassword(
       {required String email}) async {
     try {
-      final response = await ApiService.post('/auth/forgot-password', {
-        'email': email,
-      });
+      final response = await ApiService.post(
+        '/auth/forgot-password',
+        {
+          'email': email,
+        },
+        useRetry: false,
+      );
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {
@@ -228,9 +236,13 @@ class AuthService {
   /// RESEND OTP
   static Future<Map<String, dynamic>> resendOtp({required String email}) async {
     try {
-      final response = await ApiService.post('/auth/resend-otp', {
-        'email': email,
-      });
+      final response = await ApiService.post(
+        '/auth/resend-otp',
+        {
+          'email': email,
+        },
+        useRetry: false,
+      );
       final data = json.decode(response.body);
 
       if (response.statusCode == 200) {

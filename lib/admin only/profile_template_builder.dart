@@ -203,6 +203,12 @@ class _ProfileTemplateBuilderScreenState
                       if (nameController.text.trim().isEmpty) return;
                       setDialogState(() => isSubmitting = true);
                       try {
+                        // 1. Add any pending text in the option field to the list
+                        if (optionController.text.trim().isNotEmpty) {
+                          draftOptions.add(optionController.text.trim());
+                          optionController.clear();
+                        }
+
                         final result = await TemplateService.createCustomField(
                             nameController.text.trim(),
                             managedBy,
@@ -213,10 +219,21 @@ class _ProfileTemplateBuilderScreenState
                           final fieldId = int.tryParse(
                                   result['data']?['id']?.toString() ?? '0') ??
                               0;
+
                           if (fieldId != 0 && draftOptions.isNotEmpty) {
-                            for (var opt in draftOptions) {
-                              await TemplateService.createFieldOption(
-                                  fieldId, opt);
+                            final optionFutures = draftOptions.map((opt) =>
+                                TemplateService.createFieldOption(
+                                    fieldId, opt));
+
+                            final optionResults =
+                                await Future.wait(optionFutures);
+                            final failures = optionResults
+                                .where((res) => res['success'] != true)
+                                .toList();
+
+                            if (failures.isNotEmpty) {
+                              result['message'] = (result['message'] ?? '') +
+                                  ' (ማስጠንቀቂያ: ${failures.length} አማራጮችን መቆጠብ አልተቻለም)';
                             }
                           }
                         }
@@ -402,6 +419,12 @@ class _ProfileTemplateBuilderScreenState
                       if (nameController.text.trim().isEmpty) return;
                       setDialogState(() => isSubmitting = true);
                       try {
+                        // 1. Add any pending text in the option field to the list
+                        if (optionController.text.trim().isNotEmpty) {
+                          draftOptions.add(optionController.text.trim());
+                          optionController.clear();
+                        }
+
                         final result = await TemplateService.updateCustomField(
                             int.tryParse(field['id'].toString()) ?? 0,
                             nameController.text.trim(),
@@ -413,9 +436,19 @@ class _ProfileTemplateBuilderScreenState
                           final fieldId =
                               int.tryParse(field['id'].toString()) ?? 0;
                           if (draftOptions.isNotEmpty) {
-                            for (var opt in draftOptions) {
-                              await TemplateService.createFieldOption(
-                                  fieldId, opt);
+                            final optionFutures = draftOptions.map((opt) =>
+                                TemplateService.createFieldOption(
+                                    fieldId, opt));
+
+                            final optionResults =
+                                await Future.wait(optionFutures);
+                            final failures = optionResults
+                                .where((res) => res['success'] != true)
+                                .toList();
+
+                            if (failures.isNotEmpty) {
+                              result['message'] = (result['message'] ?? '') +
+                                  ' (ማስጠንቀቂያ: ${failures.length} አዳዲስ አማራጮችን መቆጠብ አልተቻለም)';
                             }
                           }
                         }
@@ -509,6 +542,10 @@ class _ProfileTemplateBuilderScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Iconsax.arrow_left),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           title:
               Text('የመገለጫ አብነት ግንባታ', style: GoogleFonts.notoSansEthiopic())),
       body: FutureBuilder<List<dynamic>>(

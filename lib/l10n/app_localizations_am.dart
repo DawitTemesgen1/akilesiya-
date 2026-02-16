@@ -34,6 +34,9 @@ class AppLocalizationsAm extends AppLocalizations {
   String get loginPrompt => 'ለመቀጠል ወደ መለያዎ ይግቡ';
 
   @override
+  String get loginWithEmail => 'በኢሜይል ይግቡ';
+
+  @override
   String get loginSchoolName => 'የት/ቤቱ ስም';
 
   @override
@@ -226,6 +229,24 @@ class AppLocalizationsAm extends AppLocalizations {
   String get drawerNewSchoolRegistration => 'አዲስ ት/ቤት መመዝገብ';
 
   @override
+  String get drawerProfileTemplateEditor => 'የመገለጫ አብነት አርታዒ';
+
+  @override
+  String get drawerUserActivity => 'የተጠቃሚ እንቅስቃሴ';
+
+  @override
+  String get drawerAdminHub => 'የአስተዳዳሪ ማዕከል';
+
+  @override
+  String get drawerMemberManagementCockpit => 'የአባላት አስተዳደር ኮክፒት';
+
+  @override
+  String get drawerFamilyStatus => 'የቤተሰብ ሁኔታ';
+
+  @override
+  String get drawerAttendanceSummary => 'የክትትል ሪፖርት';
+
+  @override
   String get drawerApplication => 'መተግበሪያ';
 
   @override
@@ -268,13 +289,13 @@ class AppLocalizationsAm extends AppLocalizations {
   String get sysAdminUnknownSchool => 'ያልታወቀ ትምህርት ቤት';
 
   @override
-  String get attendanceStatusPresent => 'ተገኝቷል';
+  String get attendanceStatusPresent => 'ቀርቧል';
 
   @override
   String get attendanceStatusAbsent => 'ቀርቷል';
 
   @override
-  String get attendanceStatusLate => 'አርፍዷል';
+  String get attendanceStatusLate => 'ዘግይቷል';
 
   @override
   String get attendanceStatusPermission => 'በፈቃድ';
@@ -437,7 +458,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get learningAddCommentPlaceholder => 'አስተያየት ያክሉ...';
 
   @override
-  String get learningNoCommentsYet => 'እስካሁን ምንም አስተያየት የለም። ሀሳብዎን ያካፍሉ!';
+  String get learningNoCommentsYet => 'እስካሁን ምንም አስተያየት የለም';
 
   @override
   String get profileMotherName => 'የእናት ስም';
@@ -455,7 +476,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get profileFemale => 'ሴት';
 
   @override
-  String get profileConfessionFather => 'የንስሐ አባት ስም';
+  String get profileConfessionFather => 'የንስሃ አባት ስም';
 
   @override
   String get profileAcademicLevel => 'የትምህርት ደረጃ';
@@ -464,13 +485,13 @@ class AppLocalizationsAm extends AppLocalizations {
   String get profileKifil => 'ክፍል';
 
   @override
-  String get profileGuardianInfo => 'የአሳዳጊ መረጃ';
+  String get profileGuardianInfo => 'የወላጅ/ሞግዚት መረጃ';
 
   @override
-  String get profileGuardianName => 'የአሳዳጊ ስም';
+  String get profileGuardianName => 'የወላጅ/ሞግዚት ስም';
 
   @override
-  String get profileGuardianPhone => 'የአሳዳጊ ስልክ';
+  String get profileGuardianPhone => 'የወላጅ/ሞግዚት ስልክ';
 
   @override
   String get loginLoadSchoolsError => 'ት/ቤቶችን መጫን አልተቻለም። ግንኙነት ያረጋግጡ።';
@@ -756,7 +777,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get dateJustNow => 'አሁን';
 
   @override
-  String get dateHoursAgo => 'h ago';
+  String get dateHoursAgo => 'ሰ በፊት';
 
   @override
   String get dateYesterday => 'ትናንት';
@@ -811,6 +832,9 @@ class AppLocalizationsAm extends AppLocalizations {
 
   @override
   String get commonFailedToPostComment => 'አስተያየት መለጠፍ አልተሳካም።';
+
+  @override
+  String get commonGuest => 'እንግዳ';
 
   @override
   String get yesButton => 'አዎ';
@@ -996,7 +1020,7 @@ class AppLocalizationsAm extends AppLocalizations {
   String get learningAddComment => 'አስተያየት ያክሉ...';
 
   @override
-  String get profileEditTitle => 'መገለጫዬን ያርትዑ';
+  String get profileEditTitle => 'የእኔ መገለጫ ማሻሻያ';
 
   @override
   String get profilePersonalInfo => 'የግል መረጃ';
@@ -1014,19 +1038,19 @@ class AppLocalizationsAm extends AppLocalizations {
   String get profileGenderFemale => 'ሴት';
 
   @override
-  String get profileSpiritualAcademic => 'መንፈሳዊ እና አካዳሚያዊ';
+  String get profileSpiritualAcademic => 'መንፈሳዊ እና ትምህርታዊ';
 
   @override
   String get profileAdditionalInfo => 'ተጨማሪ መረጃ';
 
   @override
-  String get profileNotSet => 'አልተዘጋጀም';
+  String get profileNotSet => 'ያልተሞላ';
 
   @override
-  String get profileSaveChanges => 'ለውጦችን ያስቀምጡ';
+  String get profileSaveChanges => 'የመረጃ ማሻሻያውን አድስ';
 
   @override
-  String get profileSelectDob => 'የትውልድ ቀን ይምረጡ';
+  String get profileSelectDob => 'የልደት ቀን ይምረጡ';
 
   @override
   String get signupStepAccount => 'መለያ';
@@ -1114,37 +1138,37 @@ class AppLocalizationsAm extends AppLocalizations {
   String get signupLabelPhone => '8. ስልክ ቁጥር';
 
   @override
-  String get signupLabelDob => '10. የልደት ቀን (የኢትዮጵያ)';
+  String get signupLabelDob => '10. የልደት ቀን (በኢትዮጵያ)';
 
   @override
-  String get signupLabelGuardianName => '1. የወላጅ/አሳዳጊ ስም';
+  String get signupLabelParentName => '1. የወላጅ/የአሳዳጊ ስም';
 
   @override
-  String get signupLabelGuardianPhone => '5. የወላጅ/አሳዳጊ ስልክ';
+  String get signupLabelParentPhone => '5. የወላጅ/የአሳዳጊ ስልክ';
 
   @override
-  String get signupLabelHadPrevService => 'ከዚህ በፊት ሲያገለግሉ ነበር?';
+  String get signupLabelHadPrevService => 'ከዚህ ቀደም አገልግሎት ነበረዎት?';
 
   @override
-  String get signupLabelServiceDept => 'የሚያገለግሉበት ክፍል';
+  String get signupLabelDept => 'የአገልግሎት ክፍል';
 
   @override
-  String get signupLabelServiceResp => 'የሚያገለግሉት ኃላፊነት';
+  String get signupLabelResponsibility => 'የአገልግሎት ኃላፊነት';
 
   @override
-  String get signupLabelServiceLevel => 'የአገልግሎት ደረጃ';
+  String get signupLabelLevel => 'የአገልግሎት ደረጃ';
 
   @override
-  String get signupErrorSelectDept => 'እባክዎን ክፍል ይምረጡ';
+  String get signupErrorSelectDept => 'እባክዎ ክፍል ይምረጡ';
 
   @override
-  String get signupErrorSelectResp => 'እባክዎን ኃላፊነት ይምረጡ';
+  String get signupErrorSelectResp => 'እባክዎ ኃላፊነት ይምረጡ';
 
   @override
-  String get signupErrorSelectLevel => 'እባክዎን ደረጃ ይምረጡ';
+  String get signupErrorSelectLevel => 'እባክዎ ደረጃ ይምረጡ';
 
   @override
-  String get signupLabelOtherDept => 'እባክዎን ሌላ ክፍል ይግለጹ';
+  String get signupLabelOtherDept => 'እባክዎን ሌላ ክፍል ይጥቀሱ';
 
   @override
   String get signupPledgeTitle => 'የአባልነት ቃል ኪዳን';
@@ -1153,8 +1177,1543 @@ class AppLocalizationsAm extends AppLocalizations {
   String get signupPledgeAgree => 'ቃል ኪዳኑን አንብቤ ተስማምቻለሁ።';
 
   @override
+  String get signupStepAccountTitle => 'መለያ ማስተካከያ';
+
+  @override
+  String get signupStepAccountSubtitle => 'ትምህርት ቤትዎን ይምረጡ እና መለያዎን ይጠብቁ';
+
+  @override
+  String get signupStepPersonalTitle => 'የግል ዝርዝሮች';
+
+  @override
+  String get signupStepPersonalSubtitle => 'ስለራስዎ የበለጠ ይንገሩን';
+
+  @override
+  String get signupStepGuardianTitle => 'የአሳዳጊ መረጃ';
+
+  @override
+  String get signupStepGuardianSubtitle => 'የአደጋ ጊዜ ግንኙነት እና የወላጅ ዝርዝሮች';
+
+  @override
+  String get signupStepServiceTitle => 'የአገልግሎት ታሪክ';
+
+  @override
+  String get signupStepServiceSubtitle => 'በቤተክርስቲያን ውስጥ የነበረዎት ተሳትፎ';
+
+  @override
+  String get signupStepAdditionalTitle => 'ተጨማሪ መረጃ';
+
+  @override
+  String get signupStepAdditionalSubtitle => 'በትምህርት ቤትዎ የሚፈለግ መረጃ';
+
+  @override
+  String get signupStepPledgeTitle => 'ቃል ኪዳኑ';
+
+  @override
+  String get signupStepPledgeSubtitle => 'የአባልነት ቃል ኪዳኑን ያንብቡ እና ይስማሙ';
+
+  @override
+  String get signupSchoolSelectionError => 'ትምህርት ቤቶችን መጫን አልተቻለም።';
+
+  @override
+  String get signupEmailAddress => 'ኢሜይል አድራሻ';
+
+  @override
+  String get signupInvalidEmail => 'ያልተገኘ ኢሜይል አድራሻ';
+
+  @override
+  String get signupPasswordsDoNotMatch => 'የይለፍ ቃሎች አይዛመዱም';
+
+  @override
+  String get signupPreviousServiceCheck => 'ከዚህ በፊት በሰንበት ትምህርት ቤት አገልግያለሁ';
+
+  @override
+  String get signupOtherSpecify => 'እባክዎን ይግለጹ';
+
+  @override
+  String get signupNoCustomFields => 'በትምህርት ቤትዎ የሚፈለግ ተጨማሪ መረጃ የለም።';
+
+  @override
+  String get signupSelectSchool => 'ትምህርት ቤት ይምረጡ';
+
+  @override
+  String signupPledgeText(Object christianName, Object schoolName) {
+    return 'እኔ $christianName እውነተኛይቱ የኢትዮጵያ ኦርቶዶክስ ተዋህዶ ቤ/ያን እምነትና ስርዓት ተከታይ የሆንኩኝ በ $schoolName ሰንበት ት/ቤት በፍፁም ልብ ለማገልገል ቃል እየገባሁ የበኩሌን ሁሉ ለመወጣት ቃል እገባለሁ።';
+  }
+
+  @override
+  String get deptEducation => 'ትምህርት ክፍል';
+
+  @override
+  String get deptMusic => 'መዝሙር ክፍል';
+
+  @override
+  String get deptArt => 'ኪነጥበብ ክፍል';
+
+  @override
+  String get deptDevelopment => 'ልማት ክፍል';
+
+  @override
+  String get deptAudit => 'ቁጥጥር ክፍል';
+
+  @override
+  String get deptOffering => 'መብዓና መስተነግዶ';
+
+  @override
+  String get deptMembers => 'አባላት ጉዳይ';
+
+  @override
+  String get deptFinance => 'ሂሳብ ክፍል';
+
+  @override
+  String get deptOffice => 'ፅህፈት ቤት';
+
+  @override
+  String get deptRelation => 'ግንኙነት ክፍል';
+
+  @override
+  String get deptLibrary => 'ቤተ መጻሕፍት ክፍል';
+
+  @override
+  String get deptProperty => 'ንብረት ክፍል';
+
+  @override
+  String get deptMedia => 'ሚዲያ ክፍል';
+
+  @override
+  String get deptOther => 'ሌላ';
+
+  @override
+  String get respCoordinator => 'ተጠሪ';
+
+  @override
+  String get respSub => 'ንዑስ';
+
+  @override
+  String get respMember => 'አባል';
+
+  @override
+  String get respChair => 'ሰብሳቢ';
+
+  @override
+  String get respViceChair => 'ምክትል ሰብሳቢ';
+
+  @override
+  String get respSecretary => 'ፀሀፊ';
+
+  @override
   String get settingsLanguageToggleTooltip => 'ቋንቋ ቀይር';
 
   @override
-  String get commonRequired => 'የግድ የሚሞላ';
+  String get commonRequired => 'አስፈላጊ';
+
+  @override
+  String get genderMale => 'ወንድ';
+
+  @override
+  String get genderFemale => 'ሴት';
+
+  @override
+  String get signupPasswordLengthError => 'የይለፍ ቃል ቢያንስ 6 ቁምፊዎች መሆን አለበት';
+
+  @override
+  String get homepageWelcomeUser => 'እንኳን ደህና መጡ፣';
+
+  @override
+  String get homepageMember => 'ምዕመን';
+
+  @override
+  String get homepageFeatured => 'ልዩ ትኩረት';
+
+  @override
+  String get homepageRecent => 'የቅርብ ጊዜ';
+
+  @override
+  String get homepageNoDataFound => 'ምንም መረጃ የለም';
+
+  @override
+  String get homepageManagePosts => 'ልጥፎችን ያስተዳድሩ';
+
+  @override
+  String get homepageEditProfile => 'መገለጫ አርትዕ';
+
+  @override
+  String get homepageFeaturedEvent => 'ልዩ ዝግጅት';
+
+  @override
+  String get homepageImportant => 'አስፈላጊ';
+
+  @override
+  String get homepageErrorLoading => 'የመረጃ ጫኝ ስህተት። እባክዎ እንደገና ይሞክሩ።';
+
+  @override
+  String commentsViewAllReplies(int count) {
+    return 'ሁሉንም $count ምላሾች ይመልከቱ';
+  }
+
+  @override
+  String get commentsCollapseReplies => 'ምላሾችን ሰብስብ';
+
+  @override
+  String get commentsEditing => 'አስተያየትን በማስተካከል ላይ...';
+
+  @override
+  String commentsReplyingTo(String author) {
+    return '$author በመመለስ ላይ...';
+  }
+
+  @override
+  String get commentsWritePlaceholder => 'አስተያየት ይፃፉ...';
+
+  @override
+  String get commentsDeleteConfirmTitle => 'አስተያየት ይጥፉ?';
+
+  @override
+  String get commentsDeleteConfirmMessage =>
+      'ይህንን አስተያየት ማጥፋት እንደሚፈልጉ እርግጠኛ ነዎት?';
+
+  @override
+  String get commentsPostError => 'አስተያየቱን መለጠፍ አልተቻለም።';
+
+  @override
+  String get commentsDeleteError => 'አስተያየቱን ማጥፋት አልተቻለም።';
+
+  @override
+  String get privateHomepageSundaySchool => 'ሰንበት ትምህርት ቤት';
+
+  @override
+  String get privateHomepageCommunityUpdates => 'የማህበረሰብ ዝመናዎች';
+
+  @override
+  String get privateHomepageMembersText => 'አባላት';
+
+  @override
+  String get privateHomepagePostsText => 'ልጥፎች';
+
+  @override
+  String get privateHomepageYearsText => 'ዓመታት';
+
+  @override
+  String get labelDescription => 'መግለጫ';
+
+  @override
+  String get labelServiceTimes => 'የአገልግሎት ጊዜያት';
+
+  @override
+  String get labelAddress => 'አድራሻ';
+
+  @override
+  String get commentsLoadMore => 'ተጨማሪ አስተያየቶችን አሳይ';
+
+  @override
+  String get commentsReplyAction => 'መልስ';
+
+  @override
+  String get commentsHideReplies => 'ምላሾችን ሰውር';
+
+  @override
+  String get privateHomepageSaveError => 'ዝመና አልተሳካም';
+
+  @override
+  String get privateHomepageFeatured => 'ተለይቶ የቀረበ';
+
+  @override
+  String get platformLinksLoadError => 'ሊንኮችን መጫን አልተቻለም።';
+
+  @override
+  String get platformLinksSaveError => 'ሊንኩን ማስቀመጥ አልተቻለም።';
+
+  @override
+  String get platformLinksDeleteError => 'ሊንኩን መሰረዝ አልተቻለም።';
+
+  @override
+  String get confirmation => 'ማረጋገጫ';
+
+  @override
+  String platformLinksDeleteConfirm(String name) {
+    return '\"$name\" የተባለውን ሊንክ ለማጥፋት እርግጠኛ ነዎት?';
+  }
+
+  @override
+  String get platformOurPlatforms => 'የእኛ መድረኮች';
+
+  @override
+  String get platformMainPlatforms => 'ዋና መድረኮች';
+
+  @override
+  String get platformSocialMedia => 'ማህበራዊ ሚዲያ';
+
+  @override
+  String get platformAddLink => 'አዲስ ሊንክ ጨምር';
+
+  @override
+  String get platformEditLink => 'ሊንክ አርትዕ';
+
+  @override
+  String get platformTagline => 'ማህበራዊ ድረገጽና መገልገያ';
+
+  @override
+  String get platformNoLinksFound => 'ምንም ሊንኮች አልተገኙም።';
+
+  @override
+  String platformLinkOpenError(String url) {
+    return 'ሊንኩን መክፈት አልተቻለም: $url';
+  }
+
+  @override
+  String get platformIconLabel => 'አይከን';
+
+  @override
+  String get platformColorLabel => 'ቀለም';
+
+  @override
+  String get platformIsSocialMedia => 'የማህበራዊ ሚዲያ ሊንክ ነው?';
+
+  @override
+  String get platformUrlLabel => 'ሊንክ (URL)';
+
+  @override
+  String get nameRequiredError => 'ስም ማስገባት ያስፈልጋል';
+
+  @override
+  String get urlRequiredError => 'ሊንክ ማስገባት ያስፈልጋል';
+
+  @override
+  String get invalidUrlError => 'የተሳሳተ ሊንክ ነው';
+
+  @override
+  String get optionsLabel => 'አማራጮች';
+
+  @override
+  String errorLabel(String error) {
+    return 'ስህተት፦ $error';
+  }
+
+  @override
+  String get forgotPasswordTitle => 'የይለፍ ቃል ረስተዋል';
+
+  @override
+  String get forgotPasswordSubtitle => 'ኦቲፒ (OTP) ለመቀበል የኢሜይል አድራሻዎን ያስገቡ';
+
+  @override
+  String get forgotPasswordEmailLabel => 'የኢሜይል አድራሻ';
+
+  @override
+  String get forgotPasswordEmailRequired => 'እባክዎ ኢሜይልዎን ያስገቡ';
+
+  @override
+  String get forgotPasswordSendOtpButton => 'ኦቲፒ ላክ';
+
+  @override
+  String get forgotPasswordOtpSentSuccess => 'ኦቲፒ ወደ ኢሜይልዎ ተልኳል';
+
+  @override
+  String get forgotPasswordOtpSentError => 'ኦቲፒ መላክ አልተቻለም';
+
+  @override
+  String get forgotPasswordConnectionError => 'የግንኙነት ስህተት። እባክዎ እንደገና ይሞክሩ።';
+
+  @override
+  String get forgotPasswordResetTitle => 'የይለፍ ቃል ይቀይሩ';
+
+  @override
+  String get forgotPasswordResetSubtitle => 'የኦቲፒ ኮድ እና አዲሱን የይለፍ ቃል ያስገቡ';
+
+  @override
+  String get forgotPasswordOtpLabel => 'የኦቲፒ ኮድ';
+
+  @override
+  String get forgotPasswordOtpRequired => 'እባክዎ ኦቲፒውን ያስገቡ';
+
+  @override
+  String get forgotPasswordOtpDigitsError => 'ኦቲፒ 6 አሃዝ መሆን አለበት';
+
+  @override
+  String get forgotPasswordNewPasswordLabel => 'አዲስ የይለፍ ቃል';
+
+  @override
+  String get forgotPasswordConfirmPasswordLabel => 'አዲስ የይለፍ ቃል ያረጋግጡ';
+
+  @override
+  String get forgotPasswordConfirmPasswordRequired => 'እባክዎ የይለፍ ቃልዎን ያረጋግጡ';
+
+  @override
+  String get forgotPasswordResetButton => 'የይለፍ ቃል ቀይር';
+
+  @override
+  String get forgotPasswordResetSuccess => 'የይለፍ ቃል በተሳካ ሁኔታ ተቀይሯል!';
+
+  @override
+  String get forgotPasswordResetError => 'የይለፍ ቃል መቀየር አልተቻለም';
+
+  @override
+  String get forgotPasswordResendOtpText => 'ኮዱ አልደረሰዎትም? እንደገና ላክ';
+
+  @override
+  String get forgotPasswordOtpResentSuccess => 'ኦቲፒ እንደገና ተልኳል';
+
+  @override
+  String get otpSetPasswordTitle => 'የይለፍ ቃልዎን ያስተካክሉ';
+
+  @override
+  String get otpVerifyTitle => 'የመለያ ማረጋገጫ';
+
+  @override
+  String get otpSetPasswordSubtitle => 'ለመለያዎ ደህንነቱ የተጠበቀ የይለፍ ቃል ይፍጠሩ';
+
+  @override
+  String otpVerifySubtitle(String email) {
+    return 'ለደህንነትዎ ሲባል ባለ 6 አሃዝ የማረጋገጫ ኮድ ወደ $email ልከናል፤ እባክዎን ኮዱን ከታች ያስገቡ።';
+  }
+
+  @override
+  String get otpCompleteRegistration => 'ምዝገባውን ያጠናቅቁ';
+
+  @override
+  String get otpVerifyButton => 'አረጋግጥ እና ቀጥል';
+
+  @override
+  String get otpInvalidCode => 'እባክዎን ትክክለኛ የ6 አሃዝ ኮድ ያስገቡ';
+
+  @override
+  String get otpVerificationFailed => 'ማረጋገጥ አልተሳካም';
+
+  @override
+  String get otpResentSuccess => 'ኦቲፒ እንደገና ተልኳል';
+
+  @override
+  String get otpLoginFailed => 'መግባት አልተሳካም። እባክዎ በቀጥታ ለመግባት ይሞክሩ።';
+
+  @override
+  String get otpSetPasswordFailed => 'የይለፍ ቃል ማዘጋጀት አልተሳካም';
+
+  @override
+  String get profileTabStatus => 'ሁኔታ';
+
+  @override
+  String get profileTabPersonal => 'የግል';
+
+  @override
+  String get profileTabSpiritual => 'መንፈሳዊ';
+
+  @override
+  String get profileTabEducation => 'ትምህርት እና ቤተሰብ';
+
+  @override
+  String get profileNoName => 'ስም የለም';
+
+  @override
+  String get profileServiceStatus => 'የአገልግሎት ሁኔታ';
+
+  @override
+  String get profileStatusActive => 'በአገልግሎት ላይ ያለ';
+
+  @override
+  String get profileStatusOnBreak => 'በእረፍት ላይ';
+
+  @override
+  String get profileStatusInactive => 'አገልግሎት ላይ ያልሆነ';
+
+  @override
+  String get profileStatusManagedByAdmin => 'ይህ ሁኔታ የሚተዳደረው በስተዳደር ነው::';
+
+  @override
+  String get profileAttendanceSummary => 'የመገኘት ማጠቃለያ';
+
+  @override
+  String get profilePresent => 'ተገኝቷል';
+
+  @override
+  String get profileAbsent => 'ቀርቷል';
+
+  @override
+  String get profileOnLeave => 'አስፈቅዷል';
+
+  @override
+  String get profileClickToSeeHistory => 'ዝርዝር ታሪክን ለማየት ይጫኑ';
+
+  @override
+  String get profileAge => 'ዕድሜ';
+
+  @override
+  String get profileDob => 'የትውልድ ቀን';
+
+  @override
+  String get profileSpiritualClass => 'የመንፈሳዊ ትምህርት ክፍል';
+
+  @override
+  String get profileClass => 'ክፍል';
+
+  @override
+  String get profileFilter => 'ማጣሪያ (Filter)';
+
+  @override
+  String get profileYear => 'ዓመተ ምሕረት';
+
+  @override
+  String get profileGradeReport => 'የውጤት መዝገብ (Grade Report)';
+
+  @override
+  String get profileNoGradesFound => 'ውጤት አልተገኘም ወይም ይህ ተጠቃሚ ተማሪ አይደለም';
+
+  @override
+  String get profileGradeList => 'የውጤት ዝርዝር';
+
+  @override
+  String get profileParentName => 'የወላጅ ስም';
+
+  @override
+  String get profileParentPhone => 'የወላጅ ስልክ';
+
+  @override
+  String get profileLibrary => 'ቤተ-መጽሐፍት';
+
+  @override
+  String get profileToRead => 'የሚነበብ';
+
+  @override
+  String get profileRead => 'የተነበበ';
+
+  @override
+  String get profileNoBooksToRead => 'ምንም የሚነበብ መጽሐፍ የለም';
+
+  @override
+  String get profileNoBooksRead => 'እስካሁን ያነበቡት መጽሐፍ የለም';
+
+  @override
+  String get profileFinishBy => 'የማጠናቀቂያ ጊዜ';
+
+  @override
+  String get profileReadVerified => 'ተነብቦ ተረጋግጧል';
+
+  @override
+  String get profileTotalScore => 'ጠቅላላ ውጤት';
+
+  @override
+  String get profileNoAssessments => 'ምንም የፈተና ውጤት አልገባም';
+
+  @override
+  String get profileAssessmentType => 'የፈተና ዓይነት (Assessment)';
+
+  @override
+  String get profileScore => 'ውጤት (Score)';
+
+  @override
+  String get profileFilterYear => 'ዓመተ ምሕረት';
+
+  @override
+  String get profileNoGradesYet => 'ምንም ውጤት የለም';
+
+  @override
+  String profileAssessmentsCount(int count) {
+    return '$count ውጤቶች';
+  }
+
+  @override
+  String profileDaysRemaining(int count) {
+    return '$count ቀናት ቀርተዋል';
+  }
+
+  @override
+  String get profileTimeElapsed => 'ጊዜው አልፏል';
+
+  @override
+  String get profileManagedByAdminReadOnly => 'በአስተዳዳሪ ብቻ የሚሞላ (Read Only)';
+
+  @override
+  String get profileSpiritualClassLabel => 'የመንፈሳዊ ትምህርት ክፍል';
+
+  @override
+  String profileSpiritualGrade(Object level) {
+    return '$levelኛ ክፍል';
+  }
+
+  @override
+  String get learningNA => 'ያልተጠቀሰ';
+
+  @override
+  String get learningToggleTheme => 'ሞድ ቀይር';
+
+  @override
+  String get learningCommentsLoadFailed => 'አስተያየቶችን መጫን አልተቻለም';
+
+  @override
+  String get learningDeleteCommentTitle => 'አስተያየቱን ላጥፋው?';
+
+  @override
+  String get learningDeleteCommentConfirm => 'አስተያየቱን ማጥፋት እርግጠኛ ነዎት?';
+
+  @override
+  String get learningCommentDeleteFailed => 'አስተያየቱን ማጥፋት አልተቻለም';
+
+  @override
+  String get learningFailedToPostComment => 'አስተያየቱን ለመላክ አልተሳካም';
+
+  @override
+  String get learningCommentsHeader => 'አስተያየቶች';
+
+  @override
+  String get learningHideReplies => 'መልሶችን ደብቅ';
+
+  @override
+  String learningViewReplies(int count) {
+    return '$count መልሶችን አሳይ';
+  }
+
+  @override
+  String get learningEditingComment => 'አስተያየት እየተስተካከለ ነው...';
+
+  @override
+  String learningReplyingTo(String author) {
+    return 'ለ $author መልስ እየተሰጠ ነው...';
+  }
+
+  @override
+  String get learningCommentHint => 'አስተያየት ይጻፉ...';
+
+  @override
+  String get learningReplyAction => 'መልስ';
+
+  @override
+  String get learningEditAction => 'አስተካክል';
+
+  @override
+  String get learningDeleteAction => 'አጥፋ';
+
+  @override
+  String get learningBookmarked => 'መፅሐፍ ምልክት ተቀምጧል';
+
+  @override
+  String get videoBy => 'በ';
+
+  @override
+  String get videoDescription => 'መግለጫ';
+
+  @override
+  String get videoWatchOnYoutube => 'በዩቲዩብ ይመልከቱ';
+
+  @override
+  String get videoDesktopNote =>
+      'በዴስክቶፕ ላይ ለተሻለ ተሞክሮ ቪዲዮውን በዩቲዩብ እንዲመለከቱ እንመክራለን።';
+
+  @override
+  String get postImportant => 'አስፈላጊ';
+
+  @override
+  String get postMySundaySchool => 'የእኔ ቤተክርስቲያን';
+
+  @override
+  String get postEventDate => 'የዝግጅት ቀን';
+
+  @override
+  String get postLikes => 'ወደዱ';
+
+  @override
+  String get postCommentsCount => 'አስተያየቶች';
+
+  @override
+  String get postLikedAction => 'ወድጃለሁ';
+
+  @override
+  String get postLikeAction => 'አውደው';
+
+  @override
+  String get postCommentAction => 'አስተያየት';
+
+  @override
+  String postShareMessage(Object description, Object title) {
+    return 'ይህን ጽሁፍ ይመልከቱ: $title\n\n$description\n\nበአቅሌስያ መተግበሪያ የተጋራ';
+  }
+
+  @override
+  String get postViewMoreComments => 'ተጨማሪ አስተያየቶችን ይመልከቱ';
+
+  @override
+  String postViewAllReplies(int count) {
+    return 'ሁሉንም $count መልሶች ይመልከቱ';
+  }
+
+  @override
+  String get postHideReplies => 'መልሶችን ደብቅ';
+
+  @override
+  String get commentsEditAction => 'አስተካክል';
+
+  @override
+  String get commentsDeleteAction => 'ሰርዝ';
+
+  @override
+  String get aboutUsAppSubTitle => 'ሁለንተናዊ መንፈሳዊ መተግበሪያ';
+
+  @override
+  String get aboutUsVisionTitle => 'ራዕያችን';
+
+  @override
+  String get aboutUsVisionSubTitle => 'በሃይማኖትና በምግባር የታነጸ ጥበበኛ ትውልድን መፍጠር';
+
+  @override
+  String get aboutUsVisionDescription =>
+      'ቅዱሳን አባቶች ያስረከቡንን የቤተ ክርስቲያን ዶግማ፣ ቀኖናና ትውፊት በማክበርና በማስከበር፣ ለመንግስተ ሰማያት የሚያበቃ የጸና ሃይማኖትና ምግባር ያለው ትውልድ ተፈጥሮ ማየት።';
+
+  @override
+  String get aboutUsStoryTitle => 'ታሪካችን';
+
+  @override
+  String get aboutUsStoryDescription =>
+      'አኪሌሲያ ባለፉት በርካታ ዓመታት ጥቂት የማይባሉ የቤተ ክርስቲያን ልጆችን በመንፈሳዊ አገልግሎት እያፈራ ይገኛል። ይህ ዲጂታል መድረክ ጥንታዊውን የቤተክርስቲያናችንን ትውፊት ከዘመናዊ ቴክኖሎጂ ጋር በማጣመር የተዘጋጀ ነው።';
+
+  @override
+  String get aboutUsValuesTitle => 'መሠረታዊ እሴቶቻችን';
+
+  @override
+  String get aboutUsValueFaithTitle => 'ሃይማኖት';
+
+  @override
+  String get aboutUsValueFaithDesc => 'በምግባር የተገለጠ የጸና እምነት';
+
+  @override
+  String get aboutUsValueLoveTitle => 'ፍቅር';
+
+  @override
+  String get aboutUsValueLoveDesc => 'በፍቅረ እግዚአብሔርና ፍቅረ ቢጽ የተሳሰረ';
+
+  @override
+  String get aboutUsValueEducationTitle => 'ትምህርት';
+
+  @override
+  String get aboutUsValueEducationDesc => 'ተከታታይ መንፈሳዊና ሰብአዊ ዕድገት';
+
+  @override
+  String get aboutUsValueServiceTitle => 'አገልግሎት';
+
+  @override
+  String get aboutUsValueServiceDesc => 'እግዚአብሔርንና ማኅበረሰቡን በትጋት ማገልገል';
+
+  @override
+  String get aboutUsBuiltByTitle => 'በእምነት እና በቴክኖሎጂ የተገነባ';
+
+  @override
+  String get aboutUsBuiltByDesc =>
+      'ይህ መድረክ የተዘጋጀው ጥንታዊ መንፈሳዊ ጥበብን ከዘመናዊ ቴክኖሎጂ ጋር አጣምሮ ለመያዝ ነው።';
+
+  @override
+  String get aboutUsDigitalName => 'አኪሌሲያ ዲጂታል';
+
+  @override
+  String get aboutUsJoinCommunity => 'ማኅበረሰባችንን ይቀላቀሉ';
+
+  @override
+  String get aboutUsStayConnected => 'ከእያደገ ካለው ቤተሰባችን ጋር እንደተገናኙ ይቆዩ';
+
+  @override
+  String get aboutUsLocation => 'አኪሌሲያ፣ ኢትዮጵያ';
+
+  @override
+  String get splashMotto => 'የነገዋ ቤተ ክርስቲያን ዛሬ ትገነባለች';
+
+  @override
+  String get appName => 'አቅሌስያ';
+
+  @override
+  String get attendanceScreenTitle => 'የተማሪ ክትትል አስተዳደር';
+
+  @override
+  String get attendanceAccessDenied => 'መዳረሻ ተከልክሏል';
+
+  @override
+  String get attendanceNoPermission => 'ይህንን ክፍል ለመጠቀም ፈቃድ የለዎትም።';
+
+  @override
+  String get attendanceTabRecord => 'ክትትል ይመዝግቡ';
+
+  @override
+  String get attendanceTabManageAdmins => 'አስተዳዳሪዎችን ያቀናብሩ';
+
+  @override
+  String get attendanceTypeLabel => 'የክትትል ዓይነት';
+
+  @override
+  String get attendanceTypeLearning => 'የትምህርት ክፍለ ጊዜ';
+
+  @override
+  String get attendanceTypeHymnLearning => 'የዜማ ትምህርት';
+
+  @override
+  String get attendanceTypeAwudemihiret => 'አውደ ምሕረት';
+
+  @override
+  String get attendanceTypeSpecial => 'ልዩ መርሃ ግብር';
+
+  @override
+  String get attendanceSessionLabel => 'ክፍለ ጊዜ';
+
+  @override
+  String get attendanceSessionMorning => 'ጥዋት';
+
+  @override
+  String get attendanceSessionAfternoon => 'ከሰዓት';
+
+  @override
+  String get attendanceFilterBy => 'ማጣሪያ በ';
+
+  @override
+  String get attendanceGroup => 'ቡድን';
+
+  @override
+  String get attendanceAll => 'ሁሉም';
+
+  @override
+  String get attendanceStudents => 'ተማሪዎች';
+
+  @override
+  String get attendanceSelectOption => 'አማራጭ ይምረጡ';
+
+  @override
+  String get attendanceUnnamedStudent => 'ስም ያልተሰጠው ተማሪ';
+
+  @override
+  String get attendanceLateTimeLabel => 'ዘግይቷል';
+
+  @override
+  String get attendanceLoadingStudents => 'ተማሪዎችን በመጫን ላይ...';
+
+  @override
+  String get attendanceLoadingRecords => 'መረጃዎችን በመጫን ላይ...';
+
+  @override
+  String get attendanceEmptyStateTitle => 'ምንም ተማሪዎች አልተገኙም';
+
+  @override
+  String get attendanceEmptyStateSubtitle =>
+      'ማጣሪያዎችዎን ለማስተካከል ይሞክሩ ወይም ተማሪዎችን ወደዚህ ትምህርት ቤት ያክሉ።';
+
+  @override
+  String get attendanceTopicLabel => '📝 የቀን ርዕስ';
+
+  @override
+  String get attendanceSaveButton => 'ክትትልን ያስቀምጡ';
+
+  @override
+  String get attendanceReadOnlyError => 'ለማንበብ ብቻ: ክትትል ማስቀመጥ አይቻልም።';
+
+  @override
+  String get attendanceErrorLoadingStudents => 'ተማሪዎችን በመጫን ላይ ስህተት:';
+
+  @override
+  String get attendanceErrorLoadingRecords => 'መረጃዎችን በመጫን ላይ ስህተት:';
+
+  @override
+  String get attendanceSaveSuccess => 'ክትትል በተሳካ ሁኔታ ተመዝግቧል! 🎉';
+
+  @override
+  String get attendanceSaveOffline =>
+      'ክትትል ኦፍላይን ተመዝግቧል። ኢንተርኔት ሲገኝ በራስ-ሰር ይላካል።';
+
+  @override
+  String get attendanceErrorSaving => 'ክትትል ማስቀመጥ ላይ ስህተት:';
+
+  @override
+  String get attendanceSearchUserHint => 'ተጠቃሚ ይፈልጉ...';
+
+  @override
+  String get attendanceRolesUpdateSuccess => 'ሚናዎች በተሳካ ሁኔታ ተዘምነዋል።';
+
+  @override
+  String get attendanceGenericError => 'ስህተት:';
+
+  @override
+  String get attendanceUserStatusPending => 'በመጠባበቅ ላይ';
+
+  @override
+  String get attendanceNoName => 'ስም የለም';
+
+  @override
+  String get attendanceNoEmail => 'ኢሜይል የለም';
+
+  @override
+  String get attendanceChangeDate => 'ቀን ቀይር';
+
+  @override
+  String get planTabDepartments => 'ክፍሎች';
+
+  @override
+  String get planTabAllPlans => 'ሁሉም እቅዶች';
+
+  @override
+  String get planTabPermissions => 'ፈቃዶች';
+
+  @override
+  String get planTabMyPlans => 'የእኔ እቅዶች';
+
+  @override
+  String get planErrorLoadData => 'የእቅድ መረጃን መጫን አልተቻለም።';
+
+  @override
+  String get planErrorRefresh => 'መረጃውን ማደስ አልተቻለም።';
+
+  @override
+  String get planErrorDeleteDept => 'ክፍሉን መሰረዝ አልተቻለም።';
+
+  @override
+  String get planErrorDeletePlan => 'እቅዱን መሰረዝ አልተቻለም።';
+
+  @override
+  String get planErrorUpdateDoneStatus => 'የእቅዱን ሁኔታ ማዘመን አልተቻለም።';
+
+  @override
+  String get planErrorUnauthorized => 'ይህንን ተግባር ለማከናወን ፈቃድ የለዎትም።';
+
+  @override
+  String get planNoDepartmentsTitle => 'ምንም ክፍላት አልተገኙም';
+
+  @override
+  String get planNoDepartmentsSubtitle =>
+      'የሚሳተፉባቸው ወይም የሚያስተዳድሯቸው ክፍላት እዚህ ይታያሉ።';
+
+  @override
+  String get planNoPlansTitle => 'ምንም እቅዶች አልተገኙም';
+
+  @override
+  String get planNoPlansSubtitle => 'ማጣሪያዎችን ወይም የፍለጋ ቃላትን ለመቀየር ይሞክሩ።';
+
+  @override
+  String get planNoPermissionsTitle => 'ምንም የፈቃድ መረጃ የለም';
+
+  @override
+  String get planNoPermissionsSubtitle =>
+      'በክፍላት ውስጥ ሚና ያላቸው ተጠቃሚዎች ብቻ እዚህ ተዘርዝረዋል።';
+
+  @override
+  String get planDeptCreateTitle => 'አዲስ ክፍል ይፍጠሩ';
+
+  @override
+  String get planDeptEditTitle => 'ክፍል ያርትዑ';
+
+  @override
+  String get planDeptNameLabel => 'የክፍል ስም';
+
+  @override
+  String get planDeptNameRequired => 'ስም ያስገቡ';
+
+  @override
+  String get planDeptDescLabel => 'መግለጫ';
+
+  @override
+  String get planDeptColorLabel => 'የመለያ ቀለም';
+
+  @override
+  String get planDeptCreateButton => 'ፍጠር';
+
+  @override
+  String get planDeptSaveButton => 'አስቀምጥ';
+
+  @override
+  String get planAddTitle => 'አዲስ እቅድ ያክሉ';
+
+  @override
+  String get planEditTitle => 'ዕቅድ አርትዕ';
+
+  @override
+  String get planTitleLabel => 'ርዕስ';
+
+  @override
+  String get planTitleRequired => 'ርዕስ ያስፈልጋል';
+
+  @override
+  String get planAcademicYearLabel => 'የትምህርት ዘመን';
+
+  @override
+  String get planDeptLabel => 'ክፍል';
+
+  @override
+  String get planSelectDeptRequired => 'እባክዎ ክፍል ይምረጡ';
+
+  @override
+  String get planAssigneeLabel => 'ተጠሪ (አማራጭ)';
+
+  @override
+  String get planAssigneeNotSelected => 'ተጠሪ አልተመረጠም';
+
+  @override
+  String get planChangeAssignee => 'ቀይር';
+
+  @override
+  String get planDateLabel => 'የማጠናቀቂያ ቀን';
+
+  @override
+  String get planDateNotSelected => 'ቀን አልተመረጠም';
+
+  @override
+  String get planSelectDateButton => 'ቀን ይምረጡ';
+
+  @override
+  String get planHighPriorityLabel => 'ከፍተኛ ትኩረት የሚሰጠው';
+
+  @override
+  String get planRecurringLabel => 'ተደጋጋሚ (በየዓመቱ)';
+
+  @override
+  String get planStatusDoneLabel => 'እንደተከናወነ ምልክት አድርግ';
+
+  @override
+  String get planAddButton => 'አክል';
+
+  @override
+  String get planSaveButton => 'አስቀምጥ';
+
+  @override
+  String get planRolloverTitle => 'ዓመታዊ እቅድ ሽግግር';
+
+  @override
+  String planRolloverContent(String source, String dest) {
+    return 'ይህ \'የሚደጋገሙ\' እቅዶችን ከ $source ወደ $dest ይገለብጣል። የቀድሞዎቹ እቅዶች አይቀየሩም።\n\nእርግጠኛ ነዎት?';
+  }
+
+  @override
+  String get planRolloverConfirmButton => 'ሮልኦቨር ጀምር';
+
+  @override
+  String get planRolloverProgress => 'ሽግግር በመከናወን ላይ...';
+
+  @override
+  String get planRolloverSuccess => 'ሮልኦቨር በተሳካ ሁኔታ ተጠናቋል።';
+
+  @override
+  String get planRolloverError => 'ሮልኦቨር አልተሳካም።';
+
+  @override
+  String get planUndoRolloverTitle => 'ሽግግርን መልስ';
+
+  @override
+  String planUndoRolloverContent(String year) {
+    return 'ይህ ከ $year ዓመት የተመዘገቡትን እቅዶች በሙሉ በቋሚነት ያጠፋል።\n\nይህ በስህተት የተደረገን ሽግግር ለማረም ነው። ይህ ድርጊት ሊመለስ አይችልም። እርግጠኛ ነዎት?';
+  }
+
+  @override
+  String planUndoRolloverConfirmButton(String year) {
+    return 'አዎ፣ ለ $year መልስ';
+  }
+
+  @override
+  String get planUndoRolloverProgress => 'ሽግግር በመመለስ ላይ...';
+
+  @override
+  String get planUndoRolloverSuccess => 'በተሳካ ሁኔታ ተመልሷል!';
+
+  @override
+  String get planUndoRolloverError => 'መመለስ አልተቻለም።';
+
+  @override
+  String get planDeleteConfirmTitle => 'ክፍሉን ሰርዝ';
+
+  @override
+  String planDeleteDeptConfirmContent(String name) {
+    return '\'$name\'ን ለመሰረዝ እርግጠኛ ነዎት? ከዚህ ክፍል ጋር የተያያዙ ሁሉም እቅዶችም ይሰረዛሉ።';
+  }
+
+  @override
+  String get planDeletePlanConfirmTitle => 'እቅዱን ሰርዝ';
+
+  @override
+  String get planDeletePlanConfirmContent =>
+      'ይህን እቅድ ለመሰረዝ እርግጠኛ ነዎት? ይህን ድርጊት መመለስ አይቻልም።';
+
+  @override
+  String get planDeleteConfirmButton => 'አዎ፣ ሰርዝ';
+
+  @override
+  String get planItemAssignee => 'ኃላፊ';
+
+  @override
+  String get planItemDue => 'ቀን';
+
+  @override
+  String get planItemPriority => 'ከፍተኛ ቅድሚያ';
+
+  @override
+  String get planItemRecurring => 'የሚደጋገም';
+
+  @override
+  String get planItemAcademicYear => 'ዓመት';
+
+  @override
+  String get planAdminManageRolesTooltip => 'በዚህ ክፍል ውስጥ ሚናዎችን ያስተዳድሩ';
+
+  @override
+  String get planAdminRoleAdmin => 'አስተዳዳሪ';
+
+  @override
+  String get planAdminRoleManager => 'ሥራ አስኪያጅ';
+
+  @override
+  String get planAdminNoRoles => 'ምንም ንቁ ሚና የለም';
+
+  @override
+  String get planCancelButton => 'ይቅር';
+
+  @override
+  String get planConfirmButton => 'አረጋግጥ';
+
+  @override
+  String get planSelectMemberTitle => 'አባል ይምረጡ';
+
+  @override
+  String get planNoAvailableMembers => 'ሊጨመር የሚችል አባል የለም።';
+
+  @override
+  String get planAddMemberButton => 'አባል ጨምር';
+
+  @override
+  String get planYearRequired => 'የትምህርት ዘመን ያስፈልጋል';
+
+  @override
+  String get planYearSuffix => 'ዓ.ም';
+
+  @override
+  String planUndoRolloverConfirmButtonWithYear(String year) {
+    return 'አዎ፣ የ$year ዕቅዶችን ሰርዝ';
+  }
+
+  @override
+  String get planDeleteDeptTitle => 'ክፍሉን ሰርዝ';
+
+  @override
+  String planDeleteDeptMessage(Object deptName) {
+    return '\'$deptName\'ን ለመሰረዝ እርግጠኛ ነዎት? ከዚህ ክፍል ጋር የተያያዙ ሁሉም እቅዶችም ይሰረዛሉ።';
+  }
+
+  @override
+  String get planDeleteDeptConfirm => 'አዎ, ሰርዝ';
+
+  @override
+  String get planDeletePlanTitle => 'እቅዱን ሰርዝ';
+
+  @override
+  String get planDeletePlanMessage =>
+      'ይህን እቅድ ለመሰረዝ እርግጠኛ ነዎት? ይህን ድርጊት መመለስ አይቻልም።';
+
+  @override
+  String get planDeletePlanConfirm => 'አዎ, ሰርዝ';
+
+  @override
+  String get planNoAdminsFound => 'ምንም አስተዳዳሪዎች ወይም ሥራ አስኪያጆች አልተገኙም';
+
+  @override
+  String get planNoAdminsMessage =>
+      'በማንኛውም የክፍል ካርድ ላይ ካለው \'አባላትን አስተዳድር\' አማራጭ ሚናዎችን ይመድቡ።';
+
+  @override
+  String planAdminOfDepts(Object count) {
+    return 'የ $count ክፍል(ሎች) አስተዳዳሪ';
+  }
+
+  @override
+  String planManagerOfDepts(Object count) {
+    return 'የ $count ክፍል(ሎች) ሥራ አስኪያጅ';
+  }
+
+  @override
+  String get planManageRolesTooltip => 'በዚህ ክፍል ውስጥ ሚናዎችን አስተዳድር';
+
+  @override
+  String get planUnknownUser => 'ያልታወቀ ተጠቃሚ';
+
+  @override
+  String get planRoleManager => 'ሥራ አስኪያጅ';
+
+  @override
+  String get planRoleMember => 'አባል';
+
+  @override
+  String get planCreateButton => 'ፍጠር';
+
+  @override
+  String get planDescLabel => 'መግለጫ';
+
+  @override
+  String get planRolloverMessagePart1 => 'ይህ ተደጋጋሚ እቅዶችን ከ';
+
+  @override
+  String get planRolloverMessagePart2 => 'ወደ';
+
+  @override
+  String get planRolloverMessagePart3 => 'ይገለብጣል። ዋናዎቹ እቅዶች አይቀየሩም። እርግጠኛ ነዎት?';
+
+  @override
+  String get planRolloverInProgress => 'እቅዶችን በመገልበጥ ላይ...';
+
+  @override
+  String get planRolloverUndoInProgress => 'የተገለበጡትን በመመለስ ላይ...';
+
+  @override
+  String get planRolloverUndoSuccess => 'በተሳካ ሁኔታ ተመልሷል!';
+
+  @override
+  String get planRolloverUndoError => 'መመለስ አልተቻለም።';
+
+  @override
+  String planUndoRolloverMessage(String year) {
+    return 'ይህ የ $year ዓ.ም. እቅዶችን **በሙሉ ይሰርዛል**። ይህ በስህተት የተገለበጡትን ለማረም ነው። ይህን ድርጊት መመለስ አይቻልም። እርግጠኛ ነዎት?';
+  }
+
+  @override
+  String get planAdminRoleDescription => 'አባላትን እና ቅንብሮችን ማስተዳደር ይችላል';
+
+  @override
+  String get planManagerRoleDescription =>
+      'እቅዶችን ማስተዳደር ይችላል ነገር ግን ቅንብሮችን አይችልም';
+
+  @override
+  String get planDeptMembersEmpty => 'በዚህ ክፍል እስካሁን ምንም አባላት የሉም።';
+
+  @override
+  String get planRoleAdmin => 'አስተዳዳሪ';
+
+  @override
+  String planDeptMembersTitle(String deptName) {
+    return 'የ $deptName አባላት';
+  }
+
+  @override
+  String get planDeptMembersSaveSuccess => 'የክፍል አባላት  በተሳካ ሁኔታ ተዘምነዋል';
+
+  @override
+  String get planDeptMembersSaveError => 'የክፍል አባላትን ማዘመን አልተቻለም';
+
+  @override
+  String get planSortLatest => 'የቅርብ ጊዜ';
+
+  @override
+  String get planSortDueDate => 'የማብቂያ ቀን';
+
+  @override
+  String get planSortStatus => 'ሁኔታ';
+
+  @override
+  String get planUnknownDept => 'ያልታወቀ ክፍል';
+
+  @override
+  String get planYearLabel => 'ዓመት: ';
+
+  @override
+  String get planFilterLabel => 'ማጣሪያ: ';
+
+  @override
+  String get planSearchHint => 'እቅዶችን ይፈልጉ...';
+
+  @override
+  String get planEmptyNoDepts => 'ምንም ክፍሎች የሉም';
+
+  @override
+  String get planEmptyContactAdmin => 'እባክዎ አስተዳዳሪን ያነጋግሩ';
+
+  @override
+  String planEmptyNoPlans(String year) {
+    return 'ለ $year ዓ.ም. ምንም እቅዶች አልተገኙም';
+  }
+
+  @override
+  String get planEmptyAddPrompt => 'እቅድ ለመጨመር \'+\'ን ይንኩ';
+
+  @override
+  String get planEmptyNoSearch => 'ለፍለጋዎ ምንም አልተገኘም';
+
+  @override
+  String get planEmptyClearFilter => 'ማጣሪያዎችን ያጽዱ';
+
+  @override
+  String get planDeptMenuManage => 'አባላትን አስተዳድር';
+
+  @override
+  String get planDeptMenuEdit => 'ክፍልን አርትዕ';
+
+  @override
+  String get planDeptMenuDelete => 'ክፍልን ሰርዝ';
+
+  @override
+  String planDeptCardPlansCount(String count) {
+    return '$count እቅዶች';
+  }
+
+  @override
+  String planDeptCardPercentDone(String percent) {
+    return '$percent ተጠናቋል';
+  }
+
+  @override
+  String get platformLinksSaveSuccess => 'የመድረክ አገናኞች በተሳካ ሁኔታ ተቀምጠዋል';
+
+  @override
+  String get planYearEndSetupTooltip => 'የዓመት መጨረሻ ቅንብር';
+
+  @override
+  String get planDeptCreateSuccess => 'ክፍሉ በተሳካ ሁኔታ ተፈጥሯል።';
+
+  @override
+  String get planDeptCreateError => 'ክፍሉን መፍጠር አልተቻለም።';
+
+  @override
+  String get planDeptUpdateSuccess => 'የክፍሉ መረጃ በተሳካ ሁኔታ ተሻሽሏል።';
+
+  @override
+  String get planDeptUpdateError => 'ክፍሉን ማሻሻል አልተቻለም።';
+
+  @override
+  String get planDeptDeleteSuccess => 'ክፍሉ እና ዕቅዶቹ ተሰርዘዋል።';
+
+  @override
+  String get planDeptDeleteError => 'ክፍሉን መሰረዝ አልተቻለም።';
+
+  @override
+  String planAddSuccess(String year) {
+    return 'ዕቅዱ ለ $year ዓ.ም በተሳካ ሁኔታ ተጨምሯል።';
+  }
+
+  @override
+  String get planAddErrorDisplay =>
+      'ዕቅዱ ተፈጥሯል፣ ነገር ግን ወዲያውኑ ማሳየት አልተቻለም። እንደገና በማደስ ላይ...';
+
+  @override
+  String get planAddError => 'ዕቅዱን መጨመር አልተቻለም።';
+
+  @override
+  String get planUpdateSuccess => 'ዕቅዱ በተሳካ ሁኔታ ተሻሽሏል።';
+
+  @override
+  String get planUpdateError => 'ዕቅዱን ማሻሻል አልተቻለም።';
+
+  @override
+  String get planDeleteSuccess => 'ዕቅዱ በተሳካ ሁኔታ ተሰርዟል።';
+
+  @override
+  String get planDeleteError => 'ዕቅዱን መሰረዝ አልተቻለም።';
+
+  @override
+  String get planStatusUpdateError => 'ሁኔታውን ማሻሻል አልተቻለም።';
+
+  @override
+  String get planUnknown => 'yaaltaweqe';
+
+  @override
+  String get profileFilterClassLabel => 'ክፍል';
+
+  @override
+  String get profileTotalScoreLabel => 'ጠቅላላ ውጤት';
+
+  @override
+  String get profileUnknownTitle => 'የማይታወቅ ርዕስ';
+
+  @override
+  String get profileDeadlinePrefix => 'የማጠናቀቂያ ጊዜ:';
+
+  @override
+  String get profileReadConfirmed => 'ተነብቦ ተረጋግጧል';
+
+  @override
+  String get profileCustomFieldDefault => 'ብጁ መስክ';
+
+  @override
+  String get learningAdminHubTitle => 'የትምህርት አስተዳደር ማዕከል';
+
+  @override
+  String get learningAdminManageContentTitle => 'የትምህርት ይዘትን አስተዳድር';
+
+  @override
+  String get learningAdminTabManageContent => 'ይዘትን አስተዳድር';
+
+  @override
+  String get learningAdminTabPromoteAdmins => 'አስተዳዳሪዎችን ሹም';
+
+  @override
+  String get learningAdminFailedToLoadContent => 'የአስተዳዳሪ ይዘትን መጫን አልተሳካም።';
+
+  @override
+  String get learningAdminConfirmDeletion => 'መሰረዝን ያረጋግጡ';
+
+  @override
+  String get learningAdminDeleteConfirmation =>
+      'ይህንን ይዘት መሰረዝ ይፈልጋሉ? ይህ እርምጃ ሊቀለበስ አይችልም።';
+
+  @override
+  String get learningAdminCancel => 'ይቅር';
+
+  @override
+  String get learningAdminDelete => 'ሰርዝ';
+
+  @override
+  String get learningAdminDeleteFailed => 'መሰረዝ አልተሳካም።';
+
+  @override
+  String get learningAdminVideo => 'ቪዲዮ';
+
+  @override
+  String get learningAdminArticle => 'ጽሑፍ';
+
+  @override
+  String get learningAdminNoTitle => 'ርዕስ የለም';
+
+  @override
+  String get learningAdminCreateContent => 'ይዘት ፍጠር';
+
+  @override
+  String get learningAdminEditContent => 'ይዘት አስተካክል';
+
+  @override
+  String get learningAdminRequired => 'ያስፈልጋል';
+
+  @override
+  String get learningAdminPleaseWaitUpload => 'እባክዎን ምስሉ እስኪሰቀል ይጠብቁ።';
+
+  @override
+  String get learningAdminUploadFailed => 'መስቀል አልተሳካም:';
+
+  @override
+  String get learningAdminTitle => 'ርዕስ';
+
+  @override
+  String get learningAdminDescription => 'መግለጫ';
+
+  @override
+  String get learningAdminType => 'ዓይነት';
+
+  @override
+  String get learningAdminYoutubeURL => 'የዩቲዩብ አድራሻ';
+
+  @override
+  String get learningAdminArticleMarkdown => 'የጽሑፍ ማርክዳውን';
+
+  @override
+  String get learningAdminCategory => 'ምድብ';
+
+  @override
+  String get learningAdminDuration => 'የጊዜ ርዝመት (ለምሳሌ፣ 15:30 ወይም 10 ደቂቃ ንባብ)';
+
+  @override
+  String get learningAdminDifficulty => 'ችግር';
+
+  @override
+  String get learningAdminVisibility => 'የሚታይበት ቦታ';
+
+  @override
+  String get learningAdminBeginner => 'ጀማሪ';
+
+  @override
+  String get learningAdminIntermediate => 'መካከለኛ';
+
+  @override
+  String get learningAdminAdvanced => 'የላቀ';
+
+  @override
+  String get learningAdminForMySsOnly => 'ለሰንበት ትምህርት ቤቴ ብቻ';
+
+  @override
+  String get learningAdminForEveryone => 'ለሁሉም';
+
+  @override
+  String get learningAdminSave => 'አስቀምጥ';
+
+  @override
+  String get learningAdminTapToUploadImage => 'ምስል ለመስቀል ይጫኑ';
+
+  @override
+  String get learningAdminUploadImage => 'ምስል ስቀል';
+
+  @override
+  String get learningAdminNoNameProvided => 'ስም አልተሰጠም';
+
+  @override
+  String get learningAdminRoleUpdated => '\'s ሚና ተዘምኗል።';
+
+  @override
+  String get learningAdminFailedToUpdateRole => 'ሚና ማዘመን አልተሳካም:';
+
+  @override
+  String get learningAdminNoUsersFound => 'ምንም ተጠቃሚዎች አልተገኙም።';
+
+  @override
+  String get defaultNoTitle => 'ርዕስ የለም';
+
+  @override
+  String get defaultUnknownAuthor => 'ያልታወቀ ደራሲ';
+
+  @override
+  String get defaultUnknownError => 'ያልታወቀ ስህተት';
+
+  @override
+  String get defaultContentArticle => 'ጽሑፍ';
+
+  @override
+  String get defaultContentCategory => 'ጠቅላላ';
+
+  @override
+  String get defaultContentDifficulty => 'ጀማሪ';
+
+  @override
+  String get defaultNA => 'የለም';
+
+  @override
+  String get signupButtonNextStep => 'ቀጣይ ደረጃ';
+
+  @override
+  String get signupButtonCreateAccount => 'መለያ ይፍጠሩ';
+
+  @override
+  String get signupLabelSpiritualClass => 'የመንፈሳዊ ትምህርት ክፍል';
+
+  @override
+  String get academicLevelPrimary => '1ኛ ደረጃ';
+
+  @override
+  String get academicLevelHighSchool => '2ኛ ደረጃ';
+
+  @override
+  String get academicLevelPreparatory => 'መሰናዶ';
+
+  @override
+  String get academicLevelCertificate => 'ሰርተፍኬት';
+
+  @override
+  String get academicLevelDiploma => 'ዲፕሎማ';
+
+  @override
+  String get academicLevelDegree => 'ዲግሪ';
+
+  @override
+  String get academicLevelMasters => 'ማስተርስ';
+
+  @override
+  String get academicLevelPhD => 'ፒኤችዲ';
+
+  @override
+  String get academicLevelOther => 'ሌላ';
+
+  @override
+  String get serviceLevel1 => 'ደረጃ 1';
+
+  @override
+  String get serviceLevel2 => 'ደረጃ 2';
+
+  @override
+  String get serviceLevel3 => 'ደረጃ 3';
+
+  @override
+  String get errorInvalidEmailAddress => 'ልክ ያልሆነ ኢሜይል አድራሻ';
+
+  @override
+  String get errorConnectionTitle => 'የግንኙነት ስህተት';
+
+  @override
+  String get errorConnectionMessage =>
+      'ከአገልጋዩ ጋር መገናኘት አልተቻለም። እባክዎ የበይነመረብ ግንኙነትዎን ያረጋግጡ።';
+
+  @override
+  String get errorConnectionRetry => 'እንደገና ይሞክሩ';
+
+  @override
+  String get errorConnectionRetrying => 'እየሞከረ...';
+
+  @override
+  String errorConnectionAttempt(String attempt, String total) {
+    return 'ሙከራ $attempt ከ $total';
+  }
 }

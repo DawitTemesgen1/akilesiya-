@@ -17,6 +17,10 @@ class AdminHubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Iconsax.arrow_left),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           'የአስተዳዳሪ ማዕከል',
           style:

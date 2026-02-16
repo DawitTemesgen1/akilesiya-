@@ -1055,8 +1055,22 @@ class _FamilyMemberDetailScreenState extends State<FamilyMemberDetailScreen>
     String formattedDate = 'N/A';
     if (dateVal != null) {
       try {
-        final etDate = EthiopianDate.parse(dateVal.toString());
-        formattedDate = etDate.toString();
+        DateTime? dt;
+        if (dateVal is DateTime) {
+          dt = dateVal;
+        } else {
+          dt = DateTime.tryParse(dateVal.toString());
+        }
+
+        if (dt != null) {
+          final etDate = EthiopianDate.fromGregorian(dt);
+          formattedDate = etDate.toString();
+        } else {
+          // Fallback if it's already in a format EthiopianDate.parse can handle
+          // but usually backend sends ISO strings
+          final etDate = EthiopianDate.parse(dateVal.toString());
+          formattedDate = etDate.toString();
+        }
       } catch (e) {
         formattedDate = dateVal.toString();
       }

@@ -94,8 +94,9 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
 
   Color _getActionColor(String actionType) {
     if (actionType.contains('CREATE')) return Colors.green;
-    if (actionType.contains('DELETE') || actionType.contains('DEACTIVATE'))
+    if (actionType.contains('DELETE') || actionType.contains('DEACTIVATE')) {
       return Colors.red;
+    }
     if (actionType.contains('UPDATE')) return Colors.orange;
     if (actionType.contains('PROMOTED')) return Colors.blue;
     return Colors.grey;
@@ -103,8 +104,9 @@ class _AuditLogsScreenState extends State<AuditLogsScreen> {
 
   IconData _getActionIcon(String actionType) {
     if (actionType.contains('CREATE')) return Iconsax.add;
-    if (actionType.contains('DELETE') || actionType.contains('DEACTIVATE'))
+    if (actionType.contains('DELETE') || actionType.contains('DEACTIVATE')) {
       return Iconsax.trash;
+    }
     if (actionType.contains('UPDATE')) return Iconsax.edit;
     if (actionType.contains('PROMOTED')) return Iconsax.user_tag;
     return Iconsax.document_text;

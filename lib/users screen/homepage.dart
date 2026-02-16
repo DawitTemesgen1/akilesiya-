@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:intl/intl.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/public_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
@@ -16,6 +16,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/private_homepage.dart';
 import 'package:amde_haymanot_abalat_guday/admin%20only/post_management.dart';
 import 'package:amde_haymanot_abalat_guday/models/comment.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 
 // --- MODELS AND ENUMS ---
 
@@ -155,10 +156,10 @@ class UnifiedPost {
     try {
       return UnifiedPost(
         id: json['id']?.toString() ?? '',
-        title: json['title']?.toString() ?? 'ርዕስ የለም',
+        title: json['title']?.toString() ?? '',
         description: json['description']?.toString() ?? '',
         imageUrl: _buildFullUrl(json['imageUrl']),
-        author: json['author']?.toString() ?? 'ያልታወቀ ደራሲ',
+        author: json['author']?.toString() ?? '',
         authorAvatar: _buildFullUrl(json['authorAvatar']),
         date: _parseDateTime(json['date']),
         type: _parsePostType(json['type']),
@@ -186,10 +187,10 @@ class UnifiedPost {
     try {
       return UnifiedPost(
         id: json['id']?.toString() ?? UniqueKey().toString(),
-        title: json['title']?.toString() ?? 'ርዕስ የለም',
+        title: json['title']?.toString() ?? '',
         description: json['description']?.toString() ?? '',
         imageUrl: _buildFullUrl(json['imageUrl']),
-        author: json['author']?.toString() ?? 'ያልታወቀ ደራሲ',
+        author: json['author']?.toString() ?? '',
         authorAvatar: _buildFullUrl(json['authorAvatar']),
         date: _parseDateTime(json['date']),
         type: _parsePostType(json['type']),
@@ -355,7 +356,7 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
       debugPrint('Fatal error in _loadUnifiedFeed: $e');
       if (mounted) {
         setState(() {
-          _error = 'የመረጃ ጫኝ ስህተት። እባክዎ እንደገና ይሞክሩ።';
+          _error = AppLocalizations.of(context)!.homepageErrorLoading;
           _isLoading = false;
         });
       }
@@ -382,10 +383,13 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
     final canManagePublicPosts = userProvider.canManagePublicPosts;
     final isSuperiorAdmin = userProvider.roles.contains('superior_admin');
 
+    final l10n = AppLocalizations.of(context)!;
     final userProfile = userProvider.userProfile;
     final userName = userProfile != null
-        ? (userProfile['christian_name'] ?? userProfile['full_name'] ?? 'ምዕመን')
-        : 'ምዕመን';
+        ? (userProfile['christian_name'] ??
+            userProfile['full_name'] ??
+            l10n.homepageMember)
+        : l10n.homepageMember;
 
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = themeProvider.isDarkMode(context);
@@ -425,17 +429,17 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
               const SliverToBoxAdapter(child: SizedBox(height: 10)),
               if (_featuredPosts.isNotEmpty) ...[
                 SliverToBoxAdapter(
-                    child: _buildSectionHeader(
-                        "ልዩ ትኩረት", Iconsax.star1, primaryColor, textColor)),
+                    child: _buildSectionHeader(l10n.homepageFeatured,
+                        Iconsax.star1, primaryColor, textColor)),
                 SliverToBoxAdapter(child: _buildFeaturedCarousel()),
               ],
               SliverToBoxAdapter(
-                  child: _buildSectionHeader(
-                      "የቅርብ ጊዜ", Iconsax.activity, primaryColor, textColor)),
+                  child: _buildSectionHeader(l10n.homepageRecent,
+                      Iconsax.activity, primaryColor, textColor)),
               if (_posts.isEmpty)
                 SliverFillRemaining(
                     child: Center(
-                        child: Text("ምንም መረጃ የለም",
+                        child: Text(l10n.homepageNoDataFound,
                             style: TextStyle(color: subtleText))))
               else
                 SliverList(
@@ -509,7 +513,7 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
             elevation: 4,
             icon: const Icon(Iconsax.document_text),
             label: Text(
-              "ልጥፎችን ያስተዳድሩ",
+              AppLocalizations.of(context)!.homepageManagePosts,
               style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold),
             ),
           ),
@@ -532,7 +536,7 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
             elevation: 4,
             icon: const Icon(Iconsax.edit),
             label: Text(
-              "መገለጫ አርትዕ",
+              AppLocalizations.of(context)!.homepageEditProfile,
               style: GoogleFonts.notoSansEthiopic(fontWeight: FontWeight.bold),
             ),
           ),
@@ -584,7 +588,8 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
               size: 24,
             ),
             onPressed: onToggleTheme,
-            tooltip: 'Toggle Theme',
+            tooltip:
+                AppLocalizations.of(context)!.settingsLanguageToggleTooltip,
           ),
         ),
       ],
@@ -598,7 +603,7 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "እንኳን ደህና መጡ፣",
+                AppLocalizations.of(context)!.homepageWelcomeUser,
                 style: GoogleFonts.notoSansEthiopic(
                   fontSize: 14,
                   color: subtleText,
@@ -739,13 +744,14 @@ class _UnifiedHomePageState extends State<UnifiedHomePage> {
         children: [
           Icon(Iconsax.warning_2, color: subtleText, size: 50),
           const SizedBox(height: 16),
-          Text(_error ?? "Unknown Error", style: TextStyle(color: subtleText)),
+          Text(_error ?? AppLocalizations.of(context)!.defaultUnknownError,
+              style: TextStyle(color: subtleText)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadUnifiedFeed,
             style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor, foregroundColor: Colors.white),
-            child: const Text("እንደገና ሞክር"),
+            child: Text(AppLocalizations.of(context)!.homepageRetry),
           )
         ],
       ),
@@ -759,6 +765,7 @@ class _FeaturedPostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: MediaQuery.of(context).size.width,
       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -806,7 +813,7 @@ class _FeaturedPostCard extends StatelessWidget {
                     color: premiumGold,
                     borderRadius: BorderRadius.circular(30)),
                 child: Text(
-                  "FEATURED EVENT",
+                  l10n.homepageFeaturedEvent,
                   style: GoogleFonts.poppins(
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
@@ -815,7 +822,7 @@ class _FeaturedPostCard extends StatelessWidget {
                 ),
               ),
             Text(
-              post.title,
+              post.title.isEmpty ? l10n.defaultNoTitle : post.title,
               style: GoogleFonts.notoSansEthiopic(
                 color: Colors.white,
                 fontSize: 22,
@@ -838,7 +845,7 @@ class _FeaturedPostCard extends StatelessWidget {
                 Icon(Iconsax.calendar_1, color: premiumGold, size: 16),
                 const SizedBox(width: 8),
                 Text(
-                  DateFormat('MMMM d, y').format(post.date),
+                  EthiopianDate.fromGregorian(post.date).toString(),
                   style: GoogleFonts.poppins(
                       color: Colors.white70,
                       fontSize: 13,
@@ -935,7 +942,11 @@ class PostCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(post.author,
+                        Text(
+                            post.author.isEmpty
+                                ? AppLocalizations.of(context)!
+                                    .defaultUnknownAuthor
+                                : post.author,
                             style: GoogleFonts.notoSansEthiopic(
                                 color: textColor,
                                 fontSize: 16,
@@ -945,7 +956,9 @@ class PostCard extends StatelessWidget {
                           children: [
                             Icon(Iconsax.clock, size: 12, color: subtleText),
                             const SizedBox(width: 4),
-                            Text(DateFormat.yMMMd().format(post.date),
+                            Text(
+                                EthiopianDate.fromGregorian(post.date)
+                                    .toString(),
                                 style: GoogleFonts.poppins(
                                     color: subtleText, fontSize: 12)),
                           ],
@@ -963,7 +976,10 @@ class PostCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(post.title,
+                  Text(
+                      post.title.isEmpty
+                          ? AppLocalizations.of(context)!.defaultUnknownAuthor
+                          : post.title,
                       style: GoogleFonts.notoSansEthiopic(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -1147,6 +1163,14 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   final Set<int> _expandedComments = {};
   int _topLevelLimit = 10;
 
+  late AppLocalizations l10n;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    l10n = AppLocalizations.of(context)!;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1223,7 +1247,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(result['message'] ?? 'አስተያየቱን መለጠፍ አልተቻለም።'),
+          content: Text(result['message'] ?? l10n.commentsPostError),
           backgroundColor: Colors.red,
         ));
       }
@@ -1232,22 +1256,24 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 
   Future<void> _deleteComment(Comment comment) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E2E),
-        title: const Text("አስተያየት ይጥፉ?", style: TextStyle(color: Colors.white)),
-        content: const Text("ይህንን አስተያየት ማጥፋት እንደሚፈልጉ እርግጠኛ ነዎት?",
-            style: TextStyle(color: Colors.white70)),
+        title: Text(l10n.commentsDeleteConfirmTitle,
+            style: const TextStyle(color: Colors.white)),
+        content: Text(l10n.commentsDeleteConfirmMessage,
+            style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child:
-                  const Text("ይቅር", style: TextStyle(color: Colors.white54))),
+              child: Text(l10n.cancelButton,
+                  style: const TextStyle(color: Colors.white54))),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child:
-                  const Text("አጥፋ", style: TextStyle(color: Colors.redAccent))),
+              child: Text(l10n.deleteButton,
+                  style: const TextStyle(color: Colors.redAccent))),
         ],
       ),
     );
@@ -1264,7 +1290,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
           widget.onCommentCountChanged(_comments.length);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(result['message'] ?? 'አስተያየቱን ማጥፋት አልተቻለም።'),
+            content: Text(result['message'] ?? l10n.commentsDeleteError),
             backgroundColor: Colors.red,
           ));
         }
@@ -1335,7 +1361,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("አስተያየቶች",
+                    Text(l10n.homepageComments,
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -1369,9 +1395,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 ? const Center(
                     child: CircularProgressIndicator(color: premiumGold))
                 : _comments.isEmpty
-                    ? const Center(
-                        child: Text("እስካሁን ምንም አስተያየት የለም። የመጀመሪያው ይሁኑ!",
-                            style: TextStyle(color: Colors.white60)))
+                    ? Center(
+                        child: Text(l10n.homepageNoCommentsYet,
+                            style: const TextStyle(color: Colors.white60)))
                     : ListView.builder(
                         controller: controller,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1388,8 +1414,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                     _topLevelLimit += 10;
                                   });
                                 },
-                                child: const Text("ተጨማሪ አስተያየቶችን ይመልከቱ",
-                                    style: TextStyle(color: premiumGold)),
+                                child: Text(l10n.viewMore,
+                                    style: const TextStyle(color: premiumGold)),
                               ),
                             );
                           }
@@ -1419,7 +1445,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                       });
                                     },
                                     child: Text(
-                                      "ሁሉንም ${replies.length} ምላሾች ይመልከቱ",
+                                      l10n.commentsViewAllReplies(
+                                          replies.length),
                                       style: const TextStyle(
                                           color: premiumGold,
                                           fontSize: 12,
@@ -1450,8 +1477,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                                     .remove(comment.id);
                                               });
                                             },
-                                            child: const Text("ምላሾችን ሰብስብ",
-                                                style: TextStyle(
+                                            child: Text(
+                                                l10n.commentsCollapseReplies,
+                                                style: const TextStyle(
                                                     color: Colors.white54,
                                                     fontSize: 12)),
                                           ),
@@ -1479,8 +1507,8 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   Expanded(
                     child: Text(
                       _editingComment != null
-                          ? "አስተያየትን በማስተካከል ላይ..."
-                          : "${_replyingTo!.author} በመመለስ ላይ...",
+                          ? l10n.commentsEditing
+                          : l10n.commentsReplyingTo(_replyingTo!.author),
                       style:
                           const TextStyle(color: Colors.white70, fontSize: 12),
                     ),
@@ -1502,15 +1530,16 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                   controller: _commentController,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                      hintText: "አስተያየት ይፃፉ...",
-                      hintStyle: const TextStyle(color: Colors.white38),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.1),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 12)),
+                    hintText: l10n.commentsWritePlaceholder,
+                    hintStyle: const TextStyle(color: Colors.white38),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.1),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -1565,7 +1594,10 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                       : null,
                   child: (comment.authorAvatar == null)
                       ? Text(
-                          comment.author.isNotEmpty ? comment.author[0] : 'U',
+                          comment.author.isNotEmpty
+                              ? comment.author[0]
+                              : AppLocalizations.of(context)!
+                                  .defaultUnknownAuthor[0],
                           style: TextStyle(
                               color: Colors.white, fontSize: isReply ? 12 : 14))
                       : null,
@@ -1585,7 +1617,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                                     fontSize: isReply ? 13 : 14,
                                     color: Colors.white)),
                           ),
-                          Text(DateFormat.MMMd().format(comment.timestamp),
+                          Text(
+                              EthiopianDate.fromGregorian(comment.timestamp)
+                                  .toString(),
                               style: GoogleFonts.poppins(
                                   fontSize: 10, color: Colors.white54)),
                         ],

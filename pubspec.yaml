@@ -114,7 +114,7 @@ flutter:
   # This assumes your .env file is named 'dotenv' (without a dot)
   # for better web compatibility.
   assets:
-    - .env
+    - assets/.env
     - assets/
     - assets/images/
     - assets/icon/

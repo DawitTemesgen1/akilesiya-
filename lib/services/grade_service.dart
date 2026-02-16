@@ -243,7 +243,20 @@ class GradeService {
             final jsonResponse = json.decode(response.body);
             if (jsonResponse['success'] == true &&
                 jsonResponse['data'] != null) {
-              final grades = jsonResponse['data']['grades'];
+              // Handle both response formats:
+              // 1. {'success': true, 'data': {'grades': [...]}}
+              // 2. {'success': true, 'data': [...]}
+              dynamic grades;
+
+              if (jsonResponse['data'] is List) {
+                // Data is directly a list of grades
+                grades = jsonResponse['data'];
+              } else if (jsonResponse['data'] is Map &&
+                  jsonResponse['data']['grades'] != null) {
+                // Data is a map containing 'grades' key
+                grades = jsonResponse['data']['grades'];
+              }
+
               if (grades is List && grades.isNotEmpty) {
                 gradesByYear[year.toString()] = grades;
                 debugPrint(

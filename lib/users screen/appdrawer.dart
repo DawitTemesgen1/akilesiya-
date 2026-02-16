@@ -35,33 +35,6 @@ import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
 
-// --- Amharic Localization Strings ---
-abstract class AmharicStrings {
-  static const String guest = 'እንግዳ';
-  static const String sundaySchool = 'ሰንበት ትምህርት ቤት';
-  static const String mainMenu = 'ዋና ማውጫ';
-  static const String systemAdmin = 'የስርዓት አስተዳዳሪ';
-  static const String attendanceManagement = 'የትምህርት ክትትል';
-  static const String attendanceSummary = 'የክትትል ሪፖርት';
-  static const String academicManagement = 'አካዳሚክ አስተዳደር';
-  static const String libraryManagement = 'ቤተ-መጽሐፍት አስተዳደር';
-  static const String planManagement = 'የእቅድ አስተዳደር';
-  static const String memberDevelopment = 'የአባላት ክትትልና እድገት';
-  static const String userList = 'የተጠቃሚዎች ዝርዝር';
-  static const String superiorLeadership = 'የበላይ አስተዳደር';
-  static const String memberAccountAdjustment = 'የአባላት መለያ ማስተካከያ';
-  static const String manageFamilyLinks = 'የቤተሰብ ማያያዣ';
-  static const String auditReport = 'የኦዲት ሪፖርት';
-  static const String newSchoolRegistration = 'አዲስ ት/ቤት መመዝገቢያ';
-  static const String profileTemplateeEditor = 'የመገለጫ አብነት አርታዒ';
-  static const String app = 'መተግበሪያ';
-  static const String settings = 'ቅንብሮች';
-  static const String aboutUs = 'ስለ እኛ';
-  static const String socialMedia = 'የማህበራዊ ሚዲያ';
-  static const String logout = 'ውጣ';
-  static const String userActivity = 'የተጠቃሚ እንቅስቃሴ';
-}
-
 // --- UI Theme Constants ---
 const Color premiumDark = Color(0xFF0F0F1E);
 const Color premiumGold = Color(0xFFFFD700);
@@ -88,6 +61,7 @@ class AppDrawer extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode(context);
     final primaryColor = Theme.of(context).primaryColor;
+    final l10n = AppLocalizations.of(context)!;
 
     return Drawer(
       backgroundColor: Colors.transparent, // Required for glassmorphism
@@ -162,10 +136,9 @@ class AppDrawer extends StatelessWidget {
                         ].contains(s));
 
                 final String fullName =
-                    userProvider.userProfile?['full_name'] ??
-                        (AppLocalizations.of(context)?.settingsName ?? 'Guest');
+                    userProvider.userProfile?['full_name'] ?? l10n.commonGuest;
                 final String schoolName = tenantProvider.currentTenant?.name ??
-                    AmharicStrings.sundaySchool;
+                    l10n.privateHomepageSundaySchool;
                 final String avatarUrl = userProvider.avatarUrl ?? '';
 
                 final dynamic userProfile = userProvider.userProfile;
@@ -193,37 +166,26 @@ class AppDrawer extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           children: [
-                            _buildSectionHeader(
-                                context,
-                                AppLocalizations.of(context)?.drawerMainMenu ??
-                                    AmharicStrings.mainMenu),
+                            _buildSectionHeader(context, l10n.drawerMainMenu),
                             // Main Navigation
                             _buildDrawerItem(context,
                                 icon: Iconsax.home_2,
-                                title: AppLocalizations.of(context)
-                                        ?.homePageTitle ??
-                                    'Home',
+                                title: l10n.homePageTitle,
                                 isSelected: selectedIndex == 0,
                                 onTap: () => _handleNavigation(context, 0)),
                             _buildDrawerItem(context,
                                 icon: Iconsax.cloud_connection,
-                                title: AppLocalizations.of(context)
-                                        ?.managementPageTitle ??
-                                    'Management',
+                                title: l10n.managementPageTitle,
                                 isSelected: selectedIndex == 1,
                                 onTap: () => _handleNavigation(context, 1)),
                             _buildDrawerItem(context,
                                 icon: Iconsax.teacher,
-                                title: AppLocalizations.of(context)
-                                        ?.learningPageTitle ??
-                                    'Learning',
+                                title: l10n.learningPageTitle,
                                 isSelected: selectedIndex == 2,
                                 onTap: () => _handleNavigation(context, 2)),
                             _buildDrawerItem(context,
                                 icon: Iconsax.user,
-                                title: AppLocalizations.of(context)
-                                        ?.profilePageTitle ??
-                                    'Profile',
+                                title: l10n.profilePageTitle,
                                 isSelected: selectedIndex == 3,
                                 onTap: () => _handleNavigation(context, 3)),
                             const Divider(height: 32, thickness: 0.5),
@@ -231,73 +193,55 @@ class AppDrawer extends StatelessWidget {
                             // System Admin section
                             if (isSystemAdmin) ...[
                               _buildSectionHeader(
-                                context,
-                                AppLocalizations.of(context)
-                                        ?.drawerSystemAdmin ??
-                                    AmharicStrings.systemAdmin,
-                              ),
+                                  context, l10n.drawerSystemAdmin),
                               _buildDrawerItem(context,
                                   icon: Iconsax.category,
-                                  title: AppLocalizations.of(context)
-                                          ?.drawerSystemDashboard ??
-                                      'System Dashboard',
+                                  title: l10n.drawerSystemDashboard,
                                   onTap: () => _pushScreen(
                                       context, const SystemAdminDashboard())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.teacher,
-                                  title: AppLocalizations.of(context)
-                                          ?.drawerSchoolsManagement ??
-                                      'Schools Management',
+                                  title: l10n.drawerSchoolsManagement,
                                   onTap: () => _pushScreen(
                                       context, const SchoolsListScreen())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.people,
-                                  title: AppLocalizations.of(context)
-                                          ?.drawerUserManagement ??
-                                      'User Management',
+                                  title: l10n.drawerUserManagement,
                                   onTap: () => _pushScreen(
                                       context, const UserManagementScreen())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.user_octagon,
-                                  title: 'የአባላት አስተዳደር ኮክፒት',
+                                  title: l10n.drawerMemberManagementCockpit,
                                   onTap: () => _pushScreen(context,
                                       const MemberManagementCockpit())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.lock,
-                                  title: AppLocalizations.of(context)
-                                          ?.drawerPermissionsAndScreens ??
-                                      'Permissions & Screens',
+                                  title: l10n.drawerPermissionsAndScreens,
                                   onTap: () => _pushScreen(context,
                                       const SuperAdminDashboardScreen())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.edit_2,
-                                  title: AmharicStrings.profileTemplateeEditor,
+                                  title: l10n.drawerProfileTemplateEditor,
                                   onTap: () => _pushScreen(context,
                                       const ProfileTemplateBuilderScreen())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.activity,
-                                  title: AmharicStrings.userActivity,
+                                  title: l10n.drawerUserActivity,
                                   onTap: () => _pushScreen(
                                       context, const UserActivityScreen())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.activity,
-                                  title: AppLocalizations.of(context)
-                                          ?.drawerPlatformAnalytics ??
-                                      'Platform Analytics',
+                                  title: l10n.drawerPlatformAnalytics,
                                   onTap: () => _pushScreen(context,
                                       const PlatformAnalyticsScreen())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.security,
-                                  title: AppLocalizations.of(context)
-                                          ?.drawerSystemAudit ??
-                                      'System Audit',
+                                  title: l10n.drawerSystemAudit,
                                   onTap: () => _pushScreen(
                                       context, const AuditLogsScreen())),
                               _buildDrawerItem(context,
                                   icon: Iconsax.setting_2,
-                                  title: AppLocalizations.of(context)
-                                          ?.drawerSystemSettings ??
-                                      'System Settings',
+                                  title: l10n.drawerSystemSettings,
                                   onTap: () => _pushScreen(
                                       context, const SystemSettingsScreen())),
                             ],
@@ -305,20 +249,14 @@ class AppDrawer extends StatelessWidget {
                             // Admin Tools
                             if (showAdminTools) ...[
                               _buildSectionHeader(
-                                context,
-                                AppLocalizations.of(context)
-                                        ?.drawerAdminTools ??
-                                    'Admin Tools',
-                              ),
+                                  context, l10n.drawerAdminTools),
                               if (isAttendanceAdmin ||
                                   isSuperiorAdmin ||
                                   allowedScreens
                                       .contains('ATTENDANCE_MANAGEMENT'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.calendar_tick,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerAttendanceManagement ??
-                                        AmharicStrings.attendanceManagement,
+                                    title: l10n.drawerAttendanceManagement,
                                     onTap: () => _pushScreen(
                                         context, const AttendanceScreen())),
                               if (isAttendanceAdmin ||
@@ -326,7 +264,7 @@ class AppDrawer extends StatelessWidget {
                                   allowedScreens.contains('ATTENDANCE_SUMMARY'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.chart_square,
-                                    title: AmharicStrings.attendanceSummary,
+                                    title: l10n.drawerAttendanceSummary,
                                     onTap: () => _pushScreen(context,
                                         const AttendanceSummaryScreen())),
                               if (isGradeAdmin ||
@@ -335,9 +273,7 @@ class AppDrawer extends StatelessWidget {
                                       .contains('ACADEMIC_MANAGEMENT'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.document_text_1,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerAcademicManagement ??
-                                        AmharicStrings.academicManagement,
+                                    title: l10n.drawerAcademicManagement,
                                     onTap: () => _pushScreen(context,
                                         const GradeManagementScreen())),
                               if (isLibraryAdmin ||
@@ -345,9 +281,7 @@ class AppDrawer extends StatelessWidget {
                                   allowedScreens.contains('LIBRARY_MANAGEMENT'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.book_1,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerLibraryManagement ??
-                                        AmharicStrings.libraryManagement,
+                                    title: l10n.drawerLibraryManagement,
                                     onTap: () => _pushScreen(context,
                                         const LibraryManagementScreen())),
                               if (isPlanAdmin ||
@@ -355,9 +289,7 @@ class AppDrawer extends StatelessWidget {
                                   allowedScreens.contains('PLAN_MANAGEMENT'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.clipboard_text,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerPlanManagement ??
-                                        AmharicStrings.planManagement,
+                                    title: l10n.drawerPlanManagement,
                                     onTap: () => _pushScreen(
                                         context, const PlanControlScreen())),
                               if (isDevAdmin ||
@@ -365,18 +297,14 @@ class AppDrawer extends StatelessWidget {
                                   allowedScreens.contains('MEMBER_DEVELOPMENT'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.user_octagon,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerMemberDevelopment ??
-                                        AmharicStrings.memberDevelopment,
+                                    title: l10n.drawerMemberDevelopment,
                                     onTap: () => _pushScreen(context,
                                         const MemberDevelopmentHubScreen())),
                               if (isSuperiorAdmin ||
                                   allowedScreens.contains('USER_LIST'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.people,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerUserList ??
-                                        AmharicStrings.userList,
+                                    title: l10n.drawerUserList,
                                     onTap: () => _pushScreen(
                                         context, const UserManagementScreen())),
                             ],
@@ -391,22 +319,18 @@ class AppDrawer extends StatelessWidget {
                                       'AUDIT_REPORT'
                                     ].contains(s)))) ...[
                               _buildSectionHeader(
-                                context,
-                                AppLocalizations.of(context)
-                                        ?.drawerSuperiorLeadership ??
-                                    AmharicStrings.superiorLeadership,
-                              ),
+                                  context, l10n.drawerSuperiorLeadership),
                               if (isSuperiorAdmin ||
                                   allowedScreens.contains('ADMIN_HUB'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.category,
-                                    title: 'Admin Hub',
+                                    title: l10n.drawerAdminHub,
                                     onTap: () => _pushScreen(
                                         context, const AdminHubScreen())),
                               if (isSuperiorAdmin)
                                 _buildDrawerItem(context,
                                     icon: Iconsax.user_octagon,
-                                    title: 'የአባላት አስተዳደር ኮክፒት',
+                                    title: l10n.drawerMemberManagementCockpit,
                                     onTap: () => _pushScreen(context,
                                         const MemberManagementCockpit())),
                               if (isSuperiorAdmin ||
@@ -414,9 +338,7 @@ class AppDrawer extends StatelessWidget {
                                       .contains('MEMBER_ACCOUNT_ADJUSTMENT'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.user_edit,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerMemberAccountAdjustment ??
-                                        AmharicStrings.memberAccountAdjustment,
+                                    title: l10n.drawerMemberAccountAdjustment,
                                     onTap: () => _pushScreen(
                                         context,
                                         const AdminEditUserScreen(
@@ -426,9 +348,7 @@ class AppDrawer extends StatelessWidget {
                                       .contains('MANAGE_FAMILY_LINKS'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.people,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerManageFamilyLinks ??
-                                        AmharicStrings.manageFamilyLinks,
+                                    title: l10n.drawerManageFamilyLinks,
                                     onTap: () => _pushScreen(context,
                                         const ManageFamilyLinksScreen())),
                               if (isSuperiorAdmin ||
@@ -436,78 +356,55 @@ class AppDrawer extends StatelessWidget {
                                       .contains('PERMISSIONS_AND_SCREENS'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.lock,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerPermissionsAndScreens ??
-                                        'Permissions & Screens',
+                                    title: l10n.drawerPermissionsAndScreens,
                                     onTap: () => _pushScreen(context,
                                         const SuperAdminDashboardScreen())),
                               if (isSuperiorAdmin ||
                                   allowedScreens.contains('AUDIT_REPORT'))
                                 _buildDrawerItem(context,
                                     icon: Iconsax.shield_search,
-                                    title: AppLocalizations.of(context)
-                                            ?.drawerAuditReport ??
-                                        AmharicStrings.auditReport,
+                                    title: l10n.drawerAuditReport,
                                     onTap: () => _pushScreen(
                                         context, const AuditTrailScreen())),
                             ],
 
-                            _buildSectionHeader(
-                                context,
-                                AppLocalizations.of(context)
-                                        ?.settingsUserInfo ??
-                                    'User Information'),
+                            _buildSectionHeader(context, l10n.settingsUserInfo),
                             // Personal Info
                             _buildDrawerItem(context,
                                 icon: Iconsax.calendar_1,
-                                title: AppLocalizations.of(context)
-                                        ?.attendanceHistoryTitle ??
-                                    'My Attendance History',
+                                title: l10n.attendanceHistoryTitle,
                                 onTap: () => _pushScreen(context,
                                     const UserAttendanceHistoryScreen())),
                             _buildDrawerItem(context,
                                 icon: Iconsax.people,
-                                title: AppLocalizations.of(context)
-                                        ?.drawerManageFamilyLinks ??
-                                    'Family Status',
+                                title: l10n.drawerFamilyStatus,
                                 onTap: () => _pushScreen(
                                     context, const FamilyViewScreen())),
 
                             const Divider(height: 32, thickness: 0.5),
                             _buildSectionHeader(
-                                context,
-                                AppLocalizations.of(context)
-                                        ?.drawerApplication ??
-                                    AmharicStrings.app),
+                                context, l10n.drawerApplication),
                             // Application
                             _buildDrawerItem(context,
                                 icon: Iconsax.setting_2,
-                                title: AppLocalizations.of(context)
-                                        ?.settingsTitle ??
-                                    AmharicStrings.settings, onTap: () {
+                                title: l10n.settingsTitle, onTap: () {
                               Navigator.pop(context);
                               context.push('/settings');
                             }),
                             _buildDrawerItem(context,
                                 icon: Iconsax.info_circle,
-                                title: AppLocalizations.of(context)
-                                        ?.drawerAboutUs ??
-                                    AmharicStrings.aboutUs,
+                                title: l10n.drawerAboutUs,
                                 onTap: () => _pushScreen(
                                     context, const AboutUsScreen())),
                             _buildDrawerItem(context,
                                 icon: Iconsax.global,
-                                title: AppLocalizations.of(context)
-                                        ?.drawerSocialMedia ??
-                                    AmharicStrings.socialMedia,
+                                title: l10n.drawerSocialMedia,
                                 onTap: () =>
                                     _pushScreen(context, const AmdePlatform())),
                             const Divider(height: 24, thickness: 0.5),
                             _buildDrawerItem(context,
                                 icon: Iconsax.logout,
-                                title: AppLocalizations.of(context)
-                                        ?.settingsLogout ??
-                                    AmharicStrings.logout,
+                                title: l10n.settingsLogout,
                                 isDestructive: true, onTap: () {
                               HapticFeedback.mediumImpact();
                               Navigator.pop(context);

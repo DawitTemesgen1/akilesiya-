@@ -1,8 +1,7 @@
 // lib/screens/user_activity_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
@@ -29,7 +28,8 @@ class _UserActivityScreenState extends State<UserActivityScreen> {
       final response = await ApiService.get('/user-activities');
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data is List ? data : (data['data'] ?? []));
+        return List<Map<String, dynamic>>.from(
+            data is List ? data : (data['data'] ?? []));
       } else {
         final errorData = json.decode(response.body);
         throw 'Failed to load user activities: ${errorData['message'] ?? 'Unknown error'}';
@@ -243,10 +243,10 @@ class _UserActivityScreenState extends State<UserActivityScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              DateFormat.yMMMd().add_jm().format(
-                                    DateTime.parse(activity['created_at'])
-                                        .toLocal(),
-                                  ),
+                              EthiopianDate.fromGregorian(
+                                DateTime.parse(activity['created_at'])
+                                    .toLocal(),
+                              ).toString(),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 fontStyle: FontStyle.italic,
                                 color: Colors.white.withValues(alpha: 0.6),

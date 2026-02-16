@@ -84,7 +84,7 @@ class StartScreen extends StatelessWidget {
                     FadeInUp(
                       delay: const Duration(milliseconds: 300),
                       child: Text(
-                        'አቅሌስያ', // App Name
+                        l10n.appName, // App Name
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 36,

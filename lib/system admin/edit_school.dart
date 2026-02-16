@@ -547,7 +547,7 @@ class _EditSchoolScreenState extends State<EditSchoolScreen> {
         subtitle: Text(_isActive ? 'Active and visible' : 'Inactive and hidden',
             style: GoogleFonts.poppins(
                 fontSize: 12, color: _isActive ? Colors.green : Colors.red)),
-        activeColor: primaryColor,
+        activeThumbColor: primaryColor,
         value: _isActive,
         onChanged: (v) => setState(() => _isActive = v),
       ),

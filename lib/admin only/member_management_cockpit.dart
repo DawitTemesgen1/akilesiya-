@@ -108,6 +108,10 @@ class _MemberManagementCockpitState extends State<MemberManagementCockpit> {
 
   Widget _buildAppBar(BuildContext context, Color primaryColor, bool isDark) {
     return SliverAppBar(
+      leading: IconButton(
+        icon: const Icon(Iconsax.arrow_left),
+        onPressed: () => Navigator.of(context).pop(),
+      ),
       expandedHeight: 120.0,
       floating: false,
       pinned: true,

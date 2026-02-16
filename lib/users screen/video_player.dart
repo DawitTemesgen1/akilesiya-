@@ -3,18 +3,11 @@ import 'package:amde_haymanot_abalat_guday/users%20screen/learning_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
-import 'package:intl/intl.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-// --- Amharic Localization Strings for Video Player ---
-abstract class AmharicStringsVideoPlayer {
-  static const String by = 'በ';
-  static const String description = 'መግለጫ';
-  static const String watchOnYoutube = 'በዩቲዩብ ይመልከቱ';
-  static const String desktopNote =
-      'በዴስክቶፕ ላይ ለተሻለ ተሞክሮ ቪዲዮውን በዩቲዩብ እንዲመለከቱ እንመክራለን።';
-}
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
+import 'package:iconsax/iconsax.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final LearningContent content;
@@ -95,8 +88,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     if (_useFallback) {
-      return _buildFallbackUI();
+      return _buildFallbackUI(l10n);
     }
 
     // Standard Embedded Player for Mobile/Web
@@ -104,12 +98,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       controller: _controller!,
       aspectRatio: 16 / 9,
       builder: (context, player) => Scaffold(
+        backgroundColor: AppTheme.surface,
         appBar: _buildAppBar(),
         body: ListView(
           padding: EdgeInsets.zero,
+          physics: const BouncingScrollPhysics(),
           children: [
             player,
-            _buildContentDetails(),
+            _buildContentDetails(l10n),
           ],
         ),
       ),
@@ -119,21 +115,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: AppTheme.primary,
-      foregroundColor: AppTheme.textLight,
+      foregroundColor: Colors.white,
+      elevation: 0,
       title: Text(
         widget.content.title,
         style: GoogleFonts.notoSansEthiopic(
-            fontSize: 16, color: AppTheme.textLight),
+            fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
       ),
       centerTitle: true,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+        onPressed: () => Navigator.pop(context),
+      ),
     );
   }
 
-  Widget _buildFallbackUI() {
+  Widget _buildFallbackUI(AppLocalizations l10n) {
     return Scaffold(
+      backgroundColor: AppTheme.surface,
       appBar: _buildAppBar(),
       body: ListView(
         padding: EdgeInsets.zero,
+        physics: const BouncingScrollPhysics(),
         children: [
           // Thumbnail Preview with Play Button Overlay
           Stack(
@@ -141,100 +144,254 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             children: [
               AspectRatio(
                 aspectRatio: 16 / 9,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(widget.content.imageUrl),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                child: Hero(
+                  tag: 'videoImage-${widget.content.imageUrl}',
                   child: Container(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: NetworkImage(widget.content.imageUrl),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [Colors.black87, Colors.transparent],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.play_circle_fill,
-                    size: 80, color: AppTheme.accent),
-                onPressed: _launchYoutubeUrl,
+              GestureDetector(
+                onTap: _launchYoutubeUrl,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.play_circle_fill,
+                      size: 90, color: AppTheme.accent),
+                ),
               ),
             ],
           ),
           Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32),
             child: Column(
               children: [
                 ElevatedButton.icon(
                   onPressed: _launchYoutubeUrl,
-                  icon: const Icon(Icons.open_in_new),
-                  label: const Text(AmharicStringsVideoPlayer.watchOnYoutube),
+                  icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                  label: Text(
+                    l10n.videoWatchOnYoutube,
+                    style: GoogleFonts.notoSansEthiopic(
+                        fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
+                    minimumSize: const Size(double.infinity, 64),
                     backgroundColor: AppTheme.accent,
                     foregroundColor: AppTheme.primary,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                    elevation: 8,
+                    shadowColor: AppTheme.accent.withValues(alpha: 0.4),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  AmharicStringsVideoPlayer.desktopNote,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.notoSansEthiopic(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
+                const SizedBox(height: 16),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.info.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: AppTheme.info.withValues(alpha: 0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline,
+                          color: AppTheme.info, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          l10n.videoDesktopNote,
+                          style: GoogleFonts.notoSansEthiopic(
+                            fontSize: 12,
+                            color: AppTheme.info,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          _buildContentDetails(),
+          _buildContentDetails(l10n),
         ],
       ),
     );
   }
 
-  Widget _buildContentDetails() {
+  Widget _buildContentDetails(AppLocalizations l10n) {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             widget.content.title,
-            style: AppTheme.headline1,
+            style: GoogleFonts.notoSansEthiopic(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+              height: 1.2,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: AppTheme.primary,
+                child: Text(
+                  widget.content.author[0].toUpperCase(),
+                  style: GoogleFonts.notoSansEthiopic(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.content.author,
+                      style: GoogleFonts.notoSansEthiopic(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      EthiopianDate.fromGregorian(widget.content.publishDate)
+                          .toString(),
+                      style: GoogleFonts.notoSansEthiopic(
+                        color: AppTheme.textSecondary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildCategoryChip(widget.content.category.isEmpty
+                  ? l10n.learningCategoryGeneral
+                  : widget.content.category),
+            ],
+          ),
+          const SizedBox(height: 32),
           Text(
-            "${AmharicStringsVideoPlayer.by} ${widget.content.author} • ${DateFormat.yMMMd().format(widget.content.publishDate)}",
-            style: GoogleFonts.notoSansEthiopic()
-                .copyWith(fontSize: 14, color: AppTheme.textSecondary),
+            l10n.videoDescription,
+            style: GoogleFonts.notoSansEthiopic(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.primary,
+            ),
           ),
-          const SizedBox(height: 4),
-          Chip(
-            label: Text(widget.content.category,
-                style: GoogleFonts.notoSansEthiopic()),
-            labelStyle: AppTheme.chipText,
-            backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(24),
+              border:
+                  Border.all(color: AppTheme.primary.withValues(alpha: 0.1)),
+            ),
+            child: Text(
+              widget.content.description,
+              style: GoogleFonts.notoSansEthiopic(
+                fontSize: 16,
+                height: 1.7,
+                color: AppTheme.textPrimary.withValues(alpha: 0.9),
+              ),
+            ),
           ),
-          const Divider(height: 32),
-          Text(
-            AmharicStringsVideoPlayer.description,
-            style: GoogleFonts.notoSansEthiopic().copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            widget.content.description,
-            style: GoogleFonts.notoSansEthiopic()
-                .copyWith(fontSize: 14, height: 1.5),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 40),
+          _buildActionButtons(l10n),
+          const SizedBox(height: 60),
         ],
       ),
+    );
+  }
+
+  Widget _buildCategoryChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.1)),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.notoSansEthiopic(
+          color: AppTheme.primary,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(AppLocalizations l10n) {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {},
+            icon: const Icon(Iconsax.share, size: 20),
+            label:
+                Text(l10n.shareButton, style: GoogleFonts.notoSansEthiopic()),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              backgroundColor: AppTheme.surface,
+              foregroundColor: AppTheme.primary,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side:
+                    BorderSide(color: AppTheme.primary.withValues(alpha: 0.2)),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {},
+            icon: const Icon(Iconsax.bookmark, size: 20),
+            label: Text(l10n.saveButton, style: GoogleFonts.notoSansEthiopic()),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              shadowColor: AppTheme.primary.withValues(alpha: 0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

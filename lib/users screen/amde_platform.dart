@@ -13,6 +13,7 @@ import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 // --- API SERVICE (This should point to your existing API service file) ---
 import 'dart:convert';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 
 /// Service class to handle API interactions for platform links.
 class PlatformLinksService {
@@ -132,7 +133,8 @@ class _AmdePlatformState extends State<AmdePlatform> {
       final List<dynamic> linkData = result['data'];
       return linkData.map((json) => PlatformLink.fromJson(json)).toList();
     } else {
-      throw Exception(result['message'] ?? 'ሊንኮችን መጫን አልተቻለም።');
+      throw Exception(result['message'] ??
+          AppLocalizations.of(context)!.platformLinksLoadError);
     }
   }
 
@@ -174,7 +176,8 @@ class _AmdePlatformState extends State<AmdePlatform> {
     if (result['success'] == true) {
       _refreshLinks();
     } else {
-      _showErrorSnackBar(result['message'] ?? 'ሊንኩን ማስቀመጥ አልተቻለም።');
+      _showErrorSnackBar(result['message'] ??
+          AppLocalizations.of(context)!.platformLinksSaveError);
     }
   }
 
@@ -183,7 +186,8 @@ class _AmdePlatformState extends State<AmdePlatform> {
     if (result['success'] == true) {
       _refreshLinks();
     } else {
-      _showErrorSnackBar(result['message'] ?? 'ሊንኩን መሰረዝ አልተቻለም።');
+      _showErrorSnackBar(result['message'] ??
+          AppLocalizations.of(context)!.platformLinksDeleteError);
     }
   }
 
@@ -211,19 +215,20 @@ class _AmdePlatformState extends State<AmdePlatform> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ማረጋገጫ'),
-        content: Text('"${link.name}" የተባለውን ሊንክ ለማጥፋት እርግጠኛ ነዎት?'),
+        title: Text(AppLocalizations.of(context)!.confirmation),
+        content: Text(AppLocalizations.of(context)!
+            .platformLinksDeleteConfirm(link.name)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('ይቅር')),
+              child: Text(AppLocalizations.of(context)!.settingsCancel)),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               Navigator.pop(context);
               _handleDeleteLink(link);
             },
-            child: const Text('አዎ, አጥፋ'),
+            child: Text(AppLocalizations.of(context)!.settingsConfirm),
           ),
         ],
       ),
@@ -242,7 +247,7 @@ class _AmdePlatformState extends State<AmdePlatform> {
           children: <Widget>[
             ListTile(
               leading: Icon(Iconsax.edit, color: primaryColor),
-              title: const Text('አርትዕ'),
+              title: Text(AppLocalizations.of(context)!.platformEditLink),
               onTap: () {
                 Navigator.pop(context);
                 _showManageLinkSheet(existingLink: link);
@@ -250,7 +255,9 @@ class _AmdePlatformState extends State<AmdePlatform> {
             ),
             ListTile(
               leading: const Icon(Iconsax.trash, color: Colors.red),
-              title: const Text('አጥፋ', style: TextStyle(color: Colors.red)),
+              title: Text(
+                  AppLocalizations.of(context)!.platformLinksDeleteError,
+                  style: const TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 _confirmDeleteLink(link);
@@ -285,10 +292,12 @@ class _AmdePlatformState extends State<AmdePlatform> {
             if (snapshot.hasError) {
               return Center(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text('ስህተት፦ ${snapshot.error}'),
+                Text(AppLocalizations.of(context)!
+                    .errorLabel(snapshot.error.toString())),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                    onPressed: _refreshLinks, child: const Text('እንደገና ሞክር')),
+                    onPressed: _refreshLinks,
+                    child: Text(AppLocalizations.of(context)!.settingsConfirm)),
               ]));
             }
 
@@ -310,7 +319,7 @@ class _AmdePlatformState extends State<AmdePlatform> {
                     titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
                     centerTitle: false,
                     title: Text(
-                      'የእኛ መድረኮች',
+                      AppLocalizations.of(context)!.platformOurPlatforms,
                       style: GoogleFonts.notoSansEthiopic(
                           color: primaryColor, fontWeight: FontWeight.bold),
                     ),
@@ -325,13 +334,15 @@ class _AmdePlatformState extends State<AmdePlatform> {
                     delegate: SliverChildListDelegate(
                       [
                         _buildSection(
-                            title: "ዋና መድረኮች",
+                            title: AppLocalizations.of(context)!
+                                .platformMainPlatforms,
                             icon: Iconsax.hierarchy_2,
                             links: platformLinks,
                             isAdmin: isSuperiorAdmin),
                         const SizedBox(height: 24),
                         _buildSection(
-                            title: "ማህበራዊ ሚዲያ",
+                            title: AppLocalizations.of(context)!
+                                .platformSocialMedia,
                             icon: Iconsax.share,
                             links: socialLinks,
                             isAdmin: isSuperiorAdmin),
@@ -353,7 +364,7 @@ class _AmdePlatformState extends State<AmdePlatform> {
                 onPressed: () => _showManageLinkSheet(),
                 backgroundColor: primaryColor,
                 foregroundColor: accentColor,
-                tooltip: 'አዲስ ሊንክ ጨምር',
+                tooltip: AppLocalizations.of(context)!.platformAddLink,
                 child: const Icon(Iconsax.add),
               ),
             )
@@ -400,14 +411,14 @@ class _AmdePlatformState extends State<AmdePlatform> {
                 const SizedBox(height: 16),
                 FadeInUp(
                     delay: const Duration(milliseconds: 200),
-                    child: Text('አቅሌስያ',
+                    child: Text(AppLocalizations.of(context)!.appName,
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: isTablet ? 36 : 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.white))),
                 FadeInUp(
                     delay: const Duration(milliseconds: 400),
-                    child: Text('ማህበራዊ ድረገጽና መገልገያ',
+                    child: Text(AppLocalizations.of(context)!.platformTagline,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.notoSansEthiopic(
                             fontSize: isTablet ? 18 : 16,
@@ -456,7 +467,9 @@ class _AmdePlatformState extends State<AmdePlatform> {
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 20),
                       child: Center(
-                          child: Text('ምንም ሊንኮች አልተገኙም።',
+                          child: Text(
+                              AppLocalizations.of(context)!
+                                  .platformNoLinksFound,
                               style: TextStyle(color: subtleTextColor))),
                     )
                   else
@@ -516,7 +529,7 @@ class _AmdePlatformState extends State<AmdePlatform> {
                 IconButton(
                   icon: Icon(Iconsax.more, color: subtleTextColor),
                   onPressed: () => _showAdminActions(link),
-                  tooltip: 'አማራጮች',
+                  tooltip: AppLocalizations.of(context)!.optionsLabel,
                 )
               else
                 Icon(Iconsax.arrow_right_3, size: 16, color: subtleTextColor),
@@ -531,8 +544,9 @@ class _AmdePlatformState extends State<AmdePlatform> {
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('ሊንኩን መክፈት አልተቻለም: $urlString')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context)!
+                .platformLinkOpenError(urlString))));
       }
     }
   }
@@ -670,7 +684,9 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
                               borderRadius: BorderRadius.circular(10)))),
                   const SizedBox(height: 20),
                   Text(
-                    widget.link == null ? 'አዲስ ሊንክ ጨምር' : 'ሊንክ አርትዕ',
+                    widget.link == null
+                        ? AppLocalizations.of(context)!.platformAddLink
+                        : AppLocalizations.of(context)!.platformEditLink,
                     style: GoogleFonts.notoSansEthiopic(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -680,23 +696,30 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
                   const SizedBox(height: 24),
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                        labelText: 'ስም', border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? 'ስም ማስገባት ያስፈልጋል' : null,
+                    decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.settingsName,
+                        border: const OutlineInputBorder()),
+                    validator: (v) => v!.isEmpty
+                        ? AppLocalizations.of(context)!.nameRequiredError
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _urlController,
-                    decoration: const InputDecoration(
-                        labelText: 'ሊንክ (URL)', border: OutlineInputBorder()),
+                    decoration: InputDecoration(
+                        labelText:
+                            AppLocalizations.of(context)!.platformUrlLabel,
+                        border: const OutlineInputBorder()),
                     validator: (v) {
-                      if (v!.isEmpty) return 'ሊንክ ማስገባት ያስፈልጋል';
-                      if (!Uri.tryParse(v)!.isAbsolute) return 'የተሳሳተ ሊንክ ነው';
+                      if (v!.isEmpty)
+                        return AppLocalizations.of(context)!.urlRequiredError;
+                      if (!Uri.tryParse(v)!.isAbsolute)
+                        return AppLocalizations.of(context)!.invalidUrlError;
                       return null;
                     },
                   ),
                   const SizedBox(height: 20),
-                  Text('አይከን',
+                  Text(AppLocalizations.of(context)!.platformIconLabel,
                       style: GoogleFonts.notoSansEthiopic(
                           fontWeight: FontWeight.w500)),
                   const SizedBox(height: 12),
@@ -739,7 +762,7 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
                     }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  Text('ቀለም',
+                  Text(AppLocalizations.of(context)!.platformColorLabel,
                       style: GoogleFonts.notoSansEthiopic(
                           fontWeight: FontWeight.w500)),
                   const SizedBox(height: 12),
@@ -774,7 +797,8 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
                   ),
                   const SizedBox(height: 16),
                   SwitchListTile(
-                    title: const Text('የማህበራዊ ሚዲያ ሊንክ ነው?'),
+                    title: Text(
+                        AppLocalizations.of(context)!.platformIsSocialMedia),
                     value: _isSocialMedia,
                     onChanged: (val) => setState(() => _isSocialMedia = val),
                     activeThumbColor: Provider.of<ThemeProvider>(context)
@@ -787,7 +811,8 @@ class _ManageLinkSheetState extends State<ManageLinkSheet> {
                     child: FilledButton.icon(
                       onPressed: _handleSave,
                       icon: const Icon(Iconsax.save_2),
-                      label: const Text('አስቀምጥ'),
+                      label:
+                          Text(AppLocalizations.of(context)!.settingsConfirm),
                     ),
                   )
                 ],

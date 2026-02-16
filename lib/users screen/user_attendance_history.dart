@@ -1,10 +1,10 @@
 // lib/screens/user_attendance_history_screen.dart
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/services/attendance_service.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:intl/intl.dart';
 
 // --- UI Theme Constants ---
 // Replaced by ThemeProvider
@@ -324,7 +324,7 @@ class _AttendanceTimelineItem extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        DateFormat.yMMMMEEEEd('am_ET').format(recordDate),
+                        EthiopianDate.fromGregorian(recordDate).toString(),
                         style: GoogleFonts.notoSansEthiopic(
                             fontWeight: FontWeight.bold,
                             color: onSurfaceColor,

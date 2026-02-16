@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:intl/intl.dart';
+
 import 'package:iconsax/iconsax.dart';
 import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 
@@ -728,7 +728,7 @@ class _LibraryManagementScreenState extends State<LibraryManagementScreen>
           child: Text(
             _finishByDate == null
                 ? "ቀን ይምረጡ"
-                : DateFormat.yMMMd().format(_finishByDate!),
+                : EthiopianDate.fromGregorian(_finishByDate!).toString(),
             style: GoogleFonts.poppins(
                 fontSize: 16,
                 color: _finishByDate == null ? subtleTextColor : accentColor),
@@ -1062,7 +1062,8 @@ class _ReadingHistorySheetState extends State<_ReadingHistorySheet>
             title: Text(item.bookTitle,
                 style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: item.finishBy != null
-                ? Text("መመለሻ ቀን: ${DateFormat.yMMMd().format(item.finishBy!)}",
+                ? Text(
+                    "መመለሻ ቀን: ${EthiopianDate.fromGregorian(item.finishBy!).toString()}",
                     style: TextStyle(
                         color: item.status == 'overdue'
                             ? kLibDangerColor

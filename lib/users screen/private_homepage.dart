@@ -14,370 +14,12 @@ import 'package:amde_haymanot_abalat_guday/services/private_feed_service.dart';
 import 'package:amde_haymanot_abalat_guday/providers/theme_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:amde_haymanot_abalat_guday/models/etcalendar.dart';
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 import 'package:animate_do/animate_do.dart';
 
-// --- Re-usable UI Constants ---
-// Note: We use local constants for the premium theme to ensure consistency.
 const Color premiumDark = Color(0xFF0F0F1E);
 const Color premiumGold = Color(0xFFFFD700);
-
-// ===============================================================
-// MAIN CLASS: EthiopianDate (የኢትዮጵያ ቀን)
-// ===============================================================
-class EthiopianDate {
-  final int year;
-  final int month;
-  final int day;
-
-  const EthiopianDate(
-      {required this.year, required this.month, required this.day});
-
-  factory EthiopianDate.now() {
-    return EthiopianDate.fromGregorian(DateTime.now());
-  }
-
-  factory EthiopianDate.parse(String formattedString) {
-    try {
-      final parts = formattedString.split('T')[0].split('-');
-      if (parts.length != 3) {
-        return EthiopianDate.now();
-      }
-      final year = int.parse(parts[0]);
-      final month = int.parse(parts[1]);
-      final day = int.parse(parts[2]);
-      return EthiopianDate(year: year, month: month, day: day);
-    } catch (e) {
-      return EthiopianDate.now();
-    }
-  }
-
-  factory EthiopianDate.fromGregorian(DateTime gregorianDate) {
-    final jdn = _gregorianToJDN(
-        gregorianDate.year, gregorianDate.month, gregorianDate.day);
-    return _jdnToEthiopian(jdn);
-  }
-
-  DateTime toGregorian() {
-    final jdn = _ethiopianToJDN(year, month, day);
-    return _jdnToGregorian(jdn);
-  }
-
-  String toDatabaseString() {
-    return "${year.toString()}-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}";
-  }
-
-  bool get isLeapYear => (year % 4) == 3;
-
-  int get daysInMonth {
-    if (month == 13) return isLeapYear ? 6 : 5;
-    return 30;
-  }
-
-  String format(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    if (month < 1 || month > 13) return loc.dateInvalidDate;
-
-    String monthName;
-    switch (month) {
-      case 1:
-        monthName = loc.monthMeskerem;
-        break;
-      case 2:
-        monthName = loc.monthTikimt;
-        break;
-      case 3:
-        monthName = loc.monthHidar;
-        break;
-      case 4:
-        monthName = loc.monthTahsas;
-        break;
-      case 5:
-        monthName = loc.monthTir;
-        break;
-      case 6:
-        monthName = loc.monthYekatit;
-        break;
-      case 7:
-        monthName = loc.monthMegabit;
-        break;
-      case 8:
-        monthName = loc.monthMiyazya;
-        break;
-      case 9:
-        monthName = loc.monthGinbot;
-        break;
-      case 10:
-        monthName = loc.monthSene;
-        break;
-      case 11:
-        monthName = loc.monthHamle;
-        break;
-      case 12:
-        monthName = loc.monthNehase;
-        break;
-      case 13:
-        monthName = loc.monthPagume;
-        break;
-      default:
-        monthName = '';
-    }
-    return '$monthName $day, $year';
-  }
-
-  static const int _jdnOffset = 1723856;
-
-  static EthiopianDate _jdnToEthiopian(int jdn) {
-    int r = (jdn - _jdnOffset) % 1461;
-    int n = (r % 365) + 365 * (r ~/ 1460);
-    int year = 4 * ((jdn - _jdnOffset) ~/ 1461) + (r ~/ 365) - (r ~/ 1460);
-    int month = (n ~/ 30) + 1;
-    int day = (n % 30) + 1;
-    return EthiopianDate(year: year, month: month, day: day);
-  }
-
-  static int _ethiopianToJDN(int year, int month, int day) {
-    return (_jdnOffset - 1) +
-        365 * year +
-        ((year + 3) ~/ 4) +
-        30 * (month - 1) +
-        day;
-  }
-
-  static int _gregorianToJDN(int year, int month, int day) {
-    int a = (14 - month) ~/ 12;
-    int y = year + 4800 - a;
-    int m = month + 12 * a - 3;
-    return day +
-        ((153 * m + 2) ~/ 5) +
-        365 * y +
-        (y ~/ 4) -
-        (y ~/ 100) +
-        (y ~/ 400) -
-        32045;
-  }
-
-  static DateTime _jdnToGregorian(int jdn) {
-    int a = jdn + 32044;
-    int b = (4 * a + 3) ~/ 146097;
-    int c = a - (146097 * b) ~/ 4;
-    int d = (4 * c + 3) ~/ 1461;
-    int e = c - (1461 * d) ~/ 4;
-    int m = (5 * e + 2) ~/ 153;
-    int day = e - (153 * m + 2) ~/ 5 + 1;
-    int month = m + 3 - 12 * (m ~/ 10);
-    int year = 100 * b + d - 4800 + (m ~/ 10);
-    return DateTime(year, month, day);
-  }
-}
-
-// ===============================================================
-// SHARED WIDGET: EthiopianDatePickerDialog (የኢትዮጵያ ቀን መምረጫ መገናኛ)
-// ===============================================================
-class EthiopianDatePickerDialog extends StatefulWidget {
-  final EthiopianDate initialDate;
-  const EthiopianDatePickerDialog({super.key, required this.initialDate});
-
-  @override
-  State<EthiopianDatePickerDialog> createState() =>
-      _EthiopianDatePickerDialogState();
-}
-
-class _EthiopianDatePickerDialogState extends State<EthiopianDatePickerDialog> {
-  late int _selectedYear;
-  late int _selectedMonth;
-  late int _selectedDay;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedYear = widget.initialDate.year;
-    _selectedMonth = widget.initialDate.month;
-    _selectedDay = widget.initialDate.day;
-  }
-
-  void _changeYear(int amount) {
-    setState(() {
-      _selectedYear += amount;
-      final daysInMonth =
-          EthiopianDate(year: _selectedYear, month: _selectedMonth, day: 1)
-              .daysInMonth;
-      if (_selectedDay > daysInMonth) {
-        _selectedDay = daysInMonth;
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tempDate =
-        EthiopianDate(year: _selectedYear, month: _selectedMonth, day: 1);
-    final daysInMonth = tempDate.daysInMonth;
-
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-            color: premiumDark,
-            border: Border.all(color: premiumGold.withValues(alpha: 0.3)),
-            borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(AppLocalizations.of(context)!.dateSelectDate,
-                  style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: premiumGold)),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                        icon:
-                            const Icon(Icons.chevron_left, color: Colors.white),
-                        onPressed: () => _changeYear(-1)),
-                    Text(
-                        '$_selectedYear ${AppLocalizations.of(context)!.dateEthiopianCalendar}',
-                        style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Colors.white)),
-                    IconButton(
-                        icon: const Icon(Icons.chevron_right,
-                            color: Colors.white),
-                        onPressed: () => _changeYear(1)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white24),
-                    borderRadius: BorderRadius.circular(12)),
-                child: DropdownButton<int>(
-                  value: _selectedMonth,
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  dropdownColor: premiumDark,
-                  style: GoogleFonts.poppins(color: Colors.white),
-                  items: List.generate(13, (index) {
-                    final loc = AppLocalizations.of(context)!;
-                    final monthNames = [
-                      loc.monthMeskerem,
-                      loc.monthTikimt,
-                      loc.monthHidar,
-                      loc.monthTahsas,
-                      loc.monthTir,
-                      loc.monthYekatit,
-                      loc.monthMegabit,
-                      loc.monthMiyazya,
-                      loc.monthGinbot,
-                      loc.monthSene,
-                      loc.monthHamle,
-                      loc.monthNehase,
-                      loc.monthPagume
-                    ];
-                    return DropdownMenuItem(
-                        value: index + 1,
-                        child: Text(monthNames[index],
-                            style: GoogleFonts.poppins(fontSize: 14)));
-                  }),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedMonth = value;
-                        final newDaysInMonth = EthiopianDate(
-                                year: _selectedYear,
-                                month: _selectedMonth,
-                                day: 1)
-                            .daysInMonth;
-                        if (_selectedDay > newDaysInMonth) {
-                          _selectedDay = newDaysInMonth;
-                        }
-                      });
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 200,
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 7,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8),
-                  itemCount: daysInMonth,
-                  itemBuilder: (context, index) {
-                    final day = index + 1;
-                    final isSelected = day == _selectedDay;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedDay = day),
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: isSelected ? premiumGold : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: isSelected ? premiumGold : Colors.white24),
-                        ),
-                        child: Text('$day',
-                            style: GoogleFonts.poppins(
-                                color: isSelected ? Colors.black : Colors.white,
-                                fontWeight: FontWeight.w600)),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                      child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.white24),
-                              foregroundColor: Colors.white),
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text(
-                              AppLocalizations.of(context)!.cancelButton,
-                              style: GoogleFonts.poppins()))),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: premiumGold,
-                          foregroundColor: premiumDark,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12))),
-                      onPressed: () => Navigator.of(context).pop(EthiopianDate(
-                          year: _selectedYear,
-                          month: _selectedMonth,
-                          day: _selectedDay)),
-                      child: Text(AppLocalizations.of(context)!.okButton,
-                          style: GoogleFonts.poppins()),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // --- MODELS AND ENUMS ---
 
@@ -891,7 +533,8 @@ class _PrivateFeedViewState extends State<PrivateFeedView> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                _sundaySchool?.name ?? "ሰንበት ትምህርት ቤት",
+                _sundaySchool?.name ??
+                    AppLocalizations.of(context)!.privateHomepageSundaySchool,
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -934,7 +577,7 @@ class _PrivateFeedViewState extends State<PrivateFeedView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "እንኳን ደህና መጡ",
+                      AppLocalizations.of(context)!.privateHomepageWelcomeHome,
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -943,7 +586,9 @@ class _PrivateFeedViewState extends State<PrivateFeedView> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _sundaySchool!.description ?? "የማህበረሰብ ዝመናዎች",
+                      _sundaySchool!.description ??
+                          AppLocalizations.of(context)!
+                              .privateHomepageCommunityUpdates,
                       style: GoogleFonts.poppins(
                         color: subtleText,
                         fontSize: 14,
@@ -973,24 +618,24 @@ class _PrivateFeedViewState extends State<PrivateFeedView> {
 
     final stats = [
       {
-        'label': "አባላት",
+        'label': AppLocalizations.of(context)!.privateHomepageMembersText,
         'value': '${_sundaySchool!.memberCount}',
         'icon': Iconsax.people,
         'color': const Color(0xFF4ADE80)
       },
       {
-        'label': "ልጥፎች",
+        'label': AppLocalizations.of(context)!.privateHomepagePostsText,
         'value': '${_privatePosts.length}',
         'icon': Iconsax.document_text,
         'color': const Color(0xFF60A5FA)
       },
       {
-        'label': "ዓመታት",
+        'label': AppLocalizations.of(context)!.privateHomepageYearsText,
         'value': _sundaySchool!.establishedDate != null
             ? '${DateTime.now().year - _sundaySchool!.establishedDate!.year}'
             : '0',
         'icon': Iconsax.calendar,
-        'color': Color(0xFFF472B6)
+        'color': const Color(0xFFF472B6)
       },
     ];
 
@@ -1069,7 +714,7 @@ class _PrivateFeedViewState extends State<PrivateFeedView> {
                         : Theme.of(context).primaryColor),
                 const SizedBox(width: 8),
                 Text(
-                  "ተለይቶ የቀረበ",
+                  AppLocalizations.of(context)!.privateHomepageFeatured,
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -1147,7 +792,7 @@ class _PrivateFeedViewState extends State<PrivateFeedView> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                "አስፈላጊ",
+                                AppLocalizations.of(context)!.homepageImportant,
                                 style: GoogleFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 10,
@@ -1168,7 +813,7 @@ class _PrivateFeedViewState extends State<PrivateFeedView> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              DateFormat.yMMMd().format(post.date),
+                              "${EthiopianDate.fromGregorian(post.date)}",
                               style: GoogleFonts.poppins(
                                 color: Colors.white70,
                                 fontSize: 12,
@@ -1239,7 +884,7 @@ class _PrivateFeedViewState extends State<PrivateFeedView> {
                         ),
                       ),
                       Text(
-                        DateFormat.yMMMd().add_jm().format(post.date),
+                        "${EthiopianDate.fromGregorian(post.date)} ${DateFormat.jm().format(post.date)}",
                         style: GoogleFonts.poppins(
                           color: subtleText,
                           fontSize: 12,
@@ -1551,8 +1196,9 @@ class _EditTenantDialogState extends State<EditTenantDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("ዝመና አልተሳካም: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                "${AppLocalizations.of(context)!.privateHomepageSaveError}: $e")));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -1572,27 +1218,34 @@ class _EditTenantDialogState extends State<EditTenantDialog> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("መገለጫ አርትዕ",
+                  Text(AppLocalizations.of(context)!.profileEditTitle,
                       style: GoogleFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.white)),
                   const SizedBox(height: 16),
-                  _buildTextField(_nameController, "Name"),
-                  _buildTextField(_descriptionController, "Description",
+                  _buildTextField(_nameController,
+                      AppLocalizations.of(context)!.settingsName),
+                  _buildTextField(_descriptionController,
+                      AppLocalizations.of(context)!.labelDescription,
                       maxLines: 3),
-                  _buildTextField(_serviceTimesController, "Service Times"),
-                  _buildTextField(_addressController, "Address"),
-                  _buildTextField(_phoneController, "Phone"),
-                  _buildTextField(_emailController, "Email"),
+                  _buildTextField(_serviceTimesController,
+                      AppLocalizations.of(context)!.labelServiceTimes),
+                  _buildTextField(_addressController,
+                      AppLocalizations.of(context)!.labelAddress),
+                  _buildTextField(_phoneController,
+                      AppLocalizations.of(context)!.profilePhoneNumber),
+                  _buildTextField(_emailController,
+                      AppLocalizations.of(context)!.settingsName),
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: Text("Cancel",
-                              style: TextStyle(color: Colors.white70))),
+                          child: Text(
+                              AppLocalizations.of(context)!.cancelButton,
+                              style: const TextStyle(color: Colors.white70))),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: _isSaving ? null : _saveChanges,
@@ -1604,7 +1257,7 @@ class _EditTenantDialogState extends State<EditTenantDialog> {
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator())
-                            : const Text("Save"),
+                            : Text(AppLocalizations.of(context)!.saveButton),
                       )
                     ],
                   )
@@ -1841,7 +1494,7 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
             child: Row(
               children: [
                 Text(
-                  "Comments",
+                  AppLocalizations.of(context)!.homepageComments,
                   style: GoogleFonts.notoSansEthiopic(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1887,12 +1540,12 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                                 Icon(Iconsax.message,
                                     size: 48, color: Colors.white24),
                                 const SizedBox(height: 16),
-                                Text("No comments yet",
+                                Text(
+                                    AppLocalizations.of(context)!
+                                        .homepageNoCommentsYet,
                                     style: GoogleFonts.notoSansEthiopic(
                                         color: Colors.white54)),
-                                Text("Be the first to share your thoughts",
-                                    style: GoogleFonts.notoSansEthiopic(
-                                        color: Colors.white24, fontSize: 12)),
+                                // Removing the second text as homepageNoCommentsYet combined them or matches the core intent better
                               ],
                             ),
                           )
@@ -1912,8 +1565,11 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                                         _topLevelLimit += 10;
                                       });
                                     },
-                                    child: const Text("Load more comments",
-                                        style: TextStyle(color: premiumGold)),
+                                    child: Text(
+                                        AppLocalizations.of(context)!
+                                            .commentsLoadMore,
+                                        style: const TextStyle(
+                                            color: premiumGold)),
                                   ),
                                 );
                               }
@@ -1947,7 +1603,9 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                                           });
                                         },
                                         child: Text(
-                                          "View all ${replies.length} replies",
+                                          AppLocalizations.of(context)!
+                                              .commentsViewAllReplies(
+                                                  replies.length),
                                           style: const TextStyle(
                                               color: premiumGold,
                                               fontSize: 12,
@@ -1979,9 +1637,11 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                                                         .remove(comment.id);
                                                   });
                                                 },
-                                                child: const Text(
-                                                    "Hide replies",
-                                                    style: TextStyle(
+                                                child: Text(
+                                                    AppLocalizations.of(
+                                                            context)!
+                                                        .commentsHideReplies,
+                                                    style: const TextStyle(
                                                         color: Colors.white54,
                                                         fontSize: 12)),
                                               ),
@@ -2010,8 +1670,9 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                   Expanded(
                     child: Text(
                       _editingComment != null
-                          ? "Editing comment..."
-                          : "Replying to ${_replyingTo!.author}...",
+                          ? AppLocalizations.of(context)!.commentsEditing
+                          : AppLocalizations.of(context)!
+                              .commentsReplyingTo(_replyingTo!.author),
                       style:
                           const TextStyle(color: Colors.white70, fontSize: 12),
                     ),
@@ -2038,7 +1699,8 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                     controller: _commentController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: "Write a comment...",
+                      hintText: AppLocalizations.of(context)!
+                          .commentsWritePlaceholder,
                       hintStyle: const TextStyle(color: Colors.white38),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.05),
@@ -2135,7 +1797,7 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                                   fontSize: isReply ? 12 : 13),
                             ),
                             Text(
-                              DateFormat.yMMMd().format(comment.timestamp),
+                              "${EthiopianDate.fromGregorian(comment.timestamp)}",
                               style: GoogleFonts.poppins(
                                   color: Colors.white24, fontSize: 10),
                             ),
@@ -2160,7 +1822,7 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
               children: [
                 _ActionButton(
                   icon: Icons.reply,
-                  label: "Reply",
+                  label: AppLocalizations.of(context)!.commentsReplyAction,
                   onTap: () {
                     setState(() {
                       _replyingTo = comment;
@@ -2173,7 +1835,7 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                   const SizedBox(width: 16),
                   _ActionButton(
                     icon: Iconsax.edit,
-                    label: "Edit",
+                    label: AppLocalizations.of(context)!.editButton,
                     onTap: () {
                       setState(() {
                         _editingComment = comment;
@@ -2185,7 +1847,7 @@ class _PrivateCommentsSheetState extends State<_PrivateCommentsSheet> {
                   const SizedBox(width: 16),
                   _ActionButton(
                     icon: Iconsax.trash,
-                    label: "Delete",
+                    label: AppLocalizations.of(context)!.deleteButton,
                     color: Colors.redAccent.withValues(alpha: 0.7),
                     onTap: () => _deleteComment(comment),
                   ),

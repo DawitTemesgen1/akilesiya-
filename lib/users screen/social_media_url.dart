@@ -28,48 +28,51 @@ class SocialMediaUrl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // A constant for the icon size to easily change all icons at once
-    const double customIconSize = 35.0;
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          // THE FIX: Add the iconSize property
-          iconSize: customIconSize,
-          onPressed: () =>
-              _launchURL(context, 'https://youtube.com/your-channel-name'),
-          icon: const FaIcon(FontAwesomeIcons.youtube, color: Colors.red),
+        _buildSocialIcon(
+          context,
+          'https://youtube.com/@akilesiya',
+          FontAwesomeIcons.youtube,
+          Colors.red,
         ),
-        IconButton(
-          iconSize: customIconSize,
-          onPressed: () =>
-              _launchURL(context, 'https://facebook.com/your-page'),
-          icon: const FaIcon(FontAwesomeIcons.facebook, color: Colors.blue),
+        _buildSocialIcon(
+          context,
+          'https://facebook.com/akilesiya',
+          FontAwesomeIcons.facebook,
+          Colors.blue,
         ),
-        IconButton(
-          iconSize: customIconSize,
-          onPressed: () =>
-              _launchURL(context, 'https://instagram.com/your-profile'),
-          icon: const FaIcon(FontAwesomeIcons.instagram, color: Colors.purple),
+        _buildSocialIcon(
+          context,
+          'https://instagram.com/akilesiya',
+          FontAwesomeIcons.instagram,
+          Colors.purple,
         ),
-        IconButton(
-          iconSize: customIconSize,
-          onPressed: () => _launchURL(context, 'https://t.me/your-channel'),
-          icon: const FaIcon(
-            FontAwesomeIcons.telegram,
-            color: Colors.lightBlue,
-          ),
+        _buildSocialIcon(
+          context,
+          'https://t.me/akilesiya',
+          FontAwesomeIcons.telegram,
+          Colors.lightBlue,
         ),
-        IconButton(
-          iconSize: customIconSize,
-          onPressed: () =>
-              _launchURL(context, 'https://tiktok.com/@your-profile'),
-          icon: FaIcon(FontAwesomeIcons.tiktok,
-              color: Provider.of<ThemeProvider>(context)
-                  .getOnSurfaceColor(context)),
+        _buildSocialIcon(
+          context,
+          'https://tiktok.com/@akilesiya',
+          FontAwesomeIcons.tiktok,
+          Provider.of<ThemeProvider>(context).getOnSurfaceColor(context),
         ),
       ],
+    );
+  }
+
+  Widget _buildSocialIcon(
+      BuildContext context, String url, IconData icon, Color color) {
+    return IconButton(
+      iconSize: 32.0,
+      onPressed: () => _launchURL(context, url),
+      icon: FaIcon(icon, color: color),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      constraints: const BoxConstraints(),
     );
   }
 }

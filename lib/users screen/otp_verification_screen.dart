@@ -1,12 +1,13 @@
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
 import 'package:amde_haymanot_abalat_guday/providers/tenant_provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/auth_service.dart';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:provider/provider.dart';
+import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -34,16 +35,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String? _errorMessage;
+  String? _loadingStatus; // Specific status for long loads
 
   Future<void> _handleVerify() async {
     final otp = _otpController.text.trim();
     if (otp.length < 6) {
-      setState(() => _errorMessage = "Please enter a valid 6-digit code.");
+      setState(() => _errorMessage = "INVALID_CODE");
       return;
     }
 
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isLoading = true;
+      _loadingStatus = l10n.otpVerifyButton; // "Verifying..."
       _errorMessage = null;
     });
 
@@ -55,30 +59,23 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         if (widget.isRegistration && widget.password != null) {
           // For registration with password from signup, automatically set password
           await _handleSetPassword();
-        } else if (widget.isRegistration) {
-          // For registration without password, show password input
+        } else {
+          // Both Registration (no password) and Forgot Password should show password fields
           setState(() {
             _otpVerified = true;
             _isLoading = false;
           });
-        } else {
-          // For password reset, go directly to home
-          final tenantProvider = context.read<TenantProvider>();
-          final userProvider = context.read<UserProvider>();
-          tenantProvider.setTenant(result['data']['tenant']);
-          await userProvider.handleSuccessfulAuth();
-          if (mounted) context.go('/home');
         }
       } else {
         if (mounted) {
           setState(() {
-            _errorMessage = result['message'] ?? "Verification failed.";
+            _errorMessage = result['message'] ?? "VERIFICATION_FAILED";
           });
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = "An unexpected error occurred.");
+        setState(() => _errorMessage = "UNKNOWN_ERROR");
       }
     } finally {
       if (mounted && !_otpVerified) setState(() => _isLoading = false);
@@ -94,83 +91,138 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     // Only validate input fields if password wasn't provided from signup
     if (widget.password == null) {
       if (password.isEmpty || confirmPassword.isEmpty) {
-        setState(() => _errorMessage = "Please fill in all fields.");
+        setState(() => _errorMessage = "FILL_ALL_FIELDS");
         return;
       }
 
       if (password.length < 6) {
-        setState(
-            () => _errorMessage = "Password must be at least 6 characters.");
+        setState(() => _errorMessage = "PASSWORD_TOO_SHORT");
         return;
       }
 
       if (password != confirmPassword) {
-        setState(() => _errorMessage = "Passwords do not match.");
+        setState(() => _errorMessage = "PASSWORDS_DONT_MATCH");
         return;
       }
     }
 
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isLoading = true;
+      _loadingStatus = l10n.otpSetPasswordTitle; // "Saving password..."
       _errorMessage = null;
     });
 
     try {
-      final result = await AuthService.setPassword(
-        email: widget.email,
-        password: password,
-      );
-
-      if (result['success'] == true) {
-        if (!mounted) return;
-        // Now login with the new password
-        final loginResult = await AuthService.login(
+      if (widget.isRegistration) {
+        final result = await AuthService.setPassword(
           email: widget.email,
           password: password,
-          tenantName: '', // Will be set from login response
         );
 
-        if (!mounted) return;
-        if (loginResult['success'] == true) {
-          final data = loginResult['data'];
-          final tenantProvider = context.read<TenantProvider>();
-          final userProvider = context.read<UserProvider>();
-          tenantProvider.setTenant(data['tenant']);
-          await userProvider.handleSuccessfulAuth();
-          if (mounted) context.go('/home');
+        if (result['success'] == true) {
+          await _performLogin(password);
         } else {
-          setState(() =>
-              _errorMessage = "Login failed. Please try logging in manually.");
+          if (mounted) {
+            setState(() =>
+                _errorMessage = result['message'] ?? "SET_PASSWORD_FAILED");
+          }
         }
       } else {
-        if (mounted) {
-          setState(() =>
-              _errorMessage = result['message'] ?? "Failed to set password.");
+        // FORGOT PASSWORD FLOW
+        final otp = _otpController.text.trim();
+        final result = await AuthService.resetPassword(
+          email: widget.email,
+          otp: otp,
+          newPassword: password,
+        );
+
+        if (result['success'] == true) {
+          await _performLogin(password);
+        } else {
+          if (mounted) {
+            setState(() =>
+                _errorMessage = result['message'] ?? "SET_PASSWORD_FAILED");
+          }
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = "An unexpected error occurred.");
+        setState(() => _errorMessage = "UNKNOWN_ERROR");
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  Future<void> _performLogin(String password) async {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    setState(() => _loadingStatus = l10n.loginButton); // "Signing in..."
+    try {
+      final loginResult = await AuthService.login(
+        email: widget.email,
+        password: password,
+        tenantName: '', // Backend handles tenant lookup by email
+      );
+
+      if (!mounted) return;
+      if (loginResult['success'] == true) {
+        final data = loginResult['data'];
+        final tenantProvider = context.read<TenantProvider>();
+        final userProvider = context.read<UserProvider>();
+        tenantProvider.setTenant(data['tenant']);
+
+        // OPTIMIZATION: Pass profile data directly to skip /auth/me call
+        await userProvider.handleSuccessfulAuth(data['user']);
+        if (mounted) context.go('/home');
+      } else {
+        setState(() => _errorMessage = "LOGIN_FAILED");
+      }
+    } catch (e) {
+      if (mounted) setState(() => _errorMessage = "LOGIN_FAILED");
+    }
+  }
+
   Future<void> _handleResend() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoading = true);
     final result = await AuthService.resendOtp(email: widget.email);
     if (mounted) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(result['message'] ?? 'OTP Resent'),
+        content: Text(result['message'] ?? l10n.otpResentSuccess),
         backgroundColor: result['success'] == true ? Colors.green : Colors.red,
       ));
     }
   }
 
+  String _getLocalizedError(AppLocalizations l10n, String error) {
+    switch (error) {
+      case "INVALID_CODE":
+        return l10n.otpInvalidCode;
+      case "VERIFICATION_FAILED":
+        return l10n.otpVerificationFailed;
+      case "UNKNOWN_ERROR":
+        return l10n.unknownError;
+      case "FILL_ALL_FIELDS":
+        return l10n.errorRequiredField;
+      case "PASSWORD_TOO_SHORT":
+        return l10n.errorPasswordTooShort;
+      case "PASSWORDS_DONT_MATCH":
+        return l10n.errorPasswordsDoNotMatch;
+      case "LOGIN_FAILED":
+        return l10n.otpLoginFailed;
+      case "SET_PASSWORD_FAILED":
+        return l10n.otpSetPasswordFailed;
+      default:
+        return error;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     const primaryColor = Color.fromARGB(255, 1, 37, 100);
     const accentColor = Color(0xFFFFD700);
 
@@ -180,8 +232,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Iconsax.arrow_left_2, color: Colors.white),
-          onPressed: () => context.pop(),
+          icon: const Icon(Iconsax.arrow_left, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Center(
@@ -191,121 +243,98 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                _otpVerified ? Iconsax.lock : Iconsax.message_text,
-                size: 64,
+                _otpVerified ? Iconsax.lock_1 : Iconsax.sms_tracking,
+                size: 80,
                 color: accentColor,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               Text(
-                _otpVerified ? 'Set Your Password' : 'Verify Email Address',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
+                _otpVerified ? l10n.otpSetPasswordTitle : l10n.otpVerifyTitle,
+                style: GoogleFonts.notoSansEthiopic(
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
+                  letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                _otpVerified
-                    ? 'Create a secure password for your account'
-                    : 'Enter the code sent to ${widget.email}',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // DEV MODE: Show OTP for testing
-              if (kDebugMode && !_otpVerified) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.2),
-                    border: Border.all(color: Colors.orange, width: 2),
-                    borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  _otpVerified
+                      ? l10n.otpSetPasswordSubtitle
+                      : l10n.otpVerifySubtitle(widget.email),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.notoSansEthiopic(
+                    fontSize: 15,
+                    color: Colors.white.withValues(alpha: 0.7),
+                    height: 1.5,
                   ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.developer_mode,
-                              color: Colors.orange, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'DEV MODE',
-                            style: GoogleFonts.poppins(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Check backend console for OTP code',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
+                ),
+              ),
+              const SizedBox(height: 48),
+              if (!_otpVerified) ...[
+                // OTP Input Field with Glassmorphism
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(20),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              const SizedBox(height: 16),
-              if (!_otpVerified) ...[
-                // OTP Input Field
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: TextField(
                     controller: _otpController,
                     keyboardType: TextInputType.number,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        letterSpacing: 8,
-                        fontWeight: FontWeight.bold),
+                    style: GoogleFonts.notoSansEthiopic(
+                      color: Colors.white,
+                      fontSize: 32,
+                      letterSpacing: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                     maxLength: 6,
                     decoration: const InputDecoration(
                       counterText: "",
                       border: InputBorder.none,
                       hintText: "------",
-                      hintStyle: TextStyle(color: Colors.white24),
-                      contentPadding: EdgeInsets.symmetric(vertical: 16),
+                      hintStyle: TextStyle(color: Colors.white12),
+                      contentPadding: EdgeInsets.symmetric(vertical: 24),
                     ),
                   ),
                 ),
               ] else ...[
-                // Password Input Fields
+                // Password Input Fields with Glassmorphism
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                   child: TextField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
-                    style: const TextStyle(color: Colors.white),
+                    style: GoogleFonts.notoSansEthiopic(color: Colors.white),
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: "Password",
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      contentPadding: const EdgeInsets.all(16),
-                      prefixIcon: const Icon(Iconsax.lock, color: accentColor),
+                      hintText: l10n.loginPassword,
+                      hintStyle:
+                          TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                      contentPadding: const EdgeInsets.all(20),
+                      prefixIcon: const Icon(Iconsax.lock,
+                          color: accentColor, size: 20),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Iconsax.eye_slash : Iconsax.eye,
-                          color: Colors.white70,
+                          color: Colors.white.withValues(alpha: 0.5),
                         ),
                         onPressed: () => setState(
                             () => _obscurePassword = !_obscurePassword),
@@ -316,25 +345,29 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 const SizedBox(height: 16),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.1)),
                   ),
                   child: TextField(
                     controller: _confirmPasswordController,
                     obscureText: _obscureConfirmPassword,
-                    style: const TextStyle(color: Colors.white),
+                    style: GoogleFonts.notoSansEthiopic(color: Colors.white),
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: "Confirm Password",
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      contentPadding: const EdgeInsets.all(16),
-                      prefixIcon: const Icon(Iconsax.lock, color: accentColor),
+                      hintText: l10n.signupConfirmPassword,
+                      hintStyle:
+                          TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                      contentPadding: const EdgeInsets.all(20),
+                      prefixIcon: const Icon(Iconsax.lock,
+                          color: accentColor, size: 20),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword
                               ? Iconsax.eye_slash
                               : Iconsax.eye,
-                          color: Colors.white70,
+                          color: Colors.white.withValues(alpha: 0.5),
                         ),
                         onPressed: () => setState(() =>
                             _obscureConfirmPassword = !_obscureConfirmPassword),
@@ -344,40 +377,68 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 ),
               ],
               if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                const SizedBox(height: 20),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _getLocalizedError(l10n, _errorMessage!),
+                    style: GoogleFonts.notoSansEthiopic(
+                        color: Colors.redAccent.shade100, fontSize: 13),
+                  ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: _isLoading
                       ? null
                       : (_otpVerified ? _handleSetPassword : _handleVerify),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accentColor,
+                    foregroundColor: primaryColor,
                     disabledBackgroundColor: accentColor.withValues(alpha: 0.5),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: primaryColor),
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: primaryColor),
+                            ),
+                            if (_loadingStatus != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                _loadingStatus!,
+                                style: GoogleFonts.notoSansEthiopic(
+                                  fontSize: 10,
+                                  color: primaryColor.withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ],
+                          ],
                         )
                       : Text(
-                          _otpVerified ? 'Complete Registration' : 'Verify',
-                          style: GoogleFonts.poppins(
+                          _otpVerified
+                              ? l10n.otpCompleteRegistration
+                              : l10n.otpVerifyButton,
+                          style: GoogleFonts.notoSansEthiopic(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: primaryColor,
+                            letterSpacing: 0.5,
                           ),
                         ),
                 ),
@@ -387,7 +448,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 TextButton(
                   onPressed: _isLoading ? null : _handleResend,
                   child: Text(
-                    'Didn\'t receive code? Resend',
+                    l10n.forgotPasswordResendOtpText,
                     style: GoogleFonts.poppins(
                       color: Colors.white70,
                       fontWeight: FontWeight.w500,
