@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:amde_haymanot_abalat_guday/services/learning_service.dart';
 import 'package:amde_haymanot_abalat_guday/l10n/app_localizations.dart';
 import 'package:amde_haymanot_abalat_guday/providers/user_provider.dart';
+import 'package:amde_haymanot_abalat_guday/services/api_service.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/article_viewer.dart';
 import 'package:amde_haymanot_abalat_guday/users%20screen/video_player.dart';
 import 'package:amde_haymanot_abalat_guday/role%20based/learning_admin.dart';
@@ -74,11 +75,11 @@ class LearningContent {
       id: json['id']?.toString() ?? UniqueKey().toString(),
       title: json['title'] ?? '',
       author: json['author'] ?? '',
-      authorAvatar: json['authorAvatar'],
+      authorAvatar: ApiService.getImageUrl(json['authorAvatar']),
       publishDate: _parseDate(json['publishDate']),
       description: json['description'] ?? '',
       type: json['type'] ?? 'article',
-      imageUrl: json['imageUrl'] ?? '',
+      imageUrl: ApiService.getImageUrl(json['imageUrl'] ?? ''),
       content: json['content'] ?? '',
       duration: json['duration'] ?? 'N/A',
       category: json['category'] ?? '',
@@ -799,7 +800,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   @override
   void initState() {
     super.initState();
-    _fetchComments();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _fetchComments();
+    });
   }
 
   @override

@@ -109,11 +109,7 @@ class UserProvider extends ChangeNotifier {
   void _processProfileData(Map<String, dynamic> profileData) {
     _userProfile = profileData;
     final imagePath = profileData['profile_image_url'];
-    _avatarUrl = (imagePath != null && imagePath.isNotEmpty)
-        ? (imagePath.startsWith('http')
-            ? imagePath
-            : '${ApiService.baseUrl.replaceAll('/api', '')}/$imagePath')
-        : null;
+    _avatarUrl = ApiService.getImageUrl(imagePath);
     _isLoggedIn = true;
 
     // Robust role parsing: handle comma-separated string, List, or null
@@ -235,9 +231,7 @@ class UserProvider extends ChangeNotifier {
   void updateAvatar(String newFilename) {
     if (_userProfile != null) {
       _userProfile!['profile_image_url'] = newFilename;
-      _avatarUrl = newFilename.startsWith('http')
-          ? newFilename
-          : '${ApiService.baseUrl.replaceAll('/api', '')}/$newFilename';
+      _avatarUrl = ApiService.getImageUrl(newFilename);
       notifyListeners();
     }
   }

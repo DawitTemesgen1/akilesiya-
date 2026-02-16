@@ -84,14 +84,7 @@ class UnifiedPost {
 
   static String? _buildFullUrl(String? pathOrUrl) {
     if (pathOrUrl == null || pathOrUrl.isEmpty) return null;
-    if (pathOrUrl.startsWith('http')) return pathOrUrl;
-
-    final baseUrl = ApiService.baseUrl.endsWith('/api')
-        ? ApiService.baseUrl.substring(0, ApiService.baseUrl.length - 4)
-        : ApiService.baseUrl;
-    final cleanPath =
-        pathOrUrl.startsWith('/') ? pathOrUrl.substring(1) : pathOrUrl;
-    return '$baseUrl/$cleanPath';
+    return ApiService.getImageUrl(pathOrUrl);
   }
 
   static DateTime _parseDateTime(dynamic dateValue, {DateTime? fallback}) {

@@ -47,24 +47,13 @@ class PrivateComment {
   });
 
   factory PrivateComment.fromJson(Map<String, dynamic> json) {
-    String? buildFullUrl(String? pathOrUrl) {
-      if (pathOrUrl == null || pathOrUrl.isEmpty) return null;
-      if (pathOrUrl.startsWith('http')) return pathOrUrl;
-      final baseUrl = ApiService.baseUrl.endsWith('/api')
-          ? ApiService.baseUrl.substring(0, ApiService.baseUrl.length - 4)
-          : ApiService.baseUrl;
-      final cleanPath =
-          pathOrUrl.startsWith('/') ? pathOrUrl.substring(1) : pathOrUrl;
-      return '$baseUrl/$cleanPath';
-    }
-
     return PrivateComment(
       id: json['id'],
       userId: json['userId']?.toString() ?? '',
       text: json['text'] ?? '',
       timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
       author: json['author'] ?? '',
-      authorAvatar: buildFullUrl(json['authorAvatar']),
+      authorAvatar: ApiService.getImageUrl(json['authorAvatar']),
       parentId: json['parentId'],
       authorTenantId: json['authorTenantId']?.toString(),
     );
@@ -124,24 +113,13 @@ class PrivatePost {
       }
     }
 
-    String? buildFullUrl(String? pathOrUrl) {
-      if (pathOrUrl == null || pathOrUrl.isEmpty) return null;
-      if (pathOrUrl.startsWith('http')) return pathOrUrl;
-      final baseUrl = ApiService.baseUrl.endsWith('/api')
-          ? ApiService.baseUrl.substring(0, ApiService.baseUrl.length - 4)
-          : ApiService.baseUrl;
-      final cleanPath =
-          pathOrUrl.startsWith('/') ? pathOrUrl.substring(1) : pathOrUrl;
-      return '$baseUrl/$cleanPath';
-    }
-
     return PrivatePost(
       id: json['id']?.toString() ?? UniqueKey().toString(),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      imageUrl: buildFullUrl(json['imageUrl']),
+      imageUrl: ApiService.getImageUrl(json['imageUrl']),
       author: json['author'] ?? '',
-      authorAvatar: buildFullUrl(json['authorAvatar']),
+      authorAvatar: ApiService.getImageUrl(json['authorAvatar']),
       date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
       type: typeFromString(json['type']),
       likes: (json['likes'] as num?)?.toInt() ?? 0,

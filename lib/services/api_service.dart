@@ -21,6 +21,20 @@ class ApiService {
     debugPrint("ApiService Initialized with URL: $_baseUrl");
   }
 
+  /// Centralized helper to get the full URL for an image/file path.
+  static String getImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+
+    // Remove /api from the end of the base URL to get the server root
+    final serverRoot = _baseUrl.endsWith('/api')
+        ? _baseUrl.substring(0, _baseUrl.length - 4)
+        : _baseUrl;
+
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return '$serverRoot/$cleanPath';
+  }
+
   static String _getDefaultBaseUrl() {
     if (kIsWeb) return 'http://localhost:3000/api';
 
