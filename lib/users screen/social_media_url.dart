@@ -66,7 +66,7 @@ class SocialMediaUrl extends StatelessWidget {
   }
 
   Widget _buildSocialIcon(
-      BuildContext context, String url, IconData icon, Color color) {
+      BuildContext context, String url, FaIconData icon, Color color) {
     return IconButton(
       iconSize: 32.0,
       onPressed: () => _launchURL(context, url),
